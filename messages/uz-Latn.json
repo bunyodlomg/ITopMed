@@ -31,7 +31,8 @@
     "clearSearch": "Qidiruvni tozalash",
     "filters": "Filtrlar",
     "nothingFound": "Hech narsa topilmadi",
-    "nothingFoundHint": "Qidiruv yoki filtrni oʻzgartirib koʻring."
+    "nothingFoundHint": "Qidiruv yoki filtrni oʻzgartirib koʻring.",
+    "morePages": "Yana {count}"
   },
   "a11y": {
     "skipToContent": "Asosiy mazmunga oʻtish",

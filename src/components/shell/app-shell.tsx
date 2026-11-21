@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { setThemeAction } from "@/app/actions/preferences";
 import { InstallApp } from "../install-app";
 import { AccountMenu } from "./account-menu";
-import { RailForm, RailLink, RailNav, SectionRail, SectionTopNav, TopNav } from "./frame-nav";
+import { RailForm, RailLanguage, RailLink, RailNav, SectionRail, SectionTopNav, TopNav } from "./frame-nav";
 import { MobileTabBar } from "./mobile-tab-bar";
 import { NavLinks, type NavGroup, type NavItem } from "./nav-links";
 import { Preferences } from "./preferences";
@@ -103,7 +103,7 @@ export async function AppShell({
           <div className="flex min-w-0 flex-1">
             {sections ? <SectionTopNav items={nav} groups={navGroups!} label={t("a11y.mainNav")} /> : <TopNav items={top} label={t("a11y.mainNav")} />}
           </div>
-          <AccountMenu name={user.name} detail={user.detail} signOut={signOut} securityHref={securityHref} theme={theme} />
+          <AccountMenu name={user.name} detail={user.detail} signOut={signOut} securityHref={securityHref} />
         </header>
 
         {/* Phone / tablet header */}
@@ -143,9 +143,14 @@ export async function AppShell({
         <div className="lg:mt-6 lg:flex lg:min-h-0 lg:flex-1 lg:gap-6 xl:gap-8">
           {/* Desktop rail */}
           <aside data-chrome className="hidden w-14 shrink-0 flex-col items-center justify-between gap-3 pb-6 lg:flex">
-            <div className="flex flex-col gap-1 rounded-full bg-surface p-1.5 shadow-control">
-              <RailForm action={setThemeAction} label={t("common.themeLight")} icon="sun" field={{ name: "theme", value: "light" }} pressed={theme === "light"} />
-              <RailForm action={setThemeAction} label={t("common.themeDark")} icon="moon" field={{ name: "theme", value: "dark" }} pressed={theme === "dark"} />
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1 rounded-full bg-surface p-1.5 shadow-control">
+                <RailForm action={setThemeAction} label={t("common.themeLight")} icon="sun" field={{ name: "theme", value: "light" }} pressed={theme === "light"} />
+                <RailForm action={setThemeAction} label={t("common.themeDark")} icon="moon" field={{ name: "theme", value: "dark" }} pressed={theme === "dark"} />
+              </div>
+              <div className="rounded-full bg-surface p-1.5 shadow-control">
+                <RailLanguage />
+              </div>
             </div>
             <div className="flex min-h-0 flex-1 flex-col justify-center">
               {sections ? <SectionRail items={nav} groups={navGroups!} label={t("a11y.sectionsNav")} /> : <RailNav items={rail} label={t("a11y.sectionsNav")} />}

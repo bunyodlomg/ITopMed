@@ -31,7 +31,8 @@
     "clearSearch": "Қидирувни тозалаш",
     "filters": "Филтрлар",
     "nothingFound": "Ҳеч нарса топилмади",
-    "nothingFoundHint": "Қидирув ёки филтрни ўзгартириб кўринг."
+    "nothingFoundHint": "Қидирув ёки филтрни ўзгартириб кўринг.",
+    "morePages": "Яна {count}"
   },
   "a11y": {
     "skipToContent": "Асосий мазмунга ўтиш",

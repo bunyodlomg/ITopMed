@@ -31,7 +31,8 @@
     "clearSearch": "Clear search",
     "filters": "Filters",
     "nothingFound": "Nothing found",
-    "nothingFoundHint": "Try another search or filter."
+    "nothingFoundHint": "Try another search or filter.",
+    "morePages": "{count} more"
   },
   "a11y": {
     "skipToContent": "Skip to main content",

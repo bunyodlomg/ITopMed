@@ -435,8 +435,10 @@ dialog.drawer[open]::backdrop { animation: itm-fade-in var(--dur-panel) var(--ea
 }
 
 /* Rail tooltips: a quick fade from the rail's side. */
+/* Vertical centring comes from the element's own -translate-y-1/2 (the CSS translate
+   property); the keyframes only slide sideways, or the two would add up to -100%. */
 @keyframes itm-tip {
-  from { opacity: 0; transform: translate(-4px, -50%); }
-  to { opacity: 1; transform: translate(0, -50%); }
+  from { opacity: 0; transform: translateX(-4px); }
+  to { opacity: 1; transform: none; }
 }
 .animate-tip { animation: itm-tip var(--dur-quick) var(--ease-out) both; }

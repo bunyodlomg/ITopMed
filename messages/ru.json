@@ -31,7 +31,8 @@
     "clearSearch": "Очистить поиск",
     "filters": "Фильтры",
     "nothingFound": "Ничего не найдено",
-    "nothingFoundHint": "Измените запрос или фильтр."
+    "nothingFoundHint": "Измените запрос или фильтр.",
+    "morePages": "Ещё {count}"
   },
   "a11y": {
     "skipToContent": "Перейти к основному содержимому",

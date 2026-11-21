@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import { InstallApp } from "../install-app";
-import { Preferences } from "./preferences";
 
 export function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -16,7 +15,7 @@ export function initials(name: string) {
  * The person chip at the right of the top bar. A native <details>, so it opens
  * without JavaScript; with it, a click outside or Escape closes it.
  */
-export function AccountMenu({ name, detail, signOut, securityHref, theme }: { name: string; detail: string; signOut: () => Promise<void>; securityHref?: string; theme: "light" | "dark" | "system" }) {
+export function AccountMenu({ name, detail, signOut, securityHref }: { name: string; detail: string; signOut: () => Promise<void>; securityHref?: string }) {
   const t = useTranslations();
   const ref = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
@@ -57,7 +56,6 @@ export function AccountMenu({ name, detail, signOut, securityHref, theme }: { na
           <p className="truncate text-[13px] text-text-3">{detail}</p>
         </div>
         <InstallApp />
-        <Preferences theme={theme} />
         <div className="space-y-1 border-t border-border pt-2">
           {securityHref ? (
             <Link href={securityHref} className="flex h-11 items-center gap-3 rounded-full px-3 text-[14px] font-medium text-text-2 hover:bg-chip hover:text-text">
