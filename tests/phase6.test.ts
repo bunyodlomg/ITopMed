@@ -7,6 +7,7 @@ import { addScheduleBlock, addScheduleException, doctorSlots, saveDoctorProfile 
 import { addAllergy, addDiagnosis, amendNote, finishEncounter, getEncounter, getMedicalRecord, recordVitals, saveDraft, signNote, startVisit } from "@/server/emr/record";
 import { getPatient, listRecentPatients, registerPatient, searchPatients } from "@/server/patients/patients";
 import { addDays, isoWeekday, localToInstant, todayIn } from "@/server/scheduling/time";
+import { startedSlot } from "./helpers/slots";
 import { META, PASSWORD, clinicContext, clinicWithOwner, platformActor, uniq } from "./helpers/fixtures";
 
 const TZ = "Asia/Tashkent";
@@ -169,7 +170,7 @@ describe("appointments and queue", () => {
     const p = await registerPatient(reception.ctx, person(), { confirmNotDuplicate: false }, META);
     const q = await registerPatient(reception.ctx, person(), { confirmNotDuplicate: false }, META);
     if (!p.ok || !q.ok) throw new Error("register");
-    const now = new Date(Math.floor(Date.now() / 60_000) * 60_000).toISOString();
+    const now = startedSlot(TZ, 5).toISOString(); // the doctor's slot is 5 minutes
     const apptId = await bookAppointment(reception.ctx, { patientId: p.id, doctorProfileId: profileId, startsAt: now }, META);
     expect(await checkIn(reception.ctx, apptId, META)).toBe(1);
     await expect(checkIn(reception.ctx, apptId, META)).rejects.toThrow("errors.invalidTransition");

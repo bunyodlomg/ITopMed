@@ -18,6 +18,7 @@ import { activatePortalAccount, loginPatient, portalTenant, validatePatientSessi
 import { listMyMedicines } from "@/server/portal/medicines";
 import { issuePortalCode } from "@/server/portal/staff";
 import { localToInstant, todayIn, addDays, instantToLocalDate } from "@/server/scheduling/time";
+import { startedSlot } from "./helpers/slots";
 import { connectClinicBot } from "@/server/telegram/clinic-bot";
 import { handleBotUpdate, type TgUpdate } from "@/server/telegram/updates";
 import { META, PASSWORD, clinicContext, clinicWithOwner, platformActor, uniq } from "./helpers/fixtures";
@@ -73,7 +74,13 @@ async function setup() {
   expect(await handleTelegramStart(a.tenantId, link.split("start=")[1]!, chatId)).toBe(true);
   const state = (await clinicBotState(a.tenantId))!;
   const doctorCtx = await clinicContext(doctor.login, a.slug);
-  return { a, branch: branch!, reception, doctorCtx, otherCtx: await clinicContext(other.login, a.slug), profileId, patientId: r.id, p, chatId, state };
+  return { a, branch: branch!, reception, doctorCtx, otherCtx: await clinicContext(other.login, a.slug), profileId, doctorMembershipId: doctor.membershipId, patientId: r.id, p, chatId, state };
+}
+
+/** A visit that has just started (5-minute slot), valid at any hour — see startedSlot. */
+async function startedVisit(s: Awaited<ReturnType<typeof setup>>) {
+  await saveDoctorProfile(s.a.ctx, s.doctorMembershipId, { specialty: "cardiology", defaultSlotMinutes: 5, acceptsOnlineBooking: false }, META);
+  return startedSlot(TZ, 5);
 }
 
 const textUpdate = (chatId: bigint, text: string): TgUpdate => ({ update_id: 1, message: { chat: { id: Number(chatId), type: "private" }, from: { id: Number(chatId) }, date: Math.floor(Date.now() / 1000), text } });
@@ -141,7 +148,7 @@ describe("Telegram care", () => {
 
   it("a missed visit gets an offer to book again, unless the patient already booked", async () => {
     const s = await setup();
-    const now = new Date(Math.floor(Date.now() / 60_000) * 60_000).toISOString();
+    const now = (await startedVisit(s)).toISOString();
     const appt = await bookAppointment(s.reception.ctx, { patientId: s.patientId, doctorProfileId: s.profileId, startsAt: now }, META);
     await markNoShow(s.reception.ctx, appt, META);
     const rows = (await listNotifications(s.a.ctx)).rows.filter((r) => r.kind === "NO_SHOW_REBOOK");
@@ -155,7 +162,7 @@ describe("Telegram care", () => {
 
   it("no offer when the patient has already booked again", async () => {
     const s = await setup();
-    const now = new Date(Math.floor(Date.now() / 60_000) * 60_000);
+    const now = await startedVisit(s);
     const appt = await bookAppointment(s.reception.ctx, { patientId: s.patientId, doctorProfileId: s.profileId, startsAt: now.toISOString() }, META);
     await markNoShow(s.reception.ctx, appt, META);
     await bookAppointment(s.reception.ctx, { patientId: s.patientId, doctorProfileId: s.profileId, startsAt: new Date(now.getTime() + 2 * 86_400_000).toISOString() }, META);
