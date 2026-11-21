@@ -37,6 +37,8 @@ function detect() {
   const found: { kind: string; el: Element; detail: string }[] = [];
   const inScroller = (el: Element) => {
     for (let p = el.parentElement; p; p = p.parentElement) {
+      // The desktop page area scrolls vertically; it is the page, not a sideways scroller.
+      if (p.hasAttribute("data-scroll-root")) return false;
       const o = getComputedStyle(p).overflowX;
       if (o === "auto" || o === "scroll") return true;
     }

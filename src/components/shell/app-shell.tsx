@@ -10,6 +10,7 @@ import { RailForm, RailLink, RailNav, SectionRail, SectionTopNav, TopNav } from 
 import { MobileTabBar } from "./mobile-tab-bar";
 import { NavLinks, type NavGroup, type NavItem } from "./nav-links";
 import { Preferences } from "./preferences";
+import { cx } from "../ui/primitives";
 
 export async function currentTheme(): Promise<"light" | "dark" | "system"> {
   const v = (await cookies()).get("itm_theme")?.value;
@@ -42,7 +43,7 @@ function Brand({ context }: { context: string }) {
 const TOP_MAX = 6;
 
 /**
- * Workspace chrome. Desktop: one large rounded frame on the grey ground — a fixed top bar
+ * Workspace chrome. Desktop: one large rounded frame on the grey ground — top bar
  * (brand, the primary screens as a capsule with the current one as the ink pill,
  * the person's chip) and a left rail of capsules (appearance, the remaining
  * sections as icons with tooltips, security + sign out). Phones and tablets: a
@@ -81,14 +82,16 @@ export async function AppShell({
   const rail = nav.slice(top.length);
 
   return (
-    <div className="min-h-dvh lg:p-3 xl:p-4">
+    // Desktop: an app-like frame of exactly one screen. The top bar and the rail never move;
+    // only the page area (main) scrolls. Phones keep the normal page scroll.
+    <div data-shell-root className="min-h-dvh lg:relative lg:h-dvh lg:overflow-hidden lg:p-3 xl:p-4">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-surface focus:px-4 focus:py-2 focus:shadow-pop">
         {t("a11y.skipToContent")}
       </a>
 
-      <div data-frame className="mx-auto min-h-dvh max-w-[1680px] bg-frame lg:min-h-[calc(100dvh-1.5rem)] lg:rounded-[40px] lg:bg-frame lg:px-6 lg:pb-10 lg:pt-2 xl:min-h-[calc(100dvh-2rem)] xl:px-8">
-        {/* Desktop top bar: stays at the top while the page scrolls (80px: 12 + 56 + 12). */}
-        <header data-chrome className="sticky top-0 z-30 hidden items-center gap-3 bg-frame py-3 lg:flex">
+      <div data-frame className="mx-auto min-h-dvh max-w-[1680px] bg-frame lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:rounded-[40px] lg:bg-frame lg:px-6 lg:pt-5 xl:px-8">
+        {/* Desktop top bar */}
+        <header data-chrome className="hidden shrink-0 items-center gap-3 lg:flex">
           <Link href={nav[0]?.href ?? "/"} className="flex h-14 min-w-0 shrink-0 items-center gap-3 rounded-full bg-surface py-2 pl-2 pr-2 shadow-control xl:max-w-[260px] xl:pr-5">
             <Mark />
             <span className="hidden min-w-0 leading-tight xl:block">
@@ -137,9 +140,9 @@ export async function AppShell({
           </div>
         </details>
 
-        <div className="lg:mt-3 lg:flex lg:gap-6 xl:gap-8">
-          {/* Desktop rail: fixed under the top bar; short enough to clear the frame's bottom padding, so it never slides up. */}
-          <aside data-chrome className="sticky top-[92px] hidden h-[calc(100dvh-152px)] w-14 shrink-0 flex-col items-center justify-between gap-3 self-start lg:flex">
+        <div className="lg:mt-6 lg:flex lg:min-h-0 lg:flex-1 lg:gap-6 xl:gap-8">
+          {/* Desktop rail */}
+          <aside data-chrome className="hidden w-14 shrink-0 flex-col items-center justify-between gap-3 pb-6 lg:flex">
             <div className="flex flex-col gap-1 rounded-full bg-surface p-1.5 shadow-control">
               <RailForm action={setThemeAction} label={t("common.themeLight")} icon="sun" field={{ name: "theme", value: "light" }} pressed={theme === "light"} />
               <RailForm action={setThemeAction} label={t("common.themeDark")} icon="moon" field={{ name: "theme", value: "dark" }} pressed={theme === "dark"} />
@@ -153,9 +156,10 @@ export async function AppShell({
             </div>
           </aside>
 
-          <main id="main" className={primary && primary.length > 1 ? "min-w-0 flex-1 pb-[calc(56px+env(safe-area-inset-bottom))] lg:pb-0" : "min-w-0 flex-1"}>
+          {/* The only scrolling area on desktop (side padding keeps card shadows from being clipped). */}
+          <main id="main" data-scroll-root className={cx("min-w-0 flex-1 lg:relative lg:-mx-4 lg:overflow-y-auto lg:px-4 lg:[scrollbar-gutter:stable]", primary && primary.length > 1 && "pb-[calc(56px+env(safe-area-inset-bottom))] lg:pb-0")}>
             {banner}
-            <div className="page-enter px-4 pb-8 pt-2 sm:px-6 lg:p-0">{children}</div>
+            <div className="page-enter px-4 pb-8 pt-2 sm:px-6 lg:px-0 lg:pb-10 lg:pt-1">{children}</div>
           </main>
         </div>
       </div>

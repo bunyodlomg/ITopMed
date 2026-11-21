@@ -418,6 +418,9 @@ dialog.drawer[open]::backdrop { animation: itm-fade-in var(--dur-panel) var(--ea
 @media print {
   aside, details, nav.fixed, a[href="#main"], [data-chrome] { display: none !important; }
   [data-frame] { background: #fff !important; padding: 0 !important; border-radius: 0 !important; min-height: 0 !important; }
+  [data-shell-root] { height: auto !important; overflow: visible !important; padding: 0 !important; }
+  [data-frame] { display: block !important; height: auto !important; }
+  main { overflow: visible !important; margin: 0 !important; }
   body { background: #fff; color: #000; }
   main { padding: 0 !important; }
   main > div { max-width: none !important; padding: 0 !important; }
