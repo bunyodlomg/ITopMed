@@ -1265,7 +1265,10 @@
       "channel": "Channel",
       "when": "When",
       "status": "Status",
-      "attempts": "{count, plural, one {# attempt} other {# attempts}}"
+      "attempts": "{count, plural, one {# attempt} other {# attempts}}",
+      "checkInDays": "Ask this many days after the visit",
+      "checkInDaysHint": "1 to 30. The question goes out that day at 10:00.",
+      "telegramOnlyHint": "The check-in question and medicine reminders go through Telegram only. Medicine reminders follow the intake times of the prescription; the message never names the medicine. For a prescription without a duration, reminders run for 30 days. The patient can stop them in the bot."
     },
     "modules": {
       "title": "Sections (modules)",
@@ -1721,7 +1724,8 @@
     "bufferRange": "The buffer must be 0 to 30 minutes.",
     "intervalDays": "The number of days must be 7 to 365.",
     "httpsUrl": "The link must start with https://.",
-    "percentRange": "The percentage must be 0 to 100."
+    "percentRange": "The percentage must be 0 to 100.",
+    "bpOrder": "The lower pressure must be below the upper one"
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",
@@ -2100,7 +2104,9 @@
       "results": "Results",
       "invoices": "Payments",
       "account": "Account",
-      "book": "Book a visit"
+      "book": "Book a visit",
+      "medicines": "My medicines",
+      "readings": "Blood pressure"
     },
     "login": {
       "title": "Patient portal",
@@ -2213,6 +2219,31 @@
       "connect": "Connect Telegram",
       "open": "Open Telegram",
       "afterOpen": "In Telegram press Start. The connection is ready in about 20 seconds; then refresh this page. The link works once, for 15 minutes."
+    },
+    "medicines": {
+      "title": "My medicines",
+      "subtitle": "Medicines your doctor prescribed that you are taking now.",
+      "current": "Current medicines",
+      "hint": "Medicine, dose and intake times as prescribed.",
+      "none": "No medicines to take right now.",
+      "times": "Intake times",
+      "noDuration": "No duration given — ask your doctor",
+      "until": "until {date}",
+      "note": "Do not stop or switch a medicine on your own — talk to your doctor first."
+    },
+    "readings": {
+      "title": "Blood pressure and pulse",
+      "subtitle": "Blood pressure and pulse you measured at home. Your doctor will see them at your visit.",
+      "add": "New measurement",
+      "telegramHint": "You can also send it to the Telegram bot like this: 135/85 72",
+      "systolic": "Upper (systolic)",
+      "diastolic": "Lower (diastolic)",
+      "pulse": "Pulse",
+      "save": "Save",
+      "history": "My measurements",
+      "none": "No measurements yet.",
+      "note": "Values sent here do not replace emergency care. If you suddenly feel much worse, call 103.",
+      "saved": "Measurement saved."
     }
   },
   "inventoryCategory": {
@@ -2312,7 +2343,10 @@
     "appointmentReminder": "Visit reminder",
     "appointmentCancelled": "Cancellation notice",
     "resultsReady": "Results ready in the portal",
-    "dispensaryReminder": "Follow-up reminder"
+    "dispensaryReminder": "Follow-up reminder",
+    "noShowRebook": "Offer to book again after a missed visit",
+    "visitCheckIn": "\"How are you feeling?\" after a visit (Telegram)",
+    "medicationReminders": "Medicine reminders (Telegram)"
   },
   "notificationStatus": {
     "PENDING": "Waiting",
@@ -2336,7 +2370,12 @@
     "clinic_inactive": "Clinic inactive",
     "delivery_failed": "Delivery failed",
     "local_mode": "Local mode: not sent over the internet",
-    "email_removed": "Email is no longer used"
+    "email_removed": "Email is no longer used",
+    "rebooked": "Patient already booked again",
+    "opted_out": "Patient stopped reminders",
+    "disabled": "Turned off in settings",
+    "rescheduled": "Time changed",
+    "closed": "Follow-up closed"
   },
   "notifications": {
     "contact": "Questions: {phone}.",
@@ -2365,6 +2404,29 @@
       "sms": "{clinic}: your planned check-up is due on {date}. Please book a convenient time.",
       "subject": "{clinic}: check-up on {date}",
       "body": "{clinic}: the planned check-up your doctor set is due on {date}. Please book a convenient time: {link}"
+    },
+    "NO_SHOW_REBOOK": {
+      "sms": "{clinic}: you could not come to your visit on {date}. To book again, call the clinic.",
+      "subject": "{clinic}: book again",
+      "body": "{clinic}: you could not come to your visit on {date} at {time}. You can book again at a convenient time.",
+      "online": "Book online: {link}"
+    },
+    "VISIT_CHECKIN": {
+      "sms": "{clinic}: how are you feeling after your visit? Tap a button — your doctor will see the answer. If you suddenly feel much worse, call 103.",
+      "subject": "{clinic}: how are you feeling?",
+      "body": "{clinic}: how are you feeling after your visit? If you suddenly feel much worse, call 103."
+    },
+    "MEDICATION_REMINDER": {
+      "sms": "💊 {clinic}: time for your medicine — {time}. See which ones under \"My medicines\".",
+      "subject": "{clinic}: medicine time {time}",
+      "body": "{clinic}: time for your medicine — {time}."
+    },
+    "buttons": {
+      "B": "😊 Better",
+      "S": "😐 The same",
+      "W": "😟 Worse",
+      "medicines": "💊 My medicines",
+      "stop": "🔕 Stop reminders"
     }
   },
   "moduleHint": {
@@ -3089,5 +3151,48 @@
     "locked": "The account is temporarily locked. Try again in 15 minutes.",
     "disabled": "Sign-in through Telegram is not enabled yet.",
     "retry": "Try again"
+  },
+  "telegramBot": {
+    "linked": "Telegram is connected. The clinic's messages will come here.",
+    "linkExpired": "The link has expired. Tap \"Connect Telegram\" in the portal again.",
+    "readingHelp": "Send the blood pressure and pulse you measured at home like this: 135/85 72 (upper/lower pressure, then pulse). Your doctor will see them at your visit.",
+    "readingSaved": "Received. Your doctor will see it at your visit. If you suddenly feel much worse, call 103.",
+    "readingLimited": "Too many measurements today. Please continue tomorrow.",
+    "checkInThanks": "Thank you, your answer will reach your doctor. If you suddenly feel much worse, call 103.",
+    "checkInAlready": "Your answer was already received.",
+    "remindersStopped": "Medicine reminders are stopped.",
+    "remindersResumed": "Medicine reminders are on again.",
+    "resume": "🔔 Turn back on"
+  },
+  "homeReadings": {
+    "title": "Blood pressure and pulse from the patient",
+    "hint": "Values the patient measured at home and sent through the Telegram bot or the portal (patient-entered). Colours are only a cue: home BP ≥135/85 is elevated, ≥180/110 very high (ESH 2023).",
+    "none": "The patient has not sent any measurements yet.",
+    "when": "When",
+    "bp": "Blood pressure",
+    "pulse": "Pulse",
+    "source": "Via",
+    "band": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "Elevated",
+      "veryHigh": "Very high"
+    },
+    "via": {
+      "TELEGRAM": "Telegram",
+      "PORTAL": "Portal"
+    },
+    "checkIn": "Check-in after the visit",
+    "checkInPlanned": "Will be asked on {date}",
+    "checkInNoAnswer": "No answer",
+    "answer": {
+      "BETTER": "Better",
+      "SAME": "The same",
+      "WORSE": "Worse"
+    },
+    "checkInsTitle": "Check-in answers after visits",
+    "checkInsHint": "Last 14 days. \"Worse\" answers come first: call the patient.",
+    "checkInsEmpty": "No answers in the last 14 days.",
+    "answeredAt": "Answered"
   }
 }

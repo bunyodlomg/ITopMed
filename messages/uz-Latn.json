@@ -1265,7 +1265,10 @@
       "channel": "Kanal",
       "when": "Qachon",
       "status": "Holat",
-      "attempts": "{count} ta urinish"
+      "attempts": "{count} ta urinish",
+      "checkInDays": "Qabuldan necha kun keyin soʻraladi",
+      "checkInDaysHint": "1 dan 30 gacha. Savol shu kuni soat 10:00 da yuboriladi.",
+      "telegramOnlyHint": "Ahvolni soʻrash va dori eslatmalari faqat Telegram orqali boradi. Dori eslatmalari retseptdagi ichish soatlarida yuboriladi; xabarda dori nomi yozilmaydi. Davomiyligi koʻrsatilmagan retsept uchun eslatmalar 30 kun yuboriladi. Bemor eslatmalarni botda toʻxtata oladi."
     },
     "modules": {
       "title": "Boʻlimlar (modullar)",
@@ -1721,7 +1724,8 @@
     "bufferRange": "Zaxira 0 dan 30 daqiqagacha bo'lishi kerak.",
     "intervalDays": "Kunlar soni 7 dan 365 gacha bo'lishi kerak.",
     "httpsUrl": "Havola https:// bilan boshlanishi kerak.",
-    "percentRange": "Foiz 0 dan 100 gacha bo'lishi kerak."
+    "percentRange": "Foiz 0 dan 100 gacha bo'lishi kerak.",
+    "bpOrder": "Pastki bosim yuqori bosimdan kichik boʻlishi kerak"
   },
   "errors": {
     "generic": "Nimadir notoʻgʻri ketdi. Qayta urinib koʻring.",
@@ -2100,7 +2104,9 @@
       "results": "Tahlillar",
       "invoices": "Toʻlovlar",
       "account": "Profil",
-      "book": "Qabulga yozilish"
+      "book": "Qabulga yozilish",
+      "medicines": "Dorilarim",
+      "readings": "Bosim va puls"
     },
     "login": {
       "title": "Bemor portali",
@@ -2213,6 +2219,31 @@
       "connect": "Telegramni ulash",
       "open": "Telegramni ochish",
       "afterOpen": "Telegramda Start tugmasini bosing. Taxminan 20 soniyada ulanadi, so'ng bu sahifani yangilang. Havola bir marta, 15 daqiqa ishlaydi."
+    },
+    "medicines": {
+      "title": "Dorilarim",
+      "subtitle": "Shifokoringiz yozgan, hozir ichayotgan dorilaringiz.",
+      "current": "Hozirgi dorilar",
+      "hint": "Dori, doza va ichish soatlari retsept boʻyicha.",
+      "none": "Hozir ichiladigan dori yoʻq.",
+      "times": "Ichish soatlari",
+      "noDuration": "Muddati koʻrsatilmagan — shifokoringiz bilan maslahatlashing",
+      "until": "{date} gacha",
+      "note": "Dorini oʻzingiz toʻxtatmang yoki almashtirmang — avval shifokoringiz bilan maslahatlashing."
+    },
+    "readings": {
+      "title": "Bosim va puls",
+      "subtitle": "Uyda oʻlchagan bosim va pulsingiz. Shifokoringiz ularni qabulda koʻradi.",
+      "add": "Yangi oʻlchov",
+      "telegramHint": "Telegram botga ham shunday yozib yuborishingiz mumkin: 135/85 72",
+      "systolic": "Yuqori bosim",
+      "diastolic": "Pastki bosim",
+      "pulse": "Puls",
+      "save": "Saqlash",
+      "history": "Oʻlchovlarim",
+      "none": "Hali oʻlchov yoʻq.",
+      "note": "Bu yerda yuborilgan qiymatlar shoshilinch yordam oʻrnini bosmaydi. Ahvolingiz keskin yomonlashsa, 103 ga qoʻngʻiroq qiling.",
+      "saved": "Oʻlchov saqlandi."
     }
   },
   "inventoryCategory": {
@@ -2312,7 +2343,10 @@
     "appointmentReminder": "Qabul eslatmasi",
     "appointmentCancelled": "Bekor qilish xabari",
     "resultsReady": "Natijalar portalda",
-    "dispensaryReminder": "Nazorat tashrifi eslatmasi"
+    "dispensaryReminder": "Nazorat tashrifi eslatmasi",
+    "noShowRebook": "Kelmagan bemorga qayta yozilish taklifi",
+    "visitCheckIn": "Qabuldan keyin ahvolini soʻrash (Telegram)",
+    "medicationReminders": "Dori ichish eslatmalari (Telegram)"
   },
   "notificationStatus": {
     "PENDING": "Kutilmoqda",
@@ -2336,7 +2370,12 @@
     "clinic_inactive": "Klinika faol emas",
     "delivery_failed": "Yetkazib boʻlmadi",
     "local_mode": "Lokal rejim: internetga yuborilmaydi",
-    "email_removed": "Email endi ishlatilmaydi"
+    "email_removed": "Email endi ishlatilmaydi",
+    "rebooked": "Bemor qayta yozilgan",
+    "opted_out": "Bemor eslatmalarni toʻxtatgan",
+    "disabled": "Sozlamada oʻchirilgan",
+    "rescheduled": "Vaqti oʻzgargan",
+    "closed": "Kuzatuv yopilgan"
   },
   "notifications": {
     "contact": "Savollar boʻyicha: {phone}.",
@@ -2365,6 +2404,29 @@
       "sms": "{clinic}: rejali nazorat tashrifingiz vaqti keldi — {date}. Qulay vaqtga yoziling.",
       "subject": "{clinic}: {date} — nazorat tashrifi",
       "body": "{clinic}: shifokoringiz belgilagan rejali nazorat tashrifi {date} kuni. Iltimos, qulay vaqtga yoziling: {link}"
+    },
+    "NO_SHOW_REBOOK": {
+      "sms": "{clinic}: siz {date} dagi qabulga kela olmadingiz. Qayta yozilish uchun klinikaga qoʻngʻiroq qiling.",
+      "subject": "{clinic}: qayta yozilish",
+      "body": "{clinic}: siz {date}, soat {time} dagi qabulga kela olmadingiz. Qulay vaqtga qayta yozilishingiz mumkin.",
+      "online": "Onlayn yozilish: {link}"
+    },
+    "VISIT_CHECKIN": {
+      "sms": "{clinic}: qabuldan keyin oʻzingizni qanday his qilyapsiz? Tugmani bosing — javobingizni shifokoringiz koʻradi. Ahvolingiz keskin yomonlashsa, 103 ga qoʻngʻiroq qiling.",
+      "subject": "{clinic}: ahvolingiz qanday?",
+      "body": "{clinic}: qabuldan keyin oʻzingizni qanday his qilyapsiz? Ahvolingiz keskin yomonlashsa, 103 ga qoʻngʻiroq qiling."
+    },
+    "MEDICATION_REMINDER": {
+      "sms": "💊 {clinic}: dori ichish vaqti — {time}. Qaysi dorilar ekanini «Dorilarim» tugmasida koʻring.",
+      "subject": "{clinic}: dori vaqti {time}",
+      "body": "{clinic}: dori ichish vaqti — {time}."
+    },
+    "buttons": {
+      "B": "😊 Yaxshiroq",
+      "S": "😐 Oʻzgarmadi",
+      "W": "😟 Yomonroq",
+      "medicines": "💊 Dorilarim",
+      "stop": "🔕 Eslatmalarni toʻxtatish"
     }
   },
   "moduleHint": {
@@ -3089,5 +3151,48 @@
     "locked": "Hisob vaqtincha bloklangan. 15 daqiqadan keyin urinib ko'ring.",
     "disabled": "Telegram orqali kirish hozircha yoqilmagan.",
     "retry": "Qayta urinish"
+  },
+  "telegramBot": {
+    "linked": "Telegram ulandi. Klinika xabarlari shu yerga keladi.",
+    "linkExpired": "Havola eskirgan. Portalda «Telegramni ulash» tugmasini qayta bosing.",
+    "readingHelp": "Uyda oʻlchagan bosim va pulsingizni shunday yuboring: 135/85 72 (yuqori/pastki bosim, keyin puls). Shifokoringiz ularni qabulda koʻradi.",
+    "readingSaved": "Qabul qilindi. Shifokoringiz qabulda koʻradi. Ahvolingiz keskin yomonlashsa, 103 ga qoʻngʻiroq qiling.",
+    "readingLimited": "Bugun juda koʻp oʻlchov yuborildi. Ertaga davom eting.",
+    "checkInThanks": "Rahmat, javobingiz shifokoringizga yetkaziladi. Ahvolingiz keskin yomonlashsa, 103 ga qoʻngʻiroq qiling.",
+    "checkInAlready": "Javobingiz avval qabul qilingan.",
+    "remindersStopped": "Dori eslatmalari toʻxtatildi.",
+    "remindersResumed": "Dori eslatmalari qayta yoqildi.",
+    "resume": "🔔 Qayta yoqish"
+  },
+  "homeReadings": {
+    "title": "Bemor yuborgan bosim va puls",
+    "hint": "Bemor uyda oʻlchab, Telegram bot yoki portal orqali yuborgan qiymatlar. Ularni bemorning oʻzi kiritgan. Ranglar faqat koʻrsatkich: uydagi bosim ≥135/85 — yuqori, ≥180/110 — juda yuqori (ESH 2023).",
+    "none": "Bemor hali oʻlchov yubormagan.",
+    "when": "Vaqti",
+    "bp": "Bosim",
+    "pulse": "Puls",
+    "source": "Qayerdan",
+    "band": {
+      "low": "Past",
+      "normal": "Meʼyorda",
+      "high": "Yuqori",
+      "veryHigh": "Juda yuqori"
+    },
+    "via": {
+      "TELEGRAM": "Telegram",
+      "PORTAL": "Portal"
+    },
+    "checkIn": "Qabuldan keyingi soʻrov",
+    "checkInPlanned": "{date} kuni soʻraladi",
+    "checkInNoAnswer": "Javob berilmagan",
+    "answer": {
+      "BETTER": "Yaxshiroq",
+      "SAME": "Oʻzgarmadi",
+      "WORSE": "Yomonroq"
+    },
+    "checkInsTitle": "Qabuldan keyingi soʻrov javoblari",
+    "checkInsHint": "Soʻnggi 14 kun. «Yomonroq» javoblari birinchi turadi: bemorga qoʻngʻiroq qiling.",
+    "checkInsEmpty": "Soʻnggi 14 kunda javob yoʻq.",
+    "answeredAt": "Javob sanasi"
   }
 }

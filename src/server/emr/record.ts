@@ -13,6 +13,7 @@ import { withRecordAccess, type BreakGlassReason } from "./access";
 import { labOrdersForRecord } from "../lab/lab";
 import { sequential } from "../db";
 import { dentalChartForRecord } from "./dental";
+import { scheduleVisitCheckIn } from "../notifications/notifications";
 
 const uuid = z.uuid();
 const clinicalText = z.string().max(10_000, "validation.tooLong");
@@ -174,6 +175,7 @@ export async function finishEncounter(ctx: ClinicContext, encounterId: string, m
     await tx.encounter.update({ where: { id: enc.id }, data: { status: "CLOSED", closedAt: now } });
     if (enc.appointmentId) await tx.appointment.update({ where: { id: enc.appointmentId }, data: { status: "COMPLETED", completedAt: now } });
     await auditClinic(tx, ctx, meta, { action: "encounter.closed", entityType: "Encounter", entityId: enc.id });
+    await scheduleVisitCheckIn(tx, ctx.tenant.id, { id: enc.id, patientId: enc.patientId, doctorProfileId: enc.doctorProfileId, closedAt: now }, ctx.tenant.timezone);
   });
 }
 

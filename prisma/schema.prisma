@@ -232,6 +232,8 @@ model Tenant {
   servicePackageItems  ServicePackageItem[]
   displayScreens       DisplayScreen[]
   dispensaryPlans      DispensaryPlan[]
+  patientReadings      PatientReading[]
+  visitCheckIns        VisitCheckIn[]
 
   @@index([status])
   @@index([networkId])
@@ -916,6 +918,8 @@ model Patient {
   notifications     Notification[]
   dentalChart       DentalChartEntry[]
   dispensaryPlans   DispensaryPlan[]
+  readings          PatientReading[]
+  visitCheckIns     VisitCheckIn[]
 
   @@unique([tenantId, mrn])
   @@index([tenantId, lastName, firstName])
@@ -1084,6 +1088,7 @@ model Encounter {
   prescriptions Prescription[]
   labOrders     LabOrder[]
   dentalChart   DentalChartEntry[]
+  checkIn       VisitCheckIn?
 
   @@index([tenantId, patientId, startedAt])
 }
@@ -1984,6 +1989,12 @@ enum NotificationKind {
   RESULTS_READY
   /// The day before a dispensary patient's follow-up is due (no clinical content in the message).
   DISPENSARY_REMINDER
+  /// The patient missed a visit: an offer to book again (portal link / clinic phone).
+  NO_SHOW_REBOOK
+  /// N days after a visit: "how are you feeling?" with answer buttons (Telegram only).
+  VISIT_CHECKIN
+  /// Medicine intake time from the prescription schedule (Telegram only; the medicine is not named).
+  MEDICATION_REMINDER
 }
 
 enum NotificationStatus {
@@ -2033,6 +2044,13 @@ model NotificationSettings {
   reminderHoursBefore  Int      @default(24)
   appointmentCancelled Boolean  @default(true)
   resultsReady         Boolean  @default(true)
+  /// Offer a patient who missed a visit to book again.
+  noShowRebook         Boolean  @default(true)
+  /// Ask "how are you feeling?" this many days after a visit (Telegram).
+  visitCheckIn         Boolean  @default(true)
+  checkInDays          Int      @default(5)
+  /// Telegram reminders at the intake times of prescriptions.
+  medicationReminders  Boolean  @default(true)
   updatedById          String   @db.Uuid
   updatedAt            DateTime @updatedAt
 
@@ -2206,6 +2224,8 @@ model TelegramLink {
   chatId    BigInt
   linkedAt  DateTime  @default(now())
   revokedAt DateTime?
+  /// The patient pressed "stop" under a medicine reminder in this chat.
+  medRemindersOff Boolean @default(false)
 
   tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   patient Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
@@ -2366,4 +2386,55 @@ model DispensaryPlan {
 
   @@index([tenantId, doctorProfileId, nextDueDate])
   @@index([tenantId, patientId])
+}
+
+// ───────────── Patient-reported measurements & visit check-ins (Telegram) ─────────────
+
+enum ReadingSource {
+  TELEGRAM
+  PORTAL
+}
+
+/// Blood pressure and pulse the patient measured at home and sent (bot message or portal).
+/// Patient-reported and append-only; shown to staff with record access.
+model PatientReading {
+  id         String        @id @db.Uuid
+  tenantId   String        @db.Uuid
+  patientId  String        @db.Uuid
+  systolic   Int
+  diastolic  Int
+  pulse      Int?
+  measuredAt DateTime
+  source     ReadingSource
+  createdAt  DateTime      @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, patientId, measuredAt])
+}
+
+enum CheckInAnswer {
+  BETTER
+  SAME
+  WORSE
+}
+
+/// "How are you feeling?" a few days after a visit; the patient answers with a bot button.
+model VisitCheckIn {
+  id              String         @id @db.Uuid
+  tenantId        String         @db.Uuid
+  patientId       String         @db.Uuid
+  encounterId     String         @unique @db.Uuid
+  doctorProfileId String         @db.Uuid
+  askAt           DateTime
+  answer          CheckInAnswer?
+  answeredAt      DateTime?
+  createdAt       DateTime       @default(now())
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  patient   Patient   @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  encounter Encounter @relation(fields: [encounterId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, doctorProfileId, answeredAt])
 }

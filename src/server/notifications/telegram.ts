@@ -10,9 +10,7 @@ import { isLocalOnly } from "../clinic/data-mode";
 import { withAppContext, withPortal, type Tx } from "../db";
 import { env, telegramTransport } from "../env";
 import { DomainError } from "../errors";
-import { logger } from "../logger";
-import { saveTelegramContact, type PatientPrincipal } from "../portal/auth";
-import { ownContact } from "../telegram/central-bot";
+import type { PatientPrincipal } from "../portal/auth";
 import { decryptField, hashIp, randomToken, sha256Hex, uuidv7 } from "../security/crypto";
 import { rateLimit } from "../security/rate-limit";
 import { mailboxRoot } from "../local/paths";
@@ -155,56 +153,46 @@ async function botToken(tx: Tx, tenantId: string): Promise<string | null> {
   return bot?.enabled ? decryptField(bot.tokenEnc, ctxKey(tenantId)) : null;
 }
 
-interface TgUpdate {
-  update_id: number;
-  message?: { chat: { id: number; type?: string }; from?: { id?: number; is_bot?: boolean }; text?: string; contact?: { phone_number?: string; user_id?: number } };
+/** Inline keyboard of a bot message: links, Mini App buttons, answer buttons (callback data = ids only). */
+export type TgButton = { text: string; url: string } | { text: string; web_app: { url: string } } | { text: string; callback_data: string };
+export interface TgMarkup {
+  inline_keyboard: TgButton[][];
+}
+
+function outboxText(text: string, markup?: TgMarkup) {
+  if (!markup) return text;
+  const buttons = markup.inline_keyboard.flat().map((b) => `[${b.text}] ${"url" in b ? b.url : "web_app" in b ? b.web_app.url : `callback:${b.callback_data}`}`);
+  return `${text}\n\n${buttons.join("\n")}`;
 }
 
 /**
- * Reads new messages of the clinic's bot (API transport): links patient chats
- * ("/start <code>"), stores a phone number the person shared about themselves
- * (for the Mini App), answers "/start" with the Mini App button. Safe every pass.
+ * A Bot API call of the clinic's bot that honours the transport: the API for
+ * real, a file in .dev-mailbox/telegram for "dev-outbox" (SIMULATED; only
+ * messages are written), nothing for "none". Never throws.
  */
-export async function pollTelegram(tenantId: string): Promise<number> {
-  if (telegramTransport() !== "api") return 0;
-  const state = await withAppContext({ tenantId }, async (tx) => {
+export async function botCall(token: string, method: string, body: Record<string, unknown>): Promise<boolean> {
+  const mode = telegramTransport();
+  if (mode === "none") return false;
+  try {
+    if (mode === "dev-outbox") {
+      if (method === "sendMessage") await writeOutbox(`chat-${String(body.chat_id)}`, outboxText(String(body.text ?? ""), body.reply_markup as TgMarkup | undefined));
+      return true;
+    }
+    await api(token, method, body);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** The clinic's bot for handling updates: token, workspace address and polling offset (null when off or local-only). */
+export async function clinicBotState(tenantId: string): Promise<{ token: string; slug: string; offset: bigint; locale: string } | null> {
+  return withAppContext({ tenantId }, async (tx) => {
     if (await isLocalOnly(tx, tenantId)) return null; // local-only clinic: no internet calls
     const b = await tx.telegramBot.findUnique({ where: { tenantId }, select: { tokenEnc: true, enabled: true, updateOffset: true } });
-    const t = await tx.tenant.findUnique({ where: { id: tenantId }, select: { slug: true } });
-    return b?.enabled && t ? { token: decryptField(b.tokenEnc, ctxKey(tenantId)), offset: b.updateOffset, slug: t.slug } : null;
+    const t = await tx.tenant.findUnique({ where: { id: tenantId }, select: { slug: true, defaultLocale: true } });
+    return b?.enabled && t ? { token: decryptField(b.tokenEnc, ctxKey(tenantId)), offset: b.updateOffset, slug: t.slug, locale: t.defaultLocale } : null;
   });
-  if (!state) return 0;
-  let updates: TgUpdate[];
-  try {
-    updates = await api(state.token, "getUpdates", { offset: Number(state.offset), timeout: 0, allowed_updates: ["message"] });
-  } catch {
-    logger.warn("telegram.poll_failed", {});
-    return 0;
-  }
-  let linked = 0;
-  const openButton = { inline_keyboard: [[{ text: "ITop Med", web_app: { url: miniAppUrl(state.slug) } }]] };
-  for (const u of updates) {
-    const msg = u.message;
-    if (!msg || msg.chat.type !== "private" || msg.from?.is_bot) continue;
-    const m = /^\/start\s+([a-z2-7]+)$/.exec(msg.text?.trim() ?? "");
-    if (m) {
-      const ok = await handleTelegramStart(tenantId, m[1]!, BigInt(msg.chat.id));
-      if (ok) linked++;
-      await api(state.token, "sendMessage", { chat_id: msg.chat.id, text: ok ? "✅ ITop Med: OK" : "ITop Med: link expired / havola eskirgan" }).catch(() => undefined);
-    } else if (msg.contact) {
-      // The Mini App asked for the number: only the sender's OWN contact is accepted.
-      const own = ownContact(u);
-      const saved = own ? await saveTelegramContact(own.tgId, own.phone) : false;
-      await api(state.token, "sendMessage", { chat_id: msg.chat.id, text: saved ? "✅ ITop Med" : "ITop Med: ❌", ...(saved ? { reply_markup: openButton } : {}) }).catch(() => undefined);
-    } else if (/^\/start(@\w+)?$/.test(msg.text?.trim() ?? "")) {
-      await api(state.token, "sendMessage", { chat_id: msg.chat.id, text: "ITop Med", reply_markup: openButton }).catch(() => undefined);
-    }
-  }
-  if (updates.length) {
-    const next = BigInt(updates[updates.length - 1]!.update_id + 1);
-    await withAppContext({ tenantId }, (tx) => tx.telegramBot.updateMany({ where: { tenantId }, data: { updateOffset: next } }));
-  }
-  return linked;
 }
 
 /** Active chat of a patient (for the dispatcher). */
@@ -219,12 +207,12 @@ export async function telegramReady(tx: Tx, tenantId: string): Promise<boolean> 
   return Boolean(b?.enabled);
 }
 
-export async function sendTelegram(tx: Tx, tenantId: string, chatId: bigint, text: string): Promise<{ delivered: boolean; transport: string | null }> {
+export async function sendTelegram(tx: Tx, tenantId: string, chatId: bigint, text: string, markup?: TgMarkup): Promise<{ delivered: boolean; transport: string | null }> {
   const mode = telegramTransport();
   if (mode === "none") return { delivered: false, transport: null };
   if (mode === "dev-outbox") {
     try {
-      await writeOutbox(`chat-${chatId}`, text);
+      await writeOutbox(`chat-${chatId}`, outboxText(text, markup));
       return { delivered: true, transport: "telegram-dev-outbox" };
     } catch {
       return { delivered: false, transport: "telegram-dev-outbox" };
@@ -233,7 +221,7 @@ export async function sendTelegram(tx: Tx, tenantId: string, chatId: bigint, tex
   const token = await botToken(tx, tenantId);
   if (!token) return { delivered: false, transport: "telegram" };
   try {
-    await api(token, "sendMessage", { chat_id: chatId.toString(), text });
+    await api(token, "sendMessage", { chat_id: chatId.toString(), text, ...(markup ? { reply_markup: markup } : {}) });
     return { delivered: true, transport: "telegram" };
   } catch {
     return { delivered: false, transport: "telegram" };

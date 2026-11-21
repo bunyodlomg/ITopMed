@@ -17,6 +17,7 @@ import { getPortalTenant, requirePatient } from "@/server/portal/guards";
 import { bookOnline } from "@/server/portal/booking";
 import { createTelegramLink, disconnectMyTelegram } from "@/server/notifications/telegram";
 import { disablePortalAccount, issuePortalCode } from "@/server/portal/staff";
+import { addMyReading } from "@/server/emr/readings";
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? "");
 const ok = (message: string, messageValues?: Record<string, string | number>): FormState => ({ ok: true, message, messageValues, nonce: Date.now() });
@@ -168,4 +169,15 @@ export async function portalTelegramDisconnectAction(_: FormState, fd: FormData)
   }
   revalidatePath(`/p/${p.tenant.slug}/account`);
   return ok("portal.telegram.disconnected");
+}
+
+export async function portalReadingAction(_: FormState, fd: FormData): Promise<FormState> {
+  const p = await requirePatient(str(fd, "$slug"));
+  try {
+    await addMyReading(p, { systolic: str(fd, "systolic"), diastolic: str(fd, "diastolic"), pulse: str(fd, "pulse") }, await requestMeta());
+  } catch (e) {
+    return toFormState(e, fd);
+  }
+  revalidatePath(`/p/${p.tenant.slug}/readings`);
+  return ok("portal.readings.saved");
 }

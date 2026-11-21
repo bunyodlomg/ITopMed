@@ -5,6 +5,9 @@ import { rxDrugLabel } from "@/lib/rx";
 import { instantToLocalDate } from "@/server/scheduling/time";
 import { DispensaryCard } from "@/components/dispensary";
 import { patientDispensary } from "@/server/emr/dispensary";
+import { HomeReadingsCard } from "@/components/home-readings";
+import { patientReadings } from "@/server/emr/readings";
+import { visitCheckIn } from "@/server/emr/checkins";
 import { parseSchemeContent } from "@/lib/rx-scheme";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { AllergyBanner, AllergyForm, DiagnosisList, SignedNote, VitalsForm, VitalsTable } from "@/components/clinical";
@@ -71,7 +74,7 @@ export default async function EncounterPage({ params, searchParams }: { params: 
   ]);
   const paidToday = billing.today.get(e.patient.id);
   const meta = await requestMeta();
-  const [history, frequent, tv, tdx, tcalc, tan, studies, tdg, dispensary] = await Promise.all([
+  const [history, frequent, tv, tdx, tcalc, tan, studies, tdg, dispensary, readings, checkIn] = await Promise.all([
     getPatientHistory(ctx, e.patient.id, meta),
     canWrite ? frequentDiagnoses(ctx) : Promise.resolve([]),
     getTranslations("clinic.visit"),
@@ -81,6 +84,8 @@ export default async function EncounterPage({ params, searchParams }: { params: 
     listDiagnosticResults(ctx, e.patient.id, meta),
     getTranslations("diagnostics"),
     patientDispensary(ctx, e.patient.id, meta),
+    patientReadings(ctx, e.patient.id, meta),
+    visitCheckIn(ctx, e.patient.id, e.id, meta),
   ]);
   const canStudy = open && ctx.permissions.has("emr.write");
   const studyTemplates = templates
@@ -598,6 +603,8 @@ export default async function EncounterPage({ params, searchParams }: { params: 
       ) : null}
 
       <DispensaryCard plans={dispensary} slug={s} patientId={e.patient.id} encounterId={e.id} doctorProfileId={e.doctorProfileId} canWrite={canWrite} today={instantToLocalDate(new Date(), tz)} />
+
+      <HomeReadingsCard readings={readings} timeZone={tz} checkIn={checkIn} />
 
       {canWrite ? (
         <Card>

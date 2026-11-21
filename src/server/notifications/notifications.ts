@@ -11,9 +11,9 @@ import { withAppContext, type Tx } from "../db";
 import { env } from "../env";
 import { logger } from "../logger";
 import { uuidv7 } from "../security/crypto";
-import { sendTelegram, telegramChatFor, telegramReady } from "./telegram";
+import { miniAppUrl, sendTelegram, telegramChatFor, telegramReady, type TgMarkup } from "./telegram";
 import { sendSms, smsEnabled } from "./sms";
-import { addDays, localToInstant, type LocalDate } from "../scheduling/time";
+import { addDays, instantToLocalDate, localToInstant, parseHm, type LocalDate } from "../scheduling/time";
 
 /**
  * Patient notifications through a transactional outbox.
@@ -31,7 +31,22 @@ import { addDays, localToInstant, type LocalDate } from "../scheduling/time";
  *    EMAIL rows in the outbox are skipped.
  */
 
-export const NOTIFICATION_KINDS = ["APPOINTMENT_BOOKED", "APPOINTMENT_REMINDER", "APPOINTMENT_CANCELLED", "RESULTS_READY", "DISPENSARY_REMINDER"] as const satisfies readonly NotificationKind[];
+export const NOTIFICATION_KINDS = [
+  "APPOINTMENT_BOOKED",
+  "APPOINTMENT_REMINDER",
+  "APPOINTMENT_CANCELLED",
+  "RESULTS_READY",
+  "DISPENSARY_REMINDER",
+  "NO_SHOW_REBOOK",
+  "VISIT_CHECKIN",
+  "MEDICATION_REMINDER",
+] as const satisfies readonly NotificationKind[];
+/** Kinds that need answer buttons or are too frequent for SMS. */
+const TELEGRAM_ONLY: ReadonlySet<NotificationKind> = new Set(["VISIT_CHECKIN", "MEDICATION_REMINDER"]);
+/** A medicine reminder later than this after its time is not sent any more (e.g. after an outage). */
+const MED_LATE_MS = 60 * 60_000;
+/** Reminders for a prescription without a duration run this many days. */
+export const MED_DEFAULT_DAYS = 30;
 const CONSENT_FOR: Record<NotificationChannel, ConsentPurpose> = { SMS: "SMS_REMINDERS", EMAIL: "EMAIL_NOTIFICATIONS", TELEGRAM: "TELEGRAM_NOTIFICATIONS" };
 const MAX_ATTEMPTS = 3;
 const RETRY_MINUTES = [5, 30, 120];
@@ -42,8 +57,22 @@ export interface Settings {
   reminderHoursBefore: number;
   appointmentCancelled: boolean;
   resultsReady: boolean;
+  noShowRebook: boolean;
+  visitCheckIn: boolean;
+  checkInDays: number;
+  medicationReminders: boolean;
 }
-const DEFAULTS: Settings = { appointmentBooked: true, appointmentReminder: true, reminderHoursBefore: 24, appointmentCancelled: true, resultsReady: true };
+const DEFAULTS: Settings = {
+  appointmentBooked: true,
+  appointmentReminder: true,
+  reminderHoursBefore: 24,
+  appointmentCancelled: true,
+  resultsReady: true,
+  noShowRebook: true,
+  visitCheckIn: true,
+  checkInDays: 5,
+  medicationReminders: true,
+};
 
 async function settingsIn(tx: Tx, tenantId: string): Promise<Settings> {
   const s = await tx.notificationSettings.findUnique({ where: { tenantId } });
@@ -58,6 +87,9 @@ function enabled(s: Settings, kind: NotificationKind) {
     RESULTS_READY: s.resultsReady,
     // Follow-up reminders are reminders: the same clinic switch turns them on or off.
     DISPENSARY_REMINDER: s.appointmentReminder,
+    NO_SHOW_REBOOK: s.noShowRebook,
+    VISIT_CHECKIN: s.visitCheckIn,
+    MEDICATION_REMINDER: s.medicationReminders,
   }[kind];
 }
 
@@ -85,7 +117,7 @@ async function enqueue(tx: Tx, tenantId: string, e: { patientId: string; kind: N
     const acc = await tx.patientAccount.findFirst({ where: { patientId: e.patientId, tenantId }, select: { status: true } });
     if (acc?.status !== "ACTIVE") return 0; // nothing to point the patient to
   }
-  const channels = await reachableChannels(tx, tenantId, e.patientId);
+  const channels = (await reachableChannels(tx, tenantId, e.patientId)).filter((c) => !TELEGRAM_ONLY.has(e.kind) || c.channel === "TELEGRAM");
   if (channels.length === 0) return 0;
   const r = await tx.notification.createMany({
     data: channels.map((c) => ({
@@ -152,6 +184,119 @@ export async function notifyDispensaryDue(tx: Tx, tenantId: string, plan: { id: 
   await enqueue(tx, tenantId, { patientId: plan.patientId, kind: "DISPENSARY_REMINDER", subjectId: plan.id, dueAt: remindAt > now ? remindAt : now, cycle: plan.nextDueDate });
 }
 
+/** The patient did not come: an offer to book again (skipped at send time if they already did). */
+export async function notifyNoShow(tx: Tx, tenantId: string, a: { id: string; patientId: string }) {
+  await enqueue(tx, tenantId, { patientId: a.patientId, kind: "NO_SHOW_REBOOK", subjectId: a.id, dueAt: new Date() });
+}
+
+/**
+ * The visit is closed: "how are you feeling?" goes out at 10:00, N days later
+ * (clinic setting), through Telegram only — the answer is a button press.
+ * Nothing is created for a patient who cannot be asked.
+ */
+export async function scheduleVisitCheckIn(tx: Tx, tenantId: string, enc: { id: string; patientId: string; doctorProfileId: string; closedAt: Date }, timeZone: string) {
+  const s = await settingsIn(tx, tenantId);
+  if (!s.visitCheckIn) return null;
+  const reachable = await reachableChannels(tx, tenantId, enc.patientId);
+  if (!reachable.some((c) => c.channel === "TELEGRAM")) return null;
+  if (await tx.visitCheckIn.findUnique({ where: { encounterId: enc.id }, select: { id: true } })) return null;
+  const askAt = localToInstant(addDays(instantToLocalDate(enc.closedAt, timeZone), s.checkInDays), 10 * 60, timeZone);
+  const id = uuidv7();
+  await tx.visitCheckIn.create({ data: { id, tenantId, patientId: enc.patientId, encounterId: enc.id, doctorProfileId: enc.doctorProfileId, askAt } });
+  await enqueue(tx, tenantId, { patientId: enc.patientId, kind: "VISIT_CHECKIN", subjectId: id, dueAt: askAt });
+  return id;
+}
+
+// ───────────── Medicine reminders ─────────────
+
+interface RxSchedule {
+  createdAt: Date;
+  durationDays: number | null;
+  times: string | null;
+}
+
+/** Intake times ("08:00, 20:00") as minutes of the day. */
+function intakeMinutes(times: string | null): number[] {
+  return (times ?? "")
+    .split(",")
+    .map((x) => parseHm(x.trim()))
+    .filter((m): m is number => m !== null);
+}
+
+/** Local dates on which a prescription is taken: from the day it was written, for its duration (or MED_DEFAULT_DAYS). */
+function rxCovers(rx: RxSchedule, date: LocalDate, timeZone: string): boolean {
+  const first = instantToLocalDate(rx.createdAt, timeZone);
+  const last = addDays(first, (rx.durationDays ?? MED_DEFAULT_DAYS) - 1);
+  return date >= first && date <= last;
+}
+
+/** Whether any of the prescriptions has an intake at this instant. */
+export function rxDueAt(rxs: RxSchedule[], at: Date, timeZone: string): boolean {
+  const date = instantToLocalDate(at, timeZone);
+  return rxs.some((rx) => rx.createdAt < at && rxCovers(rx, date, timeZone) && intakeMinutes(rx.times).some((m) => localToInstant(date, m, timeZone).getTime() === at.getTime()));
+}
+
+/** Intake instants in (from, to] — one per distinct time, however many medicines share it. */
+export function medicationSlots(rxs: RxSchedule[], from: Date, to: Date, timeZone: string): Date[] {
+  const out = new Map<number, Date>();
+  for (let d = instantToLocalDate(from, timeZone); d <= instantToLocalDate(to, timeZone); d = addDays(d, 1)) {
+    for (const rx of rxs) {
+      if (!rxCovers(rx, d, timeZone)) continue;
+      for (const m of intakeMinutes(rx.times)) {
+        const at = localToInstant(d, m, timeZone);
+        if (at > from && at <= to && at > rx.createdAt) out.set(at.getTime(), at);
+      }
+    }
+  }
+  return [...out.values()].sort((a, b) => +a - +b);
+}
+
+const MED_HORIZON_MS = 26 * 60 * 60_000;
+
+/**
+ * Queues Telegram reminders for the next ~day from the intake times of active
+ * prescriptions (worker, every few minutes; idempotent through the dedupe key).
+ * Only patients with a linked chat, active Telegram consent and reminders not
+ * stopped in the bot. The message names the time, never the medicine.
+ */
+export async function scheduleMedicationReminders(tenantId: string, now = new Date()): Promise<number> {
+  return withAppContext({ tenantId }, async (tx) => {
+    if (!(await settingsIn(tx, tenantId)).medicationReminders) return 0;
+    if (await isLocalOnly(tx, tenantId)) return 0;
+    if (!(await telegramReady(tx, tenantId))) return 0;
+    const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { timezone: true } });
+    if (!tenant) return 0;
+    const links = await tx.telegramLink.findMany({ where: { tenantId, revokedAt: null, medRemindersOff: false }, select: { patientId: true } });
+    if (!links.length) return 0;
+    const consented = await tx.patientConsent.findMany({
+      where: { tenantId, patientId: { in: [...new Set(links.map((l) => l.patientId))] }, purpose: "TELEGRAM_NOTIFICATIONS", withdrawnAt: null },
+      select: { patientId: true },
+    });
+    const patients = [...new Set(consented.map((c) => c.patientId))];
+    if (!patients.length) return 0;
+    const rxs = await tx.prescription.findMany({
+      where: { tenantId, patientId: { in: patients }, status: "ACTIVE", times: { not: null }, createdAt: { gte: new Date(now.getTime() - 3651 * 86_400_000) } },
+      select: { patientId: true, createdAt: true, durationDays: true, times: true },
+    });
+    const byPatient = new Map<string, RxSchedule[]>();
+    for (const rx of rxs) byPatient.set(rx.patientId, [...(byPatient.get(rx.patientId) ?? []), rx]);
+    const data = [...byPatient].flatMap(([patientId, list]) =>
+      medicationSlots(list, now, new Date(now.getTime() + MED_HORIZON_MS), tenant.timezone).map((at) => ({
+        id: uuidv7(),
+        tenantId,
+        patientId,
+        channel: "TELEGRAM" as const,
+        kind: "MEDICATION_REMINDER" as const,
+        subjectId: patientId,
+        dueAt: at,
+        dedupeKey: `MEDICATION_REMINDER:${patientId}:${at.toISOString()}:TELEGRAM`,
+      })),
+    );
+    if (!data.length) return 0;
+    return (await tx.notification.createMany({ data, skipDuplicates: true })).count;
+  });
+}
+
 // ───────────── Rendering ─────────────
 
 async function translator(locale: Locale) {
@@ -163,12 +308,19 @@ interface Rendered {
   sms: string;
   subject: string;
   text: string;
+  /** Telegram buttons (answers, open the Mini App, stop reminders). */
+  markup?: TgMarkup;
 }
+
+/** Callback data of the bot buttons — ids only, never content (Telegram limit: 64 bytes). */
+export const CHECKIN_CALLBACK = /^ci:([0-9a-f-]{36}):([BSW])$/;
+export const MED_STOP_CALLBACK = "mr:off";
+export const MED_RESUME_CALLBACK = "mr:on";
 
 async function render(
   kind: NotificationKind,
   locale: Locale,
-  v: { clinic: string; slug: string; timeZone: string; startsAt?: Date; branch?: string; branchPhone?: string | null },
+  v: { clinic: string; slug: string; timeZone: string; startsAt?: Date; branch?: string; branchPhone?: string | null; subjectId?: string | null; online?: boolean },
 ): Promise<Rendered> {
   const t = await translator(locale);
   const when = v.startsAt
@@ -177,12 +329,24 @@ async function render(
         time: new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: v.timeZone }).format(v.startsAt),
       }
     : { date: "", time: "" };
-  const values = { clinic: v.clinic, branch: v.branch ?? "", phone: v.branchPhone ?? "", ...when, link: `${env().APP_URL.replace(/\/$/, "")}/p/${v.slug}` };
+  const portal = `${env().APP_URL.replace(/\/$/, "")}/p/${v.slug}`;
+  const values = { clinic: v.clinic, branch: v.branch ?? "", phone: v.branchPhone ?? "", ...when, link: kind === "NO_SHOW_REBOOK" ? `${portal}/book` : portal };
   const k = kind as string;
-  const contact = v.branchPhone ? ` ${t("contact", { phone: v.branchPhone })}` : "";
-  const sms = `${t(`${k}.sms` as never, values as never)}${kind === "RESULTS_READY" ? "" : contact}`;
-  const text = `${t(`${k}.body` as never, values as never)}${kind === "RESULTS_READY" ? "" : contact}\n\n${t("footer", { clinic: v.clinic })}`;
-  return { sms, subject: t(`${k}.subject` as never, values as never), text };
+  const noContact = kind === "RESULTS_READY" || TELEGRAM_ONLY.has(kind);
+  const contact = v.branchPhone && !noContact ? ` ${t("contact", { phone: v.branchPhone })}` : "";
+  // The missed-visit offer links to online booking only where the portal is on.
+  const online = kind === "NO_SHOW_REBOOK" && v.online ? ` ${t("NO_SHOW_REBOOK.online", values)}` : "";
+  const sms = `${t(`${k}.sms` as never, values as never)}${online}${contact}`;
+  const text = `${t(`${k}.body` as never, values as never)}${online}${contact}\n\n${t("footer", { clinic: v.clinic })}`;
+  let markup: TgMarkup | undefined;
+  if (kind === "VISIT_CHECKIN" && v.subjectId) {
+    markup = { inline_keyboard: [(["B", "S", "W"] as const).map((a) => ({ text: t(`buttons.${a}`), callback_data: `ci:${v.subjectId}:${a}` }))] };
+  } else if (kind === "MEDICATION_REMINDER") {
+    markup = {
+      inline_keyboard: [[{ text: t("buttons.medicines"), web_app: { url: `${miniAppUrl(v.slug)}?next=medicines` } }], [{ text: t("buttons.stop"), callback_data: MED_STOP_CALLBACK }]],
+    };
+  }
+  return { sms, subject: t(`${k}.subject` as never, values as never), text, markup };
 }
 
 // ───────────── Dispatcher ─────────────
@@ -238,7 +402,32 @@ async function dispatchOne(tx: Tx, tenantId: string, id: string, now: Date): Pro
 
   let startsAt: Date | undefined;
   let branch: { name: string; phone: string | null } | undefined;
-  if (n.kind === "DISPENSARY_REMINDER") {
+  let online = false;
+  if (n.kind === "MEDICATION_REMINDER") {
+    if (now.getTime() - n.dueAt.getTime() > MED_LATE_MS) return skip("stale");
+    const link = await tx.telegramLink.findFirst({ where: { tenantId, patientId: n.patientId, revokedAt: null }, orderBy: { linkedAt: "desc" }, select: { medRemindersOff: true } });
+    if (!link || link.medRemindersOff) return skip("opted_out");
+    if (!(await settingsIn(tx, tenantId)).medicationReminders) return skip("disabled");
+    // Still prescribed at this time? (cancelled or finished prescriptions stop their reminders)
+    const rxs = await tx.prescription.findMany({ where: { tenantId, patientId: n.patientId, status: "ACTIVE", times: { not: null } }, select: { createdAt: true, durationDays: true, times: true } });
+    if (!rxDueAt(rxs, n.dueAt, tenant.timezone)) return skip("stale");
+    startsAt = n.dueAt; // only its time is shown
+  } else if (n.kind === "VISIT_CHECKIN") {
+    const c = n.subjectId ? await tx.visitCheckIn.findUnique({ where: { id: n.subjectId }, select: { answer: true, askAt: true } }) : null;
+    if (!c) return skip("subject_missing");
+    if (c.answer || now.getTime() - c.askAt.getTime() > 3 * 86_400_000) return skip("stale");
+  } else if (n.kind === "NO_SHOW_REBOOK") {
+    const a = n.subjectId ? await tx.appointment.findUnique({ where: { id: n.subjectId }, select: { status: true, startsAt: true, branch: { select: { name: true, phone: true } } } }) : null;
+    if (!a) return skip("subject_missing");
+    if (a.status !== "NO_SHOW" || now.getTime() - a.startsAt.getTime() > 3 * 86_400_000) return skip("stale");
+    // Already booked again (desk or online): no offer needed.
+    const again = await tx.appointment.count({ where: { tenantId, patientId: n.patientId, status: { in: ["BOOKED", "CHECKED_IN"] }, startsAt: { gte: now } } });
+    if (again > 0) return skip("rebooked");
+    const portal = await tx.tenantModule.findUnique({ where: { tenantId_moduleKey: { tenantId, moduleKey: "patient_portal" } }, select: { enabled: true } });
+    online = Boolean(portal?.enabled);
+    startsAt = a.startsAt;
+    branch = a.branch;
+  } else if (n.kind === "DISPENSARY_REMINDER") {
     const plan = n.subjectId ? await tx.dispensaryPlan.findUnique({ where: { id: n.subjectId }, select: { closedAt: true, nextDueDate: true } }) : null;
     if (!plan) return skip("subject_missing");
     const due = plan.nextDueDate.toISOString().slice(0, 10);
@@ -258,7 +447,7 @@ async function dispatchOne(tx: Tx, tenantId: string, id: string, now: Date): Pro
   }
 
   const locale: Locale = isLocale(patient.preferredLocale) ? patient.preferredLocale : isLocale(tenant.defaultLocale) ? tenant.defaultLocale : DEFAULT_LOCALE;
-  const msg = await render(n.kind, locale, { clinic: tenant.name, slug: tenant.slug, timeZone: tenant.timezone, startsAt, branch: branch?.name, branchPhone: branch?.phone });
+  const msg = await render(n.kind, locale, { clinic: tenant.name, slug: tenant.slug, timeZone: tenant.timezone, startsAt, branch: branch?.name, branchPhone: branch?.phone, subjectId: n.subjectId, online });
 
   let delivered = false;
   let transport: string | null = null;
@@ -267,7 +456,7 @@ async function dispatchOne(tx: Tx, tenantId: string, id: string, now: Date): Pro
     delivered = r.delivered;
     transport = r.transport;
   } else {
-    const r = await sendTelegram(tx, tenantId, chat!, msg.sms);
+    const r = await sendTelegram(tx, tenantId, chat!, msg.sms, msg.markup);
     delivered = r.delivered;
     transport = r.transport;
   }
@@ -294,6 +483,10 @@ export const settingsSchema = z.object({
   reminderHoursBefore: z.coerce.number().int().min(1, "validation.range").max(72, "validation.range"),
   appointmentCancelled: z.boolean(),
   resultsReady: z.boolean(),
+  noShowRebook: z.boolean().default(DEFAULTS.noShowRebook),
+  visitCheckIn: z.boolean().default(DEFAULTS.visitCheckIn),
+  checkInDays: z.coerce.number().int("validation.invalid").min(1, "validation.range").max(30, "validation.range").default(DEFAULTS.checkInDays),
+  medicationReminders: z.boolean().default(DEFAULTS.medicationReminders),
 });
 
 export async function getNotificationSettings(ctx: ClinicContext): Promise<Settings> {
@@ -331,6 +524,7 @@ export async function listNotifications(ctx: ClinicContext, opts: { status?: str
 /** "Send due now" for clinics without a running worker (and for checking delivery). */
 export async function sendDueNow(ctx: ClinicContext, meta: RequestMeta) {
   requirePermission(ctx, "clinic.settings.manage");
+  await scheduleMedicationReminders(ctx.tenant.id);
   const r = await processDueNotifications(ctx.tenant.id);
   await inClinic(ctx, (tx) => auditClinic(tx, ctx, meta, { action: "notifications.dispatched", entityType: "Tenant", entityId: ctx.tenant.id, metadata: { sent: r.sent, failed: r.failed, skipped: r.skipped } }));
   return r;

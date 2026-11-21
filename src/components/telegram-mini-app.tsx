@@ -40,7 +40,10 @@ function postEvent(eventType: string, eventData: Record<string, unknown> = {}) {
   else if (window.parent !== window) window.parent.postMessage(JSON.stringify({ eventType, eventData }), "https://web.telegram.org");
 }
 
-export function TelegramMiniApp({ slug }: { slug?: string }) {
+/** Portal pages a bot button may open directly after sign-in (anything else: the portal home). */
+const NEXT_PAGES = new Set(["medicines", "readings"]);
+
+export function TelegramMiniApp({ slug, next }: { slug?: string; next?: string }) {
   const t = useTranslations("telegramApp");
   const [state, setState] = useState<State>({ s: "loading" });
   const initData = useRef<string | null>(null);
@@ -61,13 +64,14 @@ export function TelegramMiniApp({ slug }: { slug?: string }) {
       | null;
     if (!r) return { s: "error", reason: "network" };
     if (r.status === "signed_in") {
-      window.location.replace(r.go);
+      // Only a patient portal address gets a page appended, and only an allowed one.
+      window.location.replace(next && NEXT_PAGES.has(next) && /^\/p\/[a-z0-9-]+$/.test(r.go) ? `${r.go}/${next}` : r.go);
       return null;
     }
     if (r.status === "choose") return { s: "choose", choices: r.choices };
     if (r.status === "patient") return { s: "patient", phoneKnown: r.phoneKnown, waiting: false };
     return { s: "error", reason: r.reason };
-  }, [slug]);
+  }, [slug, next]);
 
   useEffect(() => {
     initData.current = readInitData();

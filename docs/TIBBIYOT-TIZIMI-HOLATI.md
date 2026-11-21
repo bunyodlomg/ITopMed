@@ -204,6 +204,37 @@ Qo'shimcha:
     ```
   - Retsept varag'ida bu blok hamma klinikalarda darhol ishlaydi.
 
+## Telegram orqali bemor bilan aloqa (22.11.2026)
+Hammasi klinikaning o'z boti orqali ishlaydi. Bemor portalda Telegramni ulagan bo'lishi kerak. Xabarlarda dori nomi, tashxis yoki bosim qiymati yozilmaydi.
+- ✅ **Bemor bosim va pulsni yuboradi.**
+  - Botga shunday yoziladi: `135/85 72`. «AD 150/95, puls 80» yoki «давление 120/80 пульс 64» ham tushuniladi.
+  - Noaniq yozuv saqlanmaydi: bot to'g'ri yozish namunasini ko'rsatadi.
+  - Portalda ham kiritsa bo'ladi: «Bosim va puls» sahifasi.
+  - Shifokor qiymatlarni qabul sahifasida, «Bemor yuborgan bosim va puls» kartasida ko'radi. Buning uchun bemor bilan davolash aloqasi bo'lishi kerak.
+  - Ranglar faqat ko'rsatkich (ESH 2023): uyda o'lchangan bosim ≥135/85 bo'lsa — yuqori, ≥180/110 bo'lsa — juda yuqori. Bemorga avtomatik maslahat berilmaydi. Bot faqat «ahvolingiz keskin yomonlashsa — 103» deb yozadi.
+  - Bitta bemordan kuniga ko'pi bilan 30 ta o'lchov qabul qilinadi.
+- ✅ **Qabulga kelmagan bemorga qayta yozilish taklifi.**
+  - Registratura «Kelmadi» deb belgilasa, bemorga xabar ketadi. Xabarda klinika telefoni bo'ladi, portal yoqilgan bo'lsa onlayn yozilish havolasi ham.
+  - Bemor bu orada qayta yozilib bo'lgan bo'lsa, xabar yuborilmaydi.
+- ✅ **Qabuldan 5 kun keyin ahvolini so'rash.**
+  - Qabul yopilgach, belgilangan kuni soat 10:00 da «O'zingizni qanday his qilyapsiz?» savoli boradi. Kunlar sonini Integratsiyalar sahifasida 1 dan 30 gacha sozlash mumkin.
+  - Bemor uchta tugmadan birini bosadi: «Yaxshiroq», «O'zgarmadi», «Yomonroq».
+  - Javobni faqat bemorning o'zi, o'z chatidan, bir marta beradi.
+  - Javoblar **Dispanser** sahifasida chiqadi, «Yomonroq» javoblari birinchi turadi. Qabul sahifasida ham ko'rinadi.
+  - Bu savol faqat Telegram orqali boradi, chunki SMS'ga tugma bilan javob berib bo'lmaydi.
+  - ⚠️ Bu tezkor ogohlantirish emas: shifokor javobni sahifani ochganda ko'radi.
+- ✅ **Dori eslatmalari.**
+  - Retseptda «Ichish soatlari» yozilgan bo'lsa (masalan 08:00, 20:00), bemorga shu soatlarda «💊 dori ichish vaqti — 08:00» degan xabar boradi.
+  - Xabardagi «Dorilarim» tugmasi Mini App'da dorilar ro'yxatini ochadi: dori, doza, soatlar.
+  - Dori nomi Telegram xabarida yozilmaydi.
+  - Eslatmalar retsept muddati davomida boradi. Muddat ko'rsatilmagan bo'lsa — 30 kun.
+  - Retsept bekor qilinsa, eslatmalar to'xtaydi.
+  - Bemor «Eslatmalarni to'xtatish» tugmasini bosib o'chirishi va keyin qayta yoqishi mumkin.
+  - Eslatmalar faqat Telegram orqali boradi (SMS juda qimmat va ko'p bo'lib ketadi).
+- Hammasini Integratsiyalar sahifasida yoqish yoki o'chirish mumkin.
+- ⚠️ Ishlashi uchun bildirishnoma worker'i yoqilgan bo'lishi kerak (`npm run worker`). Lokal o'rnatishda u o'zi ishga tushadi.
+- ⚠️ Haqiqiy Telegram (transport `api`) bilan hali sinab ko'rilmagan. Testlarda `dev-outbox` taqlidi ishlatildi: xabarlar fayllarga yoziladi.
+
 ## Keyingi bosqichlar
 Navbat bilan:
 1. **ExoKG, EKG va boshqa UZI turlarining blankalari.** Ularni yuborsangiz, xuddi shu usulda shablonga aylantiraman. Segmentlarni (akineziya va boshqalar) yurak sxemasida belgilash va dinamika grafigi ExoKG blankasi kelgach qilinadi.
@@ -215,13 +246,7 @@ Navbat bilan:
 
    Dori-dori o'zaro ta'siri va QT ogohlantirishlari faqat tekshirilgan manba bo'lsa qilinadi (litsenziyalangan baza yoki rasmiy qo'llanma). Taxminiy ogohlantirish yozilmaydi.
 3. ~~Dispanser kuzatuvi~~ — tayyor (yuqoriga qarang).
-4. **Telegram:**
-   - bemor bosim va pulsni yuboradi;
-   - qabulga kelmagan bemorga qayta yozilish taklifi;
-   - 5 kundan keyin holatini so'rash;
-   - dori eslatmalari.
-
-   Qabul eslatmalari allaqachon bor.
+4. ~~Telegram~~ — tayyor (yuqoriga qarang). Keyinroq: bemor yuborgan bosim grafigi va «Yomonroq» javobi kelganda shifokorga darhol xabar berish.
 5. **Moliya va statistika** (shifokor va xizmat bo'yicha daromad, shifokor ulushi allaqachon bor):
    - yuborgan tashqi shifokorga komissiya (yuboruvchilar ro'yxati kerak);
    - tashxis va dori guruhlari bo'yicha hisobot;

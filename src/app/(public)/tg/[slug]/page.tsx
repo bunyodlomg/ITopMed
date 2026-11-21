@@ -13,14 +13,15 @@ import { clinicPublic } from "@/server/telegram/clinic-bot";
 export const metadata: Metadata = { referrer: "no-referrer", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
-export default async function ClinicTelegramAppPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ClinicTelegramAppPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ next?: string }> }) {
   const { slug } = await params;
+  const { next } = await searchParams;
   const clinic = await clinicPublic(slug);
   if (!clinic) notFound();
   const t = await getTranslations("telegramApp");
   return (
     <AuthLayout title={clinic.name} subtitle={t("title")}>
-      <TelegramMiniApp slug={clinic.slug} />
+      <TelegramMiniApp slug={clinic.slug} next={typeof next === "string" ? next : undefined} />
     </AuthLayout>
   );
 }

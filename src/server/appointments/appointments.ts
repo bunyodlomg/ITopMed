@@ -8,7 +8,7 @@ import type { Tx } from "../db";
 import { addDays, instantToLocalDate, isLocalDate, isoWeekday, localDateToDbDate, localToInstant, type LocalDate } from "../scheduling/time";
 import { uuidv7 } from "../security/crypto";
 import { DomainError } from "../tenancy/provisioning";
-import { notifyAppointmentBooked, notifyAppointmentCancelled, notifyAppointmentRescheduled } from "../notifications/notifications";
+import { notifyAppointmentBooked, notifyAppointmentCancelled, notifyAppointmentRescheduled, notifyNoShow } from "../notifications/notifications";
 
 const uuid = z.uuid();
 export const CANCELLATION_REASONS = ["PATIENT_REQUEST", "CLINIC_RESCHEDULE", "DOCTOR_UNAVAILABLE", "DUPLICATE", "OTHER"] as const;
@@ -201,6 +201,7 @@ export async function markNoShow(ctx: ClinicContext, appointmentId: string, meta
     if (a.startsAt > new Date()) throw new DomainError("errors.notYetStarted");
     await tx.appointment.update({ where: { id: a.id }, data: { status: "NO_SHOW" } });
     await auditClinic(tx, ctx, meta, { action: "appointment.no_show", entityType: "Appointment", entityId: a.id });
+    await notifyNoShow(tx, ctx.tenant.id, { id: a.id, patientId: a.patientId });
   });
 }
 

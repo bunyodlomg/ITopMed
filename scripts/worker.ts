@@ -10,8 +10,8 @@
 import "dotenv/config";
 import { disconnectAll, platformDb } from "../src/server/db";
 import { logger } from "../src/server/logger";
-import { processDueNotifications } from "../src/server/notifications/notifications";
-import { pollTelegram } from "../src/server/notifications/telegram";
+import { processDueNotifications, scheduleMedicationReminders } from "../src/server/notifications/notifications";
+import { pollTelegram } from "../src/server/telegram/updates";
 import { isLocalInstall, syncPatientFiles } from "../src/server/clinic/data-mode";
 import { generateMonthlyInvoices, suspendOverdueClinics } from "../src/server/platform/billing";
 
@@ -23,6 +23,9 @@ let filesAt = 0;
 // ITop Med's own billing of clinics: monthly invoices and automatic suspension of overdue clinics.
 const BILLING_EVERY_MS = 60 * 60_000;
 let billingAt = 0;
+// Medicine reminders for the next day are (re)queued this often (idempotent).
+const MEDS_EVERY_MS = 5 * 60_000;
+let medsAt = 0;
 
 async function pass() {
   const tenants = await platformDb().tenant.findMany({ where: { status: { in: ["TRIAL", "ACTIVE"] } }, select: { id: true } });
@@ -30,9 +33,12 @@ async function pass() {
   let failed = 0;
   let skipped = 0;
   let linked = 0;
+  const meds = Date.now() - medsAt >= MEDS_EVERY_MS;
+  if (meds) medsAt = Date.now();
   for (const t of tenants) {
     try {
       linked += await pollTelegram(t.id);
+      if (meds) await scheduleMedicationReminders(t.id);
       const r = await processDueNotifications(t.id);
       sent += r.sent;
       failed += r.failed;

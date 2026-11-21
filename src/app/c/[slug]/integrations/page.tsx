@@ -10,7 +10,7 @@ import { telegramStatus } from "@/server/notifications/telegram";
 
 const STATUS_TONE: Record<IntegrationStatus, "success" | "warning" | "neutral" | "accent"> = { connected: "success", simulated: "warning", off: "neutral", partial: "accent", planned: "neutral" };
 const LOG_TONE = { PENDING: "accent", SENT: "success", FAILED: "danger", SKIPPED: "neutral" } as const;
-const SWITCHES = ["appointmentBooked", "appointmentReminder", "appointmentCancelled", "resultsReady"] as const;
+const SWITCHES = ["appointmentBooked", "appointmentReminder", "appointmentCancelled", "resultsReady", "noShowRebook", "visitCheckIn", "medicationReminders"] as const;
 
 export default async function IntegrationsPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ status?: string }> }) {
   const { slug } = await params;
@@ -76,6 +76,10 @@ export default async function IntegrationsPage({ params, searchParams }: { param
               <div className="max-w-xs">
                 <TextField name="reminderHoursBefore" label={t("clinic.integrations.reminderHours")} defaultValue={String(settings.reminderHoursBefore)} inputMode="numeric" />
               </div>
+              <div className="max-w-xs">
+                <TextField name="checkInDays" label={t("clinic.integrations.checkInDays")} hint={t("clinic.integrations.checkInDaysHint")} defaultValue={String(settings.checkInDays)} inputMode="numeric" />
+              </div>
+              <p className="text-[13px] text-text-2">{t("clinic.integrations.telegramOnlyHint")}</p>
             </fieldset>
             {canManage ? <SubmitButton>{t("common.save")}</SubmitButton> : null}
           </Form>
@@ -156,4 +160,7 @@ const KIND_KEY = {
   APPOINTMENT_CANCELLED: "appointmentCancelled",
   RESULTS_READY: "resultsReady",
   DISPENSARY_REMINDER: "dispensaryReminder",
+  NO_SHOW_REBOOK: "noShowRebook",
+  VISIT_CHECKIN: "visitCheckIn",
+  MEDICATION_REMINDER: "medicationReminders",
 } as const;

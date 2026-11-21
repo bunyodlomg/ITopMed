@@ -20,6 +20,10 @@ export async function notificationSettingsAction(_: FormState, fd: FormData): Pr
         reminderHoursBefore: String(fd.get("reminderHoursBefore") ?? ""),
         appointmentCancelled: on("appointmentCancelled"),
         resultsReady: on("resultsReady"),
+        noShowRebook: on("noShowRebook"),
+        visitCheckIn: on("visitCheckIn"),
+        checkInDays: String(fd.get("checkInDays") ?? ""),
+        medicationReminders: on("medicationReminders"),
       },
       await requestMeta(),
     );

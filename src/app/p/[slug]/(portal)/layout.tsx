@@ -14,6 +14,8 @@ export default async function PortalLayout({ children, params }: { children: Rea
     { href: `${base}/book`, label: t("portal.nav.book"), icon: "booking" },
     { href: `${base}/appointments`, label: t("portal.nav.appointments"), icon: "calendar" },
     { href: `${base}/results`, label: t("portal.nav.results"), icon: "lab" },
+    { href: `${base}/medicines`, label: t("portal.nav.medicines"), icon: "pill" },
+    { href: `${base}/readings`, label: t("portal.nav.readings"), icon: "activity" },
     { href: `${base}/invoices`, label: t("portal.nav.invoices"), icon: "billing" },
     { href: `${base}/account`, label: t("portal.nav.account"), icon: "settings" },
   ];
