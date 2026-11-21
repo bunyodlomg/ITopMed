@@ -34,7 +34,10 @@
     "closeMenu": "Close menu",
     "loading": "Loading…",
     "sectionsNav": "Other sections",
-    "accountMenu": "Account menu"
+    "accountMenu": "Account menu",
+    "foldSidebar": "Collapse menu",
+    "unfoldSidebar": "Expand menu",
+    "breadcrumb": "You are here"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -73,13 +76,15 @@
     "superAdminContext": "SuperAdmin · platform control",
     "desk": "Front desk",
     "subscriptions": "Subscriptions & payments",
-    "groupDaily": "Daily work",
-    "groupCare": "Care",
-    "groupFinance": "Finance",
-    "groupClinic": "Clinic",
-    "groupAdmin": "Administration",
     "dispensary": "Follow-up",
-    "myEarnings": "My earnings"
+    "myEarnings": "My earnings",
+    "groupReception": "Front desk",
+    "groupDoctor": "My visits",
+    "groupPatients": "Patients",
+    "groupCash": "Cash & payments",
+    "groupReports": "Reports & oversight",
+    "groupStock": "Stock",
+    "groupSettings": "Settings"
   },
   "auth": {
     "adminTitle": "ITop Med Administration",

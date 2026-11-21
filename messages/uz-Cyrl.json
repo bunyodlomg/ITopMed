@@ -34,7 +34,10 @@
     "closeMenu": "Менюни ёпиш",
     "loading": "Юкланмоқда…",
     "sectionsNav": "Бошқа бўлимлар",
-    "accountMenu": "Ҳисоб менюси"
+    "accountMenu": "Ҳисоб менюси",
+    "foldSidebar": "Менюни йиғиш",
+    "unfoldSidebar": "Менюни ёйиш",
+    "breadcrumb": "Сиз турган жой"
   },
   "nav": {
     "dashboard": "Бош саҳифа",
@@ -73,13 +76,15 @@
     "superAdminContext": "SuperAdmin · бош бошқарув",
     "desk": "Қабулхона",
     "subscriptions": "Обуна ва тўловлар",
-    "groupDaily": "Кундалик иш",
-    "groupCare": "Даволаш",
-    "groupFinance": "Молия",
-    "groupClinic": "Клиника",
-    "groupAdmin": "Бошқарув",
     "dispensary": "Диспансер",
-    "myEarnings": "Даромадим"
+    "myEarnings": "Даромадим",
+    "groupReception": "Қабулхона",
+    "groupDoctor": "Қабулларим",
+    "groupPatients": "Беморлар",
+    "groupCash": "Касса ва тўловлар",
+    "groupReports": "Ҳисобот ва назорат",
+    "groupStock": "Омбор",
+    "groupSettings": "Созламалар"
   },
   "auth": {
     "adminTitle": "ITop Med бошқаруви",

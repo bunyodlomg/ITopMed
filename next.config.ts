@@ -18,6 +18,8 @@ const securityHeaders = [
 const packaging = process.env.ITM_STANDALONE === "1";
 
 const config: NextConfig = {
+  // The dev badge would sit on the sidebar's fold button (bottom-left).
+  devIndicators: { position: "bottom-right" },
   ...(packaging ? { output: "standalone" as const, distDir: ".next-pkg" } : {}),
   poweredByHeader: false,
   reactStrictMode: true,

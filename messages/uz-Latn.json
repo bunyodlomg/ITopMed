@@ -34,7 +34,10 @@
     "closeMenu": "Menyuni yopish",
     "loading": "Yuklanmoqda…",
     "sectionsNav": "Boshqa boʻlimlar",
-    "accountMenu": "Hisob menyusi"
+    "accountMenu": "Hisob menyusi",
+    "foldSidebar": "Menyuni yigʻish",
+    "unfoldSidebar": "Menyuni yoyish",
+    "breadcrumb": "Siz turgan joy"
   },
   "nav": {
     "dashboard": "Bosh sahifa",
@@ -73,13 +76,15 @@
     "superAdminContext": "SuperAdmin · bosh boshqaruv",
     "desk": "Qabulxona",
     "subscriptions": "Obuna va to'lovlar",
-    "groupDaily": "Kundalik ish",
-    "groupCare": "Davolash",
-    "groupFinance": "Moliya",
-    "groupClinic": "Klinika",
-    "groupAdmin": "Boshqaruv",
     "dispensary": "Dispanser",
-    "myEarnings": "Daromadim"
+    "myEarnings": "Daromadim",
+    "groupReception": "Qabulxona",
+    "groupDoctor": "Qabullarim",
+    "groupPatients": "Bemorlar",
+    "groupCash": "Kassa va toʻlovlar",
+    "groupReports": "Hisobot va nazorat",
+    "groupStock": "Ombor",
+    "groupSettings": "Sozlamalar"
   },
   "auth": {
     "adminTitle": "ITop Med boshqaruvi",

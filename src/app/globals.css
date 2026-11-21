@@ -334,28 +334,12 @@ label > input + span {
 }
 .bar-grow { transform-origin: bottom; animation: itm-grow 700ms var(--ease-spring) backwards; }
 
-/* Sliding nav pill (segmented-control feel): JS sets its box; CSS springs it. */
 @supports (transition-timing-function: linear(0, 1)) {
   :root {
     /* Critically-damped-ish spring: ~1.5% settle, no visible wobble. */
     --ease-spring: linear(0, 0.0175, 0.0657, 0.1363, 0.2222 9.1%, 0.4207 14.6%, 0.6138 21.1%, 0.7764 28.6%, 0.8907 36.6%, 0.9632 45.6%, 1.0026 55.4%, 1.0154 63.6%, 1.0129 75.6%, 1.0031 91.4%, 1);
   }
 }
-
-.nav-pill {
-  position: absolute;
-  left: 0;
-  top: 0;
-  border-radius: 9999px;
-  background: var(--accent-solid);
-  box-shadow: var(--shadow-ink);
-  pointer-events: none;
-  transition: transform 420ms var(--ease-spring), width 420ms var(--ease-spring), height 420ms var(--ease-spring);
-}
-.nav-pill[data-instant] { transition: none; }
-.nav-pill:not([data-on]) { opacity: 0; }
-/* Once the pill is live, the current link drops its own fill (the pill shows through). */
-[data-pill="on"] [data-pill-item][aria-current] { background: transparent; }
 
 /* Collapsible menus (<details>): the panel eases in under its summary. */
 @keyframes itm-drop {
@@ -399,9 +383,21 @@ details[open] > .animate-drop { animation: itm-drop var(--dur-quick) var(--ease-
   .skeleton { animation: none; }
 }
 
+/* Fixed desktop sidebar (248px open / 76px folded, 12px off the edge): the page
+   keeps clear of it and follows the fold. */
+@media (min-width: 64rem) {
+  .shell-main {
+    padding-left: calc(248px + 12px + 24px);
+    transition: padding-left var(--dur-quick) var(--ease-out);
+  }
+  [data-shell][data-sidebar="folded"] .shell-main { padding-left: calc(76px + 12px + 24px); }
+}
+[data-shell][data-sidebar="folded"] [data-sidebar-text] { display: none; }
+
 /* Printing (receipts, reports): only the document, no app chrome. */
 @media print {
   aside, details, nav.fixed, a[href="#main"], [data-chrome] { display: none !important; }
+  [data-shell] { background: #fff !important; }
   [data-frame] { background: #fff !important; padding: 0 !important; border-radius: 0 !important; min-height: 0 !important; }
   body { background: #fff; color: #000; }
   main { padding: 0 !important; }

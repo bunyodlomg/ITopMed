@@ -34,7 +34,10 @@
     "closeMenu": "Закрыть меню",
     "loading": "Загрузка…",
     "sectionsNav": "Другие разделы",
-    "accountMenu": "Меню аккаунта"
+    "accountMenu": "Меню аккаунта",
+    "foldSidebar": "Свернуть меню",
+    "unfoldSidebar": "Развернуть меню",
+    "breadcrumb": "Вы находитесь здесь"
   },
   "nav": {
     "dashboard": "Обзор",
@@ -73,13 +76,15 @@
     "superAdminContext": "SuperAdmin · главное управление",
     "desk": "Регистратура",
     "subscriptions": "Подписки и оплаты",
-    "groupDaily": "Ежедневная работа",
-    "groupCare": "Лечение",
-    "groupFinance": "Финансы",
-    "groupClinic": "Клиника",
-    "groupAdmin": "Управление",
     "dispensary": "Диспансер",
-    "myEarnings": "Мой доход"
+    "myEarnings": "Мой доход",
+    "groupReception": "Регистратура",
+    "groupDoctor": "Мои приёмы",
+    "groupPatients": "Пациенты",
+    "groupCash": "Касса и оплаты",
+    "groupReports": "Отчёты и контроль",
+    "groupStock": "Склад",
+    "groupSettings": "Настройки"
   },
   "auth": {
     "adminTitle": "Администрирование ITop Med",
