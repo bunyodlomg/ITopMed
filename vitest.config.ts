@@ -16,5 +16,8 @@ export default defineConfig({
     testTimeout: 30_000,
     hookTimeout: 120_000,
     fileParallelism: false,
+    // Any Node deprecation fails the run. In particular node-pg's "client.query() while
+    // a query is running" (two statements of one transaction at once, see src/server/db.ts).
+    execArgv: ["--throw-deprecation"],
   },
 });

@@ -23,7 +23,46 @@ const clients: Clients = (g.__itmDb ??= {});
 function make(url: string) {
   // Pool size per app instance; tune with DB_POOL_MAX to the database max_connections budget.
   const max = Number(process.env.DB_POOL_MAX ?? 10);
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString: url, max: Number.isFinite(max) && max > 0 ? max : 10, idleTimeoutMillis: 30_000 }) });
+  return new PrismaClient({ adapter: serialTransactions(new PrismaPg({ connectionString: url, max: Number.isFinite(max) && max > 0 ? max : 10, idleTimeoutMillis: 30_000 })) });
+}
+
+type QueuedTx = { queryRaw(...a: unknown[]): Promise<unknown>; executeRaw(...a: unknown[]): Promise<unknown>; commit(): Promise<unknown>; rollback(): Promise<unknown> };
+
+/**
+ * One transaction = one connection, and node-pg runs one query at a time per
+ * connection. Prisma's query interpreter still sends some statements of one
+ * transaction concurrently (e.g. the relations of an `include`), which node-pg
+ * only queues internally — deprecated, and removed in pg 9. This wraps the
+ * driver adapter so each transaction's statements (and its commit/rollback)
+ * go out strictly one after another, in the order Prisma issued them.
+ */
+function serialTransactions<F extends { connect(): Promise<unknown> }>(factory: F): F {
+  const connect = factory.connect.bind(factory);
+  (factory as { connect(): Promise<unknown> }).connect = async () => {
+    const adapter = (await connect()) as { startTransaction(...a: unknown[]): Promise<QueuedTx> };
+    const start = adapter.startTransaction.bind(adapter);
+    adapter.startTransaction = async (...args: unknown[]) => inOrder(await start(...args));
+    return adapter;
+  };
+  return factory;
+}
+
+function inOrder(tx: QueuedTx): QueuedTx {
+  let tail: Promise<unknown> = Promise.resolve();
+  const queue = <T>(run: () => Promise<T>): Promise<T> => {
+    const next = tail.then(run, run);
+    tail = next.catch(() => undefined);
+    return next;
+  };
+  for (const m of ["queryRaw", "executeRaw"] as const) {
+    const f = tx[m].bind(tx);
+    tx[m] = (...a: unknown[]) => queue(() => f(...a));
+  }
+  for (const m of ["commit", "rollback"] as const) {
+    const f = tx[m].bind(tx);
+    tx[m] = () => queue(() => f());
+  }
+  return tx;
 }
 
 function appClient(): PrismaClient {
