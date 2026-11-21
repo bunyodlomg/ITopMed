@@ -4,6 +4,7 @@ import { moneyFormatter } from "@/components/money";
 import { Card, CardBody, CardHeader, PageHeader, Stat, buttonClass } from "@/components/ui/primitives";
 import { requireClinic } from "@/server/auth/guards";
 import { financialReport, operationalReport } from "@/server/billing/reports";
+import { doctorsEarnings } from "@/server/billing/earnings";
 import { addDays, isLocalDate, todayIn } from "@/server/scheduling/time";
 
 /**
@@ -23,7 +24,7 @@ export default async function ReportsPage({ params, searchParams }: { params: Pr
   const today = todayIn(ctx.tenant.timezone);
   const to = isLocalDate(sp.to) ? sp.to : today;
   const from = isLocalDate(sp.from) && sp.from <= to ? sp.from : addDays(to, -29);
-  const [fin, ops] = await Promise.all([canFinance ? financialReport(ctx, from, to) : null, operationalReport(ctx, from, to)]);
+  const [fin, ops, shares] = await Promise.all([canFinance ? financialReport(ctx, from, to) : null, operationalReport(ctx, from, to), canFinance ? doctorsEarnings(ctx, from, to) : []]);
   const dayLabel = (d: string) => format.dateTime(new Date(`${d}T12:00:00Z`), { day: "numeric", month: "short", timeZone: "UTC" });
   const presets = [
     { label: "7", from: addDays(today, -6) },
@@ -122,6 +123,16 @@ export default async function ReportsPage({ params, searchParams }: { params: Pr
             <RankedList title={t("clinic.reports.byMethod")} rows={fin.byMethod.map((m) => ({ key: `${m.method}-${m.currency}`, label: t(`paymentMethod.${m.method}` as never), value: money(m.net, m.currency), sub: `${m.count}` }))} empty={t("clinic.reports.empty")} />
             <RankedList title={t("clinic.reports.byService")} rows={fin.byService.map((s) => ({ key: `${s.service}-${s.currency}`, label: s.service, value: money(s.amount, s.currency), sub: `${t("clinic.reports.qty")}: ${s.quantity}` }))} empty={t("clinic.reports.empty")} />
             <RankedList title={t("clinic.reports.byDoctor")} rows={fin.byDoctor.map((d) => ({ key: `${d.doctor}-${d.currency}`, label: d.doctor, value: money(d.amount, d.currency), sub: `${t("clinic.reports.invoices")}: ${d.invoices}` }))} empty={t("clinic.reports.empty")} />
+            <RankedList
+              title={t("clinic.reports.doctorShare")}
+              rows={shares.map((d) => ({
+                key: `${d.doctorProfileId}-${d.currency}`,
+                label: d.doctor,
+                value: d.share === null ? t("clinic.reports.noPercent") : money(d.share, d.currency),
+                sub: `${t("clinic.reports.received")}: ${money(d.net, d.currency)}${d.percent === null ? "" : ` · ${d.percent}%`}`,
+              }))}
+              empty={t("clinic.reports.empty")}
+            />
             <RankedList title={t("clinic.reports.expensesByCategory")} rows={fin.expensesByCategory.map((e) => ({ key: `${e.category}-${e.currency}`, label: t(`expenseCategory.${e.category}` as never), value: money(e.amount, e.currency) }))} empty={t("clinic.reports.empty")} />
           </div>
 

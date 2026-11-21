@@ -155,4 +155,5 @@ const KIND_KEY = {
   APPOINTMENT_REMINDER: "appointmentReminder",
   APPOINTMENT_CANCELLED: "appointmentCancelled",
   RESULTS_READY: "resultsReady",
+  DISPENSARY_REMINDER: "dispensaryReminder",
 } as const;

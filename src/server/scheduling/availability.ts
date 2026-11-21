@@ -26,6 +26,8 @@ export interface Slot {
  * - Uses the weekly blocks for that weekday, unless the date has an exception
  *   (day off, vacation, ...) in which case there are none.
  * - Slots are aligned to the block start and never cross the block end.
+ * - `bufferMinutes` (optional) is left free after each slot: 15-minute visits
+ *   with a 2-minute buffer start at 09:00, 09:17, 09:34 …
  * - Slots overlapping any `busy` interval (existing appointments — Phase 6)
  *   or starting before `notBefore` (e.g. "now") are removed.
  *
@@ -37,17 +39,20 @@ export function daySlots(args: {
   blocks: ScheduleBlock[];
   hasException: boolean;
   slotMinutes: number;
+  bufferMinutes?: number;
   busy?: Busy[];
   notBefore?: Date;
 }): Slot[] {
   if (args.hasException) return [];
   if (!Number.isInteger(args.slotMinutes) || args.slotMinutes < 5) throw new Error("slotMinutes must be an integer ≥ 5");
+  const buffer = args.bufferMinutes ?? 0;
+  if (!Number.isInteger(buffer) || buffer < 0 || buffer > 30) throw new Error("bufferMinutes must be an integer 0–30");
   const weekday = isoWeekday(args.date);
   const busy = args.busy ?? [];
   const out: Slot[] = [];
   const blocks = args.blocks.filter((b) => b.weekday === weekday).sort((a, b) => a.startMinute - b.startMinute);
   for (const b of blocks) {
-    for (let m = b.startMinute; m + args.slotMinutes <= b.endMinute; m += args.slotMinutes) {
+    for (let m = b.startMinute; m + args.slotMinutes <= b.endMinute; m += args.slotMinutes + buffer) {
       const start = localToInstant(args.date, m, args.timeZone);
       const end = localToInstant(args.date, m + args.slotMinutes, args.timeZone);
       if (args.notBefore && start < args.notBefore) continue;

@@ -2,9 +2,10 @@ import type { Letterhead as Data } from "@/server/clinic/branding";
 
 /**
  * Clinic letterhead on printed pages: logo, name, licence line, address and
- * phone. `compact` is for narrow receipt and ticket printers (58/80 mm).
+ * phone, and the map QR code when the clinic set a location link. `compact`
+ * is for narrow receipt and ticket printers (58/80 mm).
  */
-export function Letterhead({ data, compact = false }: { data: Data; compact?: boolean }) {
+export function Letterhead({ data, compact = false, locationLabel }: { data: Data; compact?: boolean; locationLabel?: string }) {
   const name = data.legalName ?? data.name;
   if (compact) {
     return (
@@ -31,6 +32,13 @@ export function Letterhead({ data, compact = false }: { data: Data; compact?: bo
         {data.address ? <p className="text-[11.5px] leading-snug text-text-2">{data.address}</p> : null}
         {data.phone ? <p className="text-[11.5px] text-text-2">{data.phone}</p> : null}
       </div>
+      {data.locationQr ? (
+        <figure className="shrink-0 text-center">
+          {/* eslint-disable-next-line @next/next/no-img-element -- QR code generated on the server */}
+          <img src={data.locationQr} alt={locationLabel ?? ""} width={64} height={64} className="mx-auto" />
+          {locationLabel ? <figcaption className="text-[10px] text-text-2">{locationLabel}</figcaption> : null}
+        </figure>
+      ) : null}
     </header>
   );
 }

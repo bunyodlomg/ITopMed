@@ -36,7 +36,7 @@ export default async function DiagnosticPrintPage({ params }: { params: Promise<
         <PrintButton label={t("clinic.rx.printNow")} />
       </div>
       <article className="space-y-5 rounded-[16px] border border-border bg-surface p-6 text-[15px] leading-relaxed print:border-0 print:p-0 print:text-[14px]">
-        <Letterhead data={head} />
+        <Letterhead data={head} locationLabel={t("clinic.settings.locationQrLabel")} />
         <h1 className="text-center text-[19px] font-bold uppercase tracking-[0.04em]">{r.title}</h1>
         {r.enteredInErrorAt ? <p className="text-center font-semibold text-danger">{t("diagnostics.inError")}</p> : null}
         <p>

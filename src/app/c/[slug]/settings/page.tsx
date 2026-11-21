@@ -122,7 +122,7 @@ export default async function ClinicSettingsPage({ params }: { params: Promise<{
         <CardHeader title={t("clinic.settings.letterheadTitle")} description={t("clinic.settings.letterheadHint")} />
         <CardBody className="space-y-5">
           <div className="rounded-[12px] border border-border bg-surface p-4">
-            <Letterhead data={head} />
+            <Letterhead data={head} locationLabel={t("clinic.settings.locationQrLabel")} />
           </div>
           {canEdit ? (
             <Form action={letterheadAction}>
@@ -139,6 +139,7 @@ export default async function ClinicSettingsPage({ params }: { params: Promise<{
                 </label>
               ) : null}
               <TextField name="licenseText" label={t("clinic.settings.license")} hint={t("clinic.settings.licenseHint")} defaultValue={head.license ?? ""} optionalLabel={optional} />
+              <TextField name="locationUrl" type="url" label={t("clinic.settings.locationUrl")} hint={t("clinic.settings.locationUrlHint")} defaultValue={head.locationUrl ?? ""} placeholder="https://maps.app.goo.gl/…" optionalLabel={optional} />
               <div className="flex justify-end">
                 <SubmitButton>{t("clinic.settings.letterheadSave")}</SubmitButton>
               </div>

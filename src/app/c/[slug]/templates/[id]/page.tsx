@@ -10,6 +10,7 @@ import { SPECIALTIES } from "@/server/scheduling/specialties";
 import { archiveTemplateAction, saveTemplateAction } from "../../../../practice-actions";
 import { DIAGNOSTIC_KINDS } from "@/lib/diagnostics";
 import { fieldLines, parseTemplateContent } from "@/lib/diagnostic-template";
+import { parseSchemeContent, schemeLines } from "@/lib/rx-scheme";
 
 /** Create (`/templates/new?kind=…`) or edit a template. */
 export default async function TemplateEditPage({ params, searchParams }: { params: Promise<{ slug: string; id: string }>; searchParams: Promise<{ kind?: string }> }) {
@@ -26,7 +27,8 @@ export default async function TemplateEditPage({ params, searchParams }: { param
         throw e;
       });
   const requested = (await searchParams).kind;
-  const kind = template?.kind ?? (requested === "NOTE" ? "NOTE" : requested === "DIAGNOSTIC" ? "DIAGNOSTIC" : "DOCUMENT");
+  const kind = template?.kind ?? (requested === "NOTE" || requested === "DIAGNOSTIC" || requested === "PRESCRIPTION" ? requested : "DOCUMENT");
+  const scheme = template && kind === "PRESCRIPTION" ? parseSchemeContent(template.content) : null;
   const study = template && kind === "DIAGNOSTIC" ? parseTemplateContent(template.content) : null;
   const note = template && kind === "NOTE" ? parseNoteContent(template.content) : null;
   const back = `/c/${ctx.tenant.slug}/templates`;
@@ -35,7 +37,7 @@ export default async function TemplateEditPage({ params, searchParams }: { param
     <div className="mx-auto w-full max-w-3xl space-y-6">
       <PageHeader
         eyebrow={t("templates.title")}
-        title={isNew ? t(kind === "NOTE" ? "templates.newNote" : kind === "DIAGNOSTIC" ? "templates.newStudy" : "templates.newDocument") : template!.name}
+        title={isNew ? t(kind === "NOTE" ? "templates.newNote" : kind === "DIAGNOSTIC" ? "templates.newStudy" : kind === "PRESCRIPTION" ? "templates.newScheme" : "templates.newDocument") : template!.name}
         action={<ButtonLink href={back} variant="secondary">{t("templates.back")}</ButtonLink>}
       />
       <Card>
@@ -54,7 +56,16 @@ export default async function TemplateEditPage({ params, searchParams }: { param
                   options={[{ value: "", label: t("templates.allSpecialties") }, ...SPECIALTIES.map((x) => ({ value: x, label: t(`specialties.${x}`) }))]}
                 />
               </div>
-              {kind === "DIAGNOSTIC" ? (
+              {kind === "PRESCRIPTION" ? (
+                <TextAreaField
+                  name="schemeText"
+                  label={t("templates.schemeLines")}
+                  hint={t("templates.schemeLinesHint")}
+                  rows={12}
+                  defaultValue={scheme ? schemeLines(scheme) : ""}
+                  placeholder={t("templates.schemeLinesPlaceholder")}
+                />
+              ) : kind === "DIAGNOSTIC" ? (
                 <>
                   <SelectField name="study" label={t("templates.study")} defaultValue={study?.study ?? "ULTRASOUND"} options={DIAGNOSTIC_KINDS.map((k) => ({ value: k, label: t(`diagnostics.kind.${k}`) }))} />
                   <TextAreaField name="fieldsText" label={t("templates.fields")} hint={t("templates.fieldsHint")} rows={12} defaultValue={study ? fieldLines(study.fields) : ""} placeholder={"fhr | Yurak urishi, 1 daqiqada | marta | 115-160 |\nmovements | Harakati |  |  | me'yorda"} />

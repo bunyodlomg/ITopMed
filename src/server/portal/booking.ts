@@ -27,10 +27,11 @@ export interface BookableDoctor {
   fullName: string;
   specialty: string;
   slotMinutes: number;
+  bufferMinutes: number;
 }
 
 export async function bookableDoctors(p: PatientPrincipal): Promise<BookableDoctor[]> {
-  return inPortal(p, (tx) => tx.$queryRaw<BookableDoctor[]>`SELECT id, "fullName", specialty, "slotMinutes" FROM portal_booking_doctors()`);
+  return inPortal(p, (tx) => tx.$queryRaw<BookableDoctor[]>`SELECT id, "fullName", specialty, "slotMinutes", "bufferMinutes" FROM portal_booking_doctors()`);
 }
 
 export interface BookingRules {
@@ -52,7 +53,7 @@ export async function availableDays(p: PatientPrincipal, doctorId: string, opts:
   if (!z.uuid().safeParse(doctorId).success) throw new DomainError("errors.notFound");
   return inPortal(p, async (tx) => {
     const rules = await rulesIn(tx);
-    const doctor = (await tx.$queryRaw<BookableDoctor[]>`SELECT id, "fullName", specialty, "slotMinutes" FROM portal_booking_doctors() WHERE id = ${doctorId}::uuid`)[0];
+    const doctor = (await tx.$queryRaw<BookableDoctor[]>`SELECT id, "fullName", specialty, "slotMinutes", "bufferMinutes" FROM portal_booking_doctors() WHERE id = ${doctorId}::uuid`)[0];
     if (!doctor) throw new DomainError("errors.doctorUnavailable");
     const tz = rules.timezone;
     const now = new Date();
@@ -74,7 +75,7 @@ export async function availableDays(p: PatientPrincipal, doctorId: string, opts:
     ).map((b) => ({ start: b.startsAt, end: b.endsAt }));
     const days: { date: LocalDate; slots: string[] }[] = [];
     for (let d: LocalDate = first; d <= to && days.length < (opts.maxDays ?? 7); d = addDays(d, 1)) {
-      const slots = daySlots({ date: d, timeZone: tz, blocks, hasException: absences.has(d), slotMinutes: doctor.slotMinutes, busy, notBefore }).filter(
+      const slots = daySlots({ date: d, timeZone: tz, blocks, hasException: absences.has(d), slotMinutes: doctor.slotMinutes, bufferMinutes: doctor.bufferMinutes, busy, notBefore }).filter(
         (s) => s.start.getTime() <= now.getTime() + rules.days * 86_400_000,
       );
       if (slots.length) days.push({ date: d, slots: slots.map((s) => s.start.toISOString()) });

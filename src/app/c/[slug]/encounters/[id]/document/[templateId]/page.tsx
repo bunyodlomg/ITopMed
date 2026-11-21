@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { rxDrugLabel } from "@/lib/rx";
 import { getTranslations } from "next-intl/server";
 import { DocumentText } from "@/components/document-text";
 import { Letterhead } from "@/components/letterhead";
@@ -86,9 +87,10 @@ export default async function VisitDocumentPage({ params }: { params: Promise<{ 
     "vitals.height": latest("HEIGHT") ?? "",
     prescriptions: e.prescriptions
       .filter((p) => p.status === "ACTIVE")
-      .map((p, i) => `${i + 1}. ${[p.drug, p.dose, p.frequency, p.route, p.durationDays ? t("clinic.rx.days", { count: p.durationDays }) : null].filter(Boolean).join(" ")}`)
+      .map((p, i) => `${i + 1}. ${[rxDrugLabel(p), p.dose, p.frequency, p.route, p.durationDays ? t("clinic.rx.days", { count: p.durationDays }) : null].filter(Boolean).join(" ")}`)
       .join("\n"),
     "prescriptions.schedule": intakeSchedule(e.prescriptions.filter((p) => p.status === "ACTIVE")),
+    labs: d.labsToTake.map((name) => `!! ${name}`).join("\n"),
     "visit.nextVisit": e.nextVisitDate ? e.nextVisitDate.toISOString().slice(0, 10).split("-").reverse().join(".") : "",
     "doctor.phone": d.doctor?.contactPhone ?? "",
     "doctor.telegram": d.doctor?.contactTelegram ?? "",
@@ -107,7 +109,7 @@ export default async function VisitDocumentPage({ params }: { params: Promise<{ 
         <PrintButton label={t("clinic.rx.printNow")} />
       </div>
       <article className="space-y-5 rounded-[16px] border border-border bg-surface p-6 text-[15px] leading-relaxed print:border-0 print:p-0 print:text-[14px]">
-        <Letterhead data={head} />
+        <Letterhead data={head} locationLabel={t("clinic.settings.locationQrLabel")} />
         <h1 className="text-center text-[19px] font-bold uppercase tracking-[0.04em]">{d.template.name}</h1>
         <DocumentText text={text} />
         {qr ? (
@@ -122,10 +124,10 @@ export default async function VisitDocumentPage({ params }: { params: Promise<{ 
   );
 }
 
-/** "08:00 — Bisoprolol 5 mg (1 tabletka)" lines, by time of day; medicines without times are not listed here. */
-function intakeSchedule(rx: { drug: string; dose: string; times: string | null }[]): string {
+/** "08:00 — Veroshpiron 25 mg (spironolakton), 1/2 tabletka" lines, by time of day; medicines without times are not listed here. */
+function intakeSchedule(rx: { drug: string; inn: string | null; dose: string; times: string | null }[]): string {
   const byTime = new Map<string, string[]>();
-  for (const p of rx) for (const time of (p.times ?? "").split(",").map((x) => x.trim()).filter(Boolean)) byTime.set(time, [...(byTime.get(time) ?? []), `${p.drug} (${p.dose})`]);
+  for (const p of rx) for (const time of (p.times ?? "").split(",").map((x) => x.trim()).filter(Boolean)) byTime.set(time, [...(byTime.get(time) ?? []), `${rxDrugLabel(p)}, ${p.dose}`]);
   return [...byTime.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([time, list]) => `${time} — ${list.join("; ")}`)

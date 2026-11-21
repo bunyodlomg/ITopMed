@@ -4,7 +4,7 @@ import pg from "pg";
 import { describe, expect, it } from "vitest";
 import { bookAppointment, listDay } from "@/server/appointments/appointments";
 import { addStaffMember, listBranches, listStaff } from "@/server/clinic/admin";
-import { addScheduleBlock, addScheduleException, saveDoctorProfile } from "@/server/clinic/doctors";
+import { addScheduleBlock, addScheduleException, doctorSlots, saveDoctorProfile } from "@/server/clinic/doctors";
 import { updateClinicPolicy } from "@/server/clinic/policy";
 import { platformDb, withAppContext } from "@/server/db";
 import { clinicBotStatus, connectClinicBot } from "@/server/telegram/clinic-bot";
@@ -54,7 +54,7 @@ async function setup() {
     return { id: r.id, p: (await validatePatientSession(login.token))! };
   };
   const at = (hhmm: string, d = day) => localToInstant(d, Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3)), TZ).toISOString();
-  return { a, branch: branch!, reception, profileId, otherId, day, patient, at, tenant };
+  return { a, branch: branch!, reception, profileId, otherId, day, patient, at, tenant, doctorMembershipId: doctor.membershipId };
 }
 
 describe("patient portal self-booking", () => {
@@ -89,6 +89,19 @@ describe("patient portal self-booking", () => {
 
     // The patient can still cancel their own online booking.
     await cancelMyAppointment(p, mine.id, META);
+  });
+
+  it("a buffer between appointments moves every slot on the desk and online, and online booking follows it", async () => {
+    const s = await setup();
+    const { p } = await s.patient(`+99894${String(Date.now()).slice(-7)}`);
+    // 30-minute visits + 5-minute buffer inside 09:00-12:00: 09:00, 09:35, 10:10, 10:45, 11:20 (11:55 would not fit).
+    await saveDoctorProfile(s.a.ctx, s.doctorMembershipId, { specialty: "cardiology", defaultSlotMinutes: 30, bufferMinutes: 5, acceptsOnlineBooking: true }, META);
+    await expect(saveDoctorProfile(s.a.ctx, s.doctorMembershipId, { specialty: "cardiology", defaultSlotMinutes: 30, bufferMinutes: 45, acceptsOnlineBooking: true }, META)).rejects.toThrow();
+    const expected = ["09:00", "09:35", "10:10", "10:45", "11:20"].map((x) => s.at(x));
+    expect((await doctorSlots(s.a.ctx, s.profileId, s.day)).map((x) => x.start.toISOString())).toEqual(expected);
+    expect((await availableDays(p, s.profileId, { maxDays: 10 })).days.find((d) => d.date === s.day)!.slots).toEqual(expected);
+    await expect(bookOnline(p, { doctorId: s.profileId, startsAt: s.at("09:30") }, META)).rejects.toThrow("errors.outsideSchedule"); // the old grid
+    await bookOnline(p, { doctorId: s.profileId, startsAt: s.at("09:35") }, META);
   });
 
   it("applies the clinic's rules: how far ahead, how soon, how many, days off", async () => {

@@ -11,9 +11,10 @@ import { requireClinic } from "@/server/auth/guards";
 import { addAllergy, addDiagnosis, amendNote, finishEncounter, recordVitals, saveDraft, setClinicalStatus, setNextVisit, signNote, startVisit } from "@/server/emr/record";
 import { addDiagnosticResult, markDiagnosticError } from "@/server/emr/diagnostics";
 import { requestMeta } from "@/server/http";
-import { addPrescription, cancelPrescription } from "@/server/emr/prescriptions";
+import { addPrescription, applyPrescriptionScheme, cancelPrescription } from "@/server/emr/prescriptions";
 import { applyNoteTemplate } from "@/server/emr/documents";
 import { copyPreviousNote } from "@/server/emr/assist";
+import { closeDispensary, enrollDispensary, markFollowUpDone } from "@/server/emr/dispensary";
 import { addNursingRecord, savePatientHistory } from "@/server/emr/history";
 import { cookies } from "next/headers";
 import { BREAK_GLASS_REASONS } from "@/server/emr/access";
@@ -242,6 +243,7 @@ export async function prescriptionAction(_: FormState, fd: FormData): Promise<Fo
       encounterId,
       {
         drug: str(fd, "drug"),
+        inn: str(fd, "inn"),
         dose: str(fd, "dose"),
         frequency: str(fd, "frequency"),
         route: str(fd, "route"),
@@ -256,6 +258,19 @@ export async function prescriptionAction(_: FormState, fd: FormData): Promise<Fo
     return ok(r.allergyOverride ? "clinic.rx.addedDespiteAllergy" : "clinic.rx.added");
   } catch (e) {
     return toFormState(e, fd);
+  }
+}
+
+/** Adds the ticked lines of a ready-made prescription scheme to the visit. */
+export async function applySchemeAction(_: FormState, fd: FormData): Promise<FormState> {
+  const { slug, ctx } = await clinicFrom(fd);
+  const encounterId = str(fd, "encounterId");
+  try {
+    const r = await applyPrescriptionScheme(ctx, encounterId, str(fd, "templateId"), { lines: fd.getAll("line").map(String), allergyOverride: fd.get("allergyOverride") === "on" }, await requestMeta());
+    revalidatePath(`/c/${slug}/encounters/${encounterId}`);
+    return ok(r.allergyOverride ? "clinic.rx.addedDespiteAllergy" : "clinic.rx.schemeApplied");
+  } catch (e) {
+    return toFormState(e);
   }
 }
 
@@ -371,4 +386,45 @@ export async function diagnosticErrorAction(_: FormState, fd: FormData): Promise
   const back = str(fd, "$back");
   if (back.startsWith(`/c/${slug}/`)) revalidatePath(back);
   return ok("diagnostics.markedError");
+}
+
+// ───────────── Dispensary follow-up ─────────────
+
+function revalidateDispensary(slug: string, encounterId: string) {
+  if (encounterId) revalidatePath(`/c/${slug}/encounters/${encounterId}`);
+  revalidatePath(`/c/${slug}/dispensary`);
+}
+
+export async function enrollDispensaryAction(_: FormState, fd: FormData): Promise<FormState> {
+  const { slug, ctx } = await clinicFrom(fd);
+  try {
+    await enrollDispensary(ctx, str(fd, "patientId"), { group: str(fd, "group"), intervalDays: str(fd, "intervalDays"), firstDue: str(fd, "firstDue"), labs: str(fd, "labs"), note: str(fd, "note") }, await requestMeta());
+  } catch (e) {
+    return toFormState(e, fd);
+  }
+  revalidateDispensary(slug, str(fd, "encounterId"));
+  return ok("clinic.dispensary.enrolled");
+}
+
+export async function followUpDoneAction(_: FormState, fd: FormData): Promise<FormState> {
+  const { slug, ctx } = await clinicFrom(fd);
+  let next: string;
+  try {
+    next = await markFollowUpDone(ctx, str(fd, "planId"), await requestMeta());
+  } catch (e) {
+    return toFormState(e);
+  }
+  revalidateDispensary(slug, str(fd, "encounterId"));
+  return ok("clinic.dispensary.followedUp", { date: next.split("-").reverse().join(".") });
+}
+
+export async function closeDispensaryAction(_: FormState, fd: FormData): Promise<FormState> {
+  const { slug, ctx } = await clinicFrom(fd);
+  try {
+    await closeDispensary(ctx, str(fd, "planId"), await requestMeta());
+  } catch (e) {
+    return toFormState(e);
+  }
+  revalidateDispensary(slug, str(fd, "encounterId"));
+  return ok("clinic.dispensary.closed");
 }

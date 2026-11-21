@@ -1,4 +1,5 @@
 import "server-only";
+import { rxDrugLabel } from "@/lib/rx";
 import { createTranslator } from "use-intl/core";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/i18n/config";
 import { minorToNumber } from "@/lib/money";
@@ -178,7 +179,7 @@ export async function patientWorkbook(d: PatientFileData, clinic: FileClinic): P
     rxRows.push({
       cells: [
         at(r.createdAt),
-        { v: r.drug, s: "wrap" },
+        { v: rxDrugLabel(r), s: "wrap" },
         { v: r.dose, s: "wrap" },
         { v: r.frequency, s: "wrap" },
         { v: r.route ?? "", s: "cell" },

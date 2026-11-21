@@ -89,6 +89,8 @@ export const doctorProfileSchema = z.object({
     .transform((v) => (v === "" ? undefined : v))
     .optional(),
   defaultSlotMinutes: z.coerce.number().int().min(5, "validation.slotRange").max(240, "validation.slotRange"),
+  /** Free minutes after each appointment; an empty field means none. */
+  bufferMinutes: z.union([z.literal("").transform(() => 0), z.coerce.number().int().min(0, "validation.bufferRange").max(30, "validation.bufferRange")]).default(0),
   acceptsOnlineBooking: z.boolean(),
   /** Printed on conclusions for patients' questions. */
   contactPhone: z
@@ -270,6 +272,7 @@ export async function doctorSlots(ctx: ClinicContext, profileId: string, date: L
       blocks: blocks.filter((b) => isOwnProfile(ctx, p) || canUseBranch(ctx, b.branchId)),
       hasException: Boolean(exception),
       slotMinutes: p.defaultSlotMinutes,
+      bufferMinutes: p.bufferMinutes,
       busy,
       notBefore: opts.includePast ? undefined : new Date(),
     });

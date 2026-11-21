@@ -37,8 +37,10 @@ export async function documentForVisit(ctx: ClinicContext, encounterId: string, 
     const doctor = e.doctorProfileId
       ? await tx.doctorProfile.findUnique({ where: { id: e.doctorProfileId }, select: { specialty: true, contactPhone: true, contactTelegram: true, membership: { select: { user: { select: { fullName: true } } } } } })
       : null;
+    // Lab tests ordered in this visit and not yet taken: printed highlighted so the patient does not skip them.
+    const labsToTake = await tx.labOrderItem.findMany({ where: { order: { encounterId: e.id, status: "ORDERED" } }, select: { name: true }, orderBy: { name: "asc" } });
     await auditClinic(tx, ctx, meta, { action: desk ? "document.printed_at_desk" : "document.printed", entityType: "Encounter", entityId: e.id, metadata: { templateId } });
-    return { tenant, doctor };
+    return { tenant, doctor, labsToTake: [...new Set(labsToTake.map((x) => x.name))] };
   });
   const note = [...e.notes].reverse().find((n) => n.status === "SIGNED") ?? e.notes[e.notes.length - 1] ?? null;
   return { template, encounter: e, note, ...extra };

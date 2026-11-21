@@ -77,7 +77,9 @@
     "groupCare": "Care",
     "groupFinance": "Finance",
     "groupClinic": "Clinic",
-    "groupAdmin": "Administration"
+    "groupAdmin": "Administration",
+    "dispensary": "Follow-up",
+    "myEarnings": "My earnings"
   },
   "auth": {
     "adminTitle": "ITop Med Administration",
@@ -429,7 +431,10 @@
       "license": "Licence / details line",
       "licenseHint": "For example: Ministry of Health licence No. …, issued …",
       "letterheadSave": "Save",
-      "letterheadSaved": "Letterhead saved."
+      "letterheadSaved": "Letterhead saved.",
+      "locationUrl": "Map link",
+      "locationUrlHint": "Your clinic on Google or Yandex Maps (https://…). Printed on forms as a QR code so patients can find you.",
+      "locationQrLabel": "Location (QR)"
     },
     "branches": {
       "title": "Branches",
@@ -591,6 +596,8 @@
       "license": "License number",
       "slot": "Appointment length (minutes)",
       "slotHint": "Default length of one appointment slot.",
+      "buffer": "Buffer between appointments (minutes)",
+      "bufferHint": "Time kept free after each appointment so the queue does not drift. E.g. 15 minutes + 2-minute buffer: 09:00, 09:17, 09:34…",
       "onlineBooking": "Allow online booking (patient portal)",
       "profileSaved": "Profile saved.",
       "perWeek": "{hours} h per week",
@@ -623,7 +630,11 @@
       "contactPhone": "Phone (for patients)",
       "contactHint": "Printed on conclusions for patients' questions.",
       "contactTelegram": "Telegram",
-      "contactTelegramHint": "E.g. @dr_farhod — printed on conclusions."
+      "contactTelegramHint": "E.g. @dr_farhod — printed on conclusions.",
+      "commission": "Doctor's share",
+      "commissionHint": "The doctor's percentage of money received for their patients; the doctor sees it day by day on “My earnings”. Empty = not set.",
+      "commissionPercent": "Share, %",
+      "commissionSaved": "Share saved."
     },
     "mySchedule": {
       "title": "My schedule",
@@ -980,7 +991,9 @@
       "invoices": "Invoices",
       "expensesByCategory": "Expenses by category",
       "dayTableCaption": "Daily payments table",
-      "lastDays": "Last {days} days"
+      "lastDays": "Last {days} days",
+      "doctorShare": "Doctors' share",
+      "noPercent": "no rate set"
     },
     "expenses": {
       "title": "Expenses",
@@ -1289,10 +1302,15 @@
       "cancelledLabel": "cancelled",
       "days": "{count, plural, one {# day} other {# days}}",
       "cancel": "Cancel prescription",
-      "drug": "Medicine and strength",
-      "drugHint": "International name preferred, e.g. Bisoprolol 5 mg",
+      "drug": "Medicine (brand name) and strength",
+      "drugHint": "e.g. Trombonet 75 mg",
+      "inn": "International name (INN)",
+      "innHint": "Printed in brackets so the pharmacy can dispense the same active substance if this brand is out of stock. e.g. clopidogrel",
       "dose": "Dose",
       "dosePlaceholder": "1 tablet",
+      "doseHint": "Tablet fractions (1/2, 1/4, 3/4, 1/8) are printed on the prescription as a picture.",
+      "tabletWord": "tablet",
+      "intakeTimes": "Intake times",
       "frequency": "How often",
       "frequencyPlaceholder": "once daily in the morning",
       "route": "Route",
@@ -1306,12 +1324,18 @@
       "addedDespiteAllergy": "Prescription added despite the recorded allergy (recorded in the audit log).",
       "cancelled": "Prescription cancelled.",
       "printNow": "Print",
+      "labsToTake": "Lab tests to take:",
       "paperTitle": "PRESCRIPTION",
       "doctor": "Doctor",
       "license": "licence",
       "signature": "Doctor's signature",
       "stamp": "Stamp",
-      "notElectronic": "Paper prescription issued by the clinic; not registered in the national electronic prescription system."
+      "notElectronic": "Paper prescription issued by the clinic; not registered in the national electronic prescription system.",
+      "schemes": "Ready-made prescription schemes",
+      "schemesHint": "Open a scheme, untick what this patient does not need, and add. Schemes are written on the Templates page.",
+      "schemeCount": "{count, plural, one {# medicine} other {# medicines}}",
+      "schemeApply": "Add ticked medicines",
+      "schemeApplied": "The scheme's medicines were added to the prescription."
     },
     "telegram": {
       "title": "Telegram bot",
@@ -1499,6 +1523,61 @@
     "subscription": {
       "overdueTitle": "ITop Med subscription unpaid",
       "overdueBody": "Amount due: {amount}. Without payment the clinic will be suspended on {date}. Contact ITop Med about payment."
+    },
+    "dispensary": {
+      "title": "Follow-up (dispensary)",
+      "hint": "A patient under long-term follow-up: how often to come, the next check-up date and which tests to repeat. The patient gets a reminder the day before (no diagnosis in it).",
+      "none": "This patient is not under follow-up.",
+      "nextDue": "Next check-up: {date}",
+      "every": "every {days} days",
+      "labs": "Tests",
+      "doctor": "Doctor: {name}",
+      "done": "Seen — set next date",
+      "close": "End follow-up",
+      "enroll": "Start follow-up",
+      "group": "Group",
+      "interval": "Every N days (7–365)",
+      "intervalHint": "E.g. 30 days — once a month.",
+      "firstDue": "First check-up date",
+      "firstDueHint": "Empty — that many days from today.",
+      "labsPlaceholder": "E.g. coagulogram (INR)",
+      "note": "Note",
+      "enrollSubmit": "Start follow-up",
+      "enrolled": "The patient is now under follow-up.",
+      "followedUp": "Done. Next check-up: {date}.",
+      "closed": "Follow-up ended.",
+      "listTitle": "Follow-up patients",
+      "listHint": "Your long-term patients, nearest due date first. Overdue ones are red.",
+      "listEmpty": "No follow-up patients yet",
+      "listEmptyHint": "Start follow-up from the visit page, section “Follow-up (dispensary)”.",
+      "overdueCount": "{count, plural, one {Overdue: # patient} other {Overdue: # patients}}",
+      "colPatient": "Patient",
+      "colDue": "Next check-up",
+      "colDoctor": "Doctor",
+      "groups": {
+        "HYPERTENSION": "Hypertension",
+        "HEART_FAILURE": "Heart failure",
+        "ATRIAL_FIBRILLATION": "Atrial fibrillation",
+        "POST_MI": "After myocardial infarction",
+        "ANTICOAGULANT": "On anticoagulants",
+        "OTHER": "Other"
+      }
+    },
+    "earnings": {
+      "title": "My earnings",
+      "subtitle": "Money received for your patients (less refunds) and your share at the clinic's rate.",
+      "received": "Received",
+      "share": "Your share ({percent}%)",
+      "byDay": "By day",
+      "day": "Day",
+      "payments": "Payments",
+      "none": "No payments in this period.",
+      "noPercent": "Your percentage is not set yet. The clinic's manager sets it on the Doctors page.",
+      "period": {
+        "today": "Today",
+        "week": "This week",
+        "month": "This month"
+      }
     }
   },
   "status": {
@@ -1638,7 +1717,11 @@
     "templateFieldLines": "Some field lines are invalid: check the key (Latin letters/digits), label and min-max format.",
     "templateUnknownPlaceholders": "The report text uses a '{{'key'}}' that is not among the fields.",
     "username": "Login: 3–64 characters — lowercase Latin letters, digits and . _ - (for example dr.karimov).",
-    "amount": "Enter a valid amount."
+    "amount": "Enter a valid amount.",
+    "bufferRange": "The buffer must be 0 to 30 minutes.",
+    "intervalDays": "The number of days must be 7 to 365.",
+    "httpsUrl": "The link must start with https://.",
+    "percentRange": "The percentage must be 0 to 100."
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",
@@ -1759,7 +1842,10 @@
     "noFile": "No file chosen.",
     "tooManyFiles": "Up to 20 files per result.",
     "nextVisitPast": "The next visit must be after today.",
-    "usernameTaken": "This login is already taken. Choose another one."
+    "usernameTaken": "This login is already taken. Choose another one.",
+    "schemeNothingChosen": "Tick at least one medicine of the scheme.",
+    "dateInPast": "The date has passed.",
+    "dispensaryExists": "This patient is already under your follow-up in this group."
   },
   "supportScope": {
     "CONFIGURATION": "Configuration",
@@ -2225,7 +2311,8 @@
     "appointmentBooked": "Booking confirmation",
     "appointmentReminder": "Visit reminder",
     "appointmentCancelled": "Cancellation notice",
-    "resultsReady": "Results ready in the portal"
+    "resultsReady": "Results ready in the portal",
+    "dispensaryReminder": "Follow-up reminder"
   },
   "notificationStatus": {
     "PENDING": "Waiting",
@@ -2273,6 +2360,11 @@
       "sms": "{clinic}: new results are available in your patient portal: {link}",
       "subject": "{clinic}: new results in your patient portal",
       "body": "New results are available in your patient portal: {link}"
+    },
+    "DISPENSARY_REMINDER": {
+      "sms": "{clinic}: your planned check-up is due on {date}. Please book a convenient time.",
+      "subject": "{clinic}: check-up on {date}",
+      "body": "{clinic}: the planned check-up your doctor set is due on {date}. Please book a convenient time: {link}"
     }
   },
   "moduleHint": {
@@ -2514,7 +2606,7 @@
     "printHint": "Print a document for this visit with the patient's data filled in.",
     "std": {
       "summaryName": "Visit summary",
-      "summaryBody": "Patient: [[patient.fullName]], born [[patient.birthDate]], record [[patient.mrn]]\nDate of visit: [[visit.date]]\n\nComplaints:\n[[note.complaints]]\n\nExamination:\n[[note.examination]]\n\nConclusion:\n[[note.assessment]]\n\nDiagnosis:\n[[diagnoses]]\n\nRecommendations:\n[[note.plan]]\n\nPrescriptions:\n[[prescriptions]]\n\nMedication schedule:\n[[prescriptions.schedule]]\n\nNext visit: [[visit.nextVisit]]\nQuestions: [[doctor.phone]] [[doctor.telegram]]\n\nDoctor: [[doctor.fullName]] ([[doctor.specialty]])\nSignature: ______________",
+      "summaryBody": "Patient: [[patient.fullName]], born [[patient.birthDate]], record [[patient.mrn]]\nDate of visit: [[visit.date]]\n\nComplaints:\n[[note.complaints]]\n\nExamination:\n[[note.examination]]\n\nConclusion:\n[[note.assessment]]\n\nDiagnosis:\n[[diagnoses]]\n\nRecommendations:\n[[note.plan]]\n\nPrescriptions:\n[[prescriptions]]\n\nMedication schedule:\n[[prescriptions.schedule]]\n\nLab tests to take:\n[[labs]]\n\nNext visit: [[visit.nextVisit]]\nQuestions: [[doctor.phone]] [[doctor.telegram]]\n\nDoctor: [[doctor.fullName]] ([[doctor.specialty]])\nSignature: ______________",
       "referralName": "Referral",
       "referralBody": "To: ______________________________\n\nPatient [[patient.fullName]], born [[patient.birthDate]] (record [[patient.mrn]]), is referred for: ______________________________\n\nDiagnosis:\n[[diagnoses]]\n\nReason / findings:\n[[note.assessment]]\n\nReferring doctor: [[doctor.fullName]] ([[doctor.specialty]]), [[clinic.name]], [[clinic.phone]]\nDate: [[today]]\nSignature: ______________",
       "certificateName": "Certificate of visit",
@@ -2561,7 +2653,8 @@
       "prescriptions_schedule": "Medication schedule (by time)",
       "visit_nextVisit": "Next visit date",
       "doctor_phone": "Doctor's phone",
-      "doctor_telegram": "Doctor's Telegram"
+      "doctor_telegram": "Doctor's Telegram",
+      "labs": "lab tests still to take (printed highlighted)"
     },
     "qrAlt": "Patient portal QR code",
     "qrHint": "Scan the QR code to see your results on your phone (patient portal).",
@@ -2573,7 +2666,13 @@
     "fieldsHint": "key | Label | unit | min-max | normal text. E.g. fhr | Fetal heart rate, per minute | bpm | 115-160 |. Range and normal text are optional.",
     "reportText": "Report text",
     "reportTextHint": "Write '{{'key'}}' where a value goes. A line whose values are all empty is not printed.",
-    "defaultConclusion": "Default conclusion"
+    "defaultConclusion": "Default conclusion",
+    "schemes": "Prescription schemes",
+    "schemesHint": "Frequent treatment schemes, added to a visit's prescription in one step. Doses are written by the clinic's doctors.",
+    "newScheme": "New prescription scheme",
+    "schemeLines": "Medicines (one per line)",
+    "schemeLinesHint": "Each line: Medicine | INN | Dose | How often | Times | Days | Instructions. The first 4 are required; the rest may be left empty.",
+    "schemeLinesPlaceholder": "Bisoprolol 5 mg | bisoprolol | 1 tablet | once daily | 08:00 | 30 | after food\nVeroshpiron 25 mg | spironolactone | 1/2 tablet | once daily | 09:00 | 30"
   },
   "connect": {
     "title": "Connect this device",

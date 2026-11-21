@@ -5,6 +5,8 @@ import type { RequestMeta } from "../auth/platform-auth";
 import { auditClinic, inClinic } from "../clinic/context";
 import { DomainError } from "../errors";
 import { uuidv7 } from "../security/crypto";
+import type { Tx } from "../db";
+import { parseSchemeContent } from "@/lib/rx-scheme";
 import { withRecordAccess } from "./access";
 import { loadEncounter, ownOpenEncounter } from "./record";
 
@@ -18,6 +20,8 @@ const optionalText = (max: number) =>
 
 export const prescriptionSchema = z.object({
   drug: z.string().trim().min(2, "validation.required").max(200, "validation.tooLong"),
+  /** International non-proprietary name, printed in brackets after a trade name. */
+  inn: optionalText(120),
   dose: z.string().trim().min(1, "validation.required").max(100, "validation.tooLong"),
   frequency: z.string().trim().min(1, "validation.required").max(120, "validation.tooLong"),
   route: optionalText(60),
@@ -48,6 +52,36 @@ export function allergyMatches(drug: string, substances: string[]): string[] {
   });
 }
 
+type PrescriptionInput = z.infer<typeof prescriptionSchema>;
+
+/** Inserts one prescription and its audit event (caller has checked access and the open visit). */
+async function insertPrescription(tx: Tx, ctx: ClinicContext, enc: { id: string; patientId: string }, input: PrescriptionInput, allergyOverride: boolean, meta: RequestMeta, schemeId?: string) {
+  const id = uuidv7();
+  await tx.prescription.create({
+    data: {
+      id,
+      tenantId: ctx.tenant.id,
+      patientId: enc.patientId,
+      encounterId: enc.id,
+      prescribedById: ctx.principal.user.id,
+      drug: input.drug,
+      inn: input.inn ?? null,
+      dose: input.dose,
+      frequency: input.frequency,
+      route: input.route ?? null,
+      durationDays: input.durationDays ?? null,
+      times: input.times ?? null,
+      instructions: input.instructions ?? null,
+      allergyOverride,
+    },
+  });
+  await auditClinic(tx, ctx, meta, { action: "prescription.created", entityType: "Prescription", entityId: id, metadata: { allergyOverride, ...(schemeId ? { schemeId } : {}) } });
+  return id;
+}
+
+/** Screens the trade name and the INN: an allergy to "klopidogrel" must catch "Trombonet". */
+const conflictsFor = (input: PrescriptionInput, substances: string[]) => allergyMatches([input.drug, input.inn].filter(Boolean).join(" "), substances);
+
 /** Doctor prescribes a medicine during their own open visit. */
 export async function addPrescription(ctx: ClinicContext, encounterId: string, raw: unknown, meta: RequestMeta) {
   if (!ctx.permissions.has("prescriptions.write")) throw new DomainError("errors.forbidden");
@@ -56,28 +90,38 @@ export async function addPrescription(ctx: ClinicContext, encounterId: string, r
   return withRecordAccess(ctx, enc.patientId, meta, { auditView: false }, async (tx, access) => {
     await ownOpenEncounter(tx, enc.id, access.doctorProfileId);
     const allergies = await tx.allergy.findMany({ where: { patientId: enc.patientId, status: "ACTIVE" }, select: { substance: true } });
-    const conflicts = allergyMatches(input.drug, allergies.map((a) => a.substance));
+    const conflicts = conflictsFor(input, allergies.map((a) => a.substance));
     if (conflicts.length > 0 && !input.allergyOverride) throw new DomainError("errors.allergyConflict");
-    const id = uuidv7();
-    await tx.prescription.create({
-      data: {
-        id,
-        tenantId: ctx.tenant.id,
-        patientId: enc.patientId,
-        encounterId: enc.id,
-        prescribedById: ctx.principal.user.id,
-        drug: input.drug,
-        dose: input.dose,
-        frequency: input.frequency,
-        route: input.route ?? null,
-        durationDays: input.durationDays ?? null,
-        times: input.times ?? null,
-        instructions: input.instructions ?? null,
-        allergyOverride: conflicts.length > 0,
-      },
-    });
-    await auditClinic(tx, ctx, meta, { action: "prescription.created", entityType: "Prescription", entityId: id, metadata: { allergyOverride: conflicts.length > 0 } });
+    const id = await insertPrescription(tx, ctx, enc, input, conflicts.length > 0, meta);
     return { id, allergyOverride: conflicts.length > 0 };
+  });
+}
+
+/**
+ * Applies the chosen lines of a ready-made prescription scheme to the doctor's
+ * own open visit, all or nothing. Every line goes through the same validation
+ * and allergy screen as a single prescription; one confirmation covers the
+ * lines that match a recorded allergy (they are flagged like single ones).
+ */
+export async function applyPrescriptionScheme(ctx: ClinicContext, encounterId: string, templateId: string, raw: unknown, meta: RequestMeta) {
+  if (!ctx.permissions.has("prescriptions.write")) throw new DomainError("errors.forbidden");
+  const opts = z.object({ lines: z.array(z.coerce.number().int().min(0).max(29)), allergyOverride: z.boolean().default(false) }).parse(raw);
+  if (!opts.lines.length) throw new DomainError("errors.schemeNothingChosen");
+  if (!z.uuid().safeParse(templateId).success) throw new DomainError("errors.notFound");
+  const enc = await inClinic(ctx, (tx) => loadEncounter(tx, encounterId));
+  return withRecordAccess(ctx, enc.patientId, meta, { auditView: false }, async (tx, access) => {
+    await ownOpenEncounter(tx, enc.id, access.doctorProfileId);
+    const t = await tx.clinicTemplate.findFirst({ where: { id: templateId, tenantId: ctx.tenant.id, kind: "PRESCRIPTION", archivedAt: null }, select: { id: true, content: true } });
+    if (!t) throw new DomainError("errors.notFound");
+    const scheme = parseSchemeContent(t.content).items;
+    const chosen = [...new Set(opts.lines)].sort((a, b) => a - b).map((i) => scheme[i]);
+    if (chosen.some((x) => !x)) throw new DomainError("errors.invalidInput");
+    const inputs = chosen.map((x) => prescriptionSchema.parse({ ...x }));
+    const allergies = (await tx.allergy.findMany({ where: { patientId: enc.patientId, status: "ACTIVE" }, select: { substance: true } })).map((a) => a.substance);
+    const flagged = inputs.map((x) => conflictsFor(x, allergies).length > 0);
+    if (flagged.some(Boolean) && !opts.allergyOverride) throw new DomainError("errors.allergyConflict");
+    for (const [i, input] of inputs.entries()) await insertPrescription(tx, ctx, enc, input, flagged[i]!, meta, t.id);
+    return { count: inputs.length, allergyOverride: flagged.some(Boolean) };
   });
 }
 

@@ -77,7 +77,9 @@
     "groupCare": "Davolash",
     "groupFinance": "Moliya",
     "groupClinic": "Klinika",
-    "groupAdmin": "Boshqaruv"
+    "groupAdmin": "Boshqaruv",
+    "dispensary": "Dispanser",
+    "myEarnings": "Daromadim"
   },
   "auth": {
     "adminTitle": "ITop Med boshqaruvi",
@@ -429,7 +431,10 @@
       "license": "Litsenziya / rekvizitlar qatori",
       "licenseHint": "Masalan: SSV litsenziyasi № …, berilgan sana …",
       "letterheadSave": "Saqlash",
-      "letterheadSaved": "Blank saqlandi."
+      "letterheadSaved": "Blank saqlandi.",
+      "locationUrl": "Joylashuv havolasi (xarita)",
+      "locationUrlHint": "Google yoki Yandex xaritadagi klinika havolasi (https://…). Blankalarda QR kod bo'lib chiqadi — bemor skanerlab klinikani topadi.",
+      "locationQrLabel": "Manzil (QR)"
     },
     "branches": {
       "title": "Filiallar",
@@ -591,6 +596,8 @@
       "license": "Litsenziya raqami",
       "slot": "Qabul davomiyligi (daqiqa)",
       "slotHint": "Bitta qabul vaqtining standart davomiyligi.",
+      "buffer": "Qabullar orasidagi zaxira (daqiqa)",
+      "bufferHint": "Har qabuldan keyin bo'sh qoladigan vaqt, navbat surilib ketmasligi uchun. Masalan 15 daqiqa + 2 daqiqa zaxira: 09:00, 09:17, 09:34…",
       "onlineBooking": "Onlayn yozilishga ruxsat berish (bemor portali)",
       "profileSaved": "Profil saqlandi.",
       "perWeek": "Haftasiga {hours} soat",
@@ -623,7 +630,11 @@
       "contactPhone": "Telefon (bemorlar uchun)",
       "contactHint": "Xulosada chiqadi: bemor savollari uchun.",
       "contactTelegram": "Telegram",
-      "contactTelegramHint": "Masalan @dr_farhod — xulosada chiqadi."
+      "contactTelegramHint": "Masalan @dr_farhod — xulosada chiqadi.",
+      "commission": "Shifokor ulushi",
+      "commissionHint": "Shifokor o'z bemorlari uchun kassaga tushgan puldan oladigan foiz. Shifokor uni «Daromadim» sahifasida kunma-kun ko'radi. Bo'sh — belgilanmagan.",
+      "commissionPercent": "Ulush, %",
+      "commissionSaved": "Ulush saqlandi."
     },
     "mySchedule": {
       "title": "Mening jadvalim",
@@ -980,7 +991,9 @@
       "invoices": "Hisoblar",
       "expensesByCategory": "Toifalar boʻyicha xarajatlar",
       "dayTableCaption": "Kunlik toʻlovlar jadvali",
-      "lastDays": "Oxirgi {days} kun"
+      "lastDays": "Oxirgi {days} kun",
+      "doctorShare": "Shifokorlar ulushi",
+      "noPercent": "foiz belgilanmagan"
     },
     "expenses": {
       "title": "Xarajatlar",
@@ -1289,10 +1302,15 @@
       "cancelledLabel": "bekor qilingan",
       "days": "{count, plural, other {# kun}}",
       "cancel": "Retseptni bekor qilish",
-      "drug": "Dori va dozasi",
-      "drugHint": "Xalqaro nomi afzal, masalan Bisoprolol 5 mg",
+      "drug": "Dori (savdo nomi) va dozasi",
+      "drugHint": "Masalan Trombonet 75 mg",
+      "inn": "Xalqaro nomi (tarkibi)",
+      "innHint": "Retseptda qavs ichida chiqadi: dorixonada shu brend bo'lmasa, bemor tarkibi bir xil dorini oladi. Masalan: klopidogrel",
       "dose": "Bir martalik doza",
       "dosePlaceholder": "1 tabletka",
+      "doseHint": "Tabletka bo'lagi (1/2, 1/4, 3/4, 1/8) retseptda rasm bilan chiqadi.",
+      "tabletWord": "tabletka",
+      "intakeTimes": "Qabul qilish soatlari",
       "frequency": "Qabul qilish tartibi",
       "frequencyPlaceholder": "kuniga 1 marta ertalab",
       "route": "Qabul usuli",
@@ -1306,12 +1324,18 @@
       "addedDespiteAllergy": "Retsept qayd etilgan allergiyaga qaramay qo'shildi (audit jurnalida yozildi).",
       "cancelled": "Retsept bekor qilindi.",
       "printNow": "Chop etish",
+      "labsToTake": "Topshirilishi kerak bo'lgan tahlillar:",
       "paperTitle": "RETSEPT",
       "doctor": "Shifokor",
       "license": "litsenziya",
       "signature": "Shifokor imzosi",
       "stamp": "Muhr",
-      "notElectronic": "Klinika bergan qog'oz retsept; milliy elektron retsept tizimida ro'yxatdan o'tmagan."
+      "notElectronic": "Klinika bergan qog'oz retsept; milliy elektron retsept tizimida ro'yxatdan o'tmagan.",
+      "schemes": "Tayyor retsept sxemalari",
+      "schemesHint": "Sxemani oching, keraksiz dorilar belgisini olib tashlang va qo'shing. Sxemalar Shablonlar sahifasida yoziladi.",
+      "schemeCount": "{count, plural, other {# ta dori}}",
+      "schemeApply": "Belgilangan dorilarni qo'shish",
+      "schemeApplied": "Sxemadagi dorilar retseptga qo'shildi."
     },
     "telegram": {
       "title": "Telegram bot",
@@ -1499,6 +1523,61 @@
     "subscription": {
       "overdueTitle": "ITop Med obunasi to'lanmagan",
       "overdueBody": "Qarz: {amount}. To'lov qilinmasa, {date} kuni klinika ishi to'xtatiladi. To'lov bo'yicha ITop Med bilan bog'laning."
+    },
+    "dispensary": {
+      "title": "Dispanser kuzatuvi",
+      "hint": "Doimiy kuzatuvdagi bemor: har necha kunda kelishi, keyingi nazorat sanasi va qaysi tahlillarni takrorlash kerakligi. Bemorga bir kun oldin eslatma boradi (tashxis yozilmaydi).",
+      "none": "Bu bemor dispanser kuzatuvida emas.",
+      "nextDue": "Keyingi nazorat: {date}",
+      "every": "har {days} kunda",
+      "labs": "Tahlillar",
+      "doctor": "Shifokor: {name}",
+      "done": "Ko'rildi — keyingi muddat",
+      "close": "Kuzatuvni yopish",
+      "enroll": "Dispanser kuzatuviga olish",
+      "group": "Guruh",
+      "interval": "Har necha kunda (7–365)",
+      "intervalHint": "Masalan 30 kun — oyiga bir marta.",
+      "firstDue": "Birinchi nazorat sanasi",
+      "firstDueHint": "Bo'sh qolsa — bugundan shuncha kun keyin.",
+      "labsPlaceholder": "Masalan: koagulogramma (INR)",
+      "note": "Izoh",
+      "enrollSubmit": "Kuzatuvga olish",
+      "enrolled": "Bemor dispanser kuzatuviga olindi.",
+      "followedUp": "Belgilandi. Keyingi nazorat: {date}.",
+      "closed": "Kuzatuv yopildi.",
+      "listTitle": "Dispanser bemorlari",
+      "listHint": "Sizning doimiy kuzatuvdagi bemorlaringiz, eng yaqin muddat birinchi. Muddati o'tganlar qizil.",
+      "listEmpty": "Hali dispanser bemori yo'q",
+      "listEmptyHint": "Bemorni qabul sahifasidagi «Dispanser kuzatuvi» bo'limidan kuzatuvga oling.",
+      "overdueCount": "{count, plural, other {Muddati o'tgan: # ta bemor}}",
+      "colPatient": "Bemor",
+      "colDue": "Keyingi nazorat",
+      "colDoctor": "Shifokor",
+      "groups": {
+        "HYPERTENSION": "Arterial gipertoniya",
+        "HEART_FAILURE": "Yurak yetishmovchiligi",
+        "ATRIAL_FIBRILLATION": "Bo'lmachalar fibrillyatsiyasi",
+        "POST_MI": "Infarktdan keyingi",
+        "ANTICOAGULANT": "Antikoagulyant qabul qiladi",
+        "OTHER": "Boshqa"
+      }
+    },
+    "earnings": {
+      "title": "Daromadim",
+      "subtitle": "Sizning bemorlaringiz uchun kassaga tushgan pul (qaytarilganlari ayirilgan) va klinika belgilagan ulushingiz.",
+      "received": "Tushum",
+      "share": "Ulushingiz ({percent}%)",
+      "byDay": "Kunlar bo'yicha",
+      "day": "Kun",
+      "payments": "To'lovlar",
+      "none": "Bu davrda to'lov yo'q.",
+      "noPercent": "Ulushingiz foizi hali belgilanmagan. Uni klinika rahbari Shifokorlar sahifasida belgilaydi.",
+      "period": {
+        "today": "Bugun",
+        "week": "Shu hafta",
+        "month": "Shu oy"
+      }
     }
   },
   "status": {
@@ -1638,7 +1717,11 @@
     "templateFieldLines": "Maydonlar qatorlarida xato bor: kalit (lotin harf/raqam), nomi, min-max formatini tekshiring.",
     "templateUnknownPlaceholders": "Hisobot matnida maydonlar roʻyxatida yoʻq '{{'kalit'}}' bor.",
     "username": "Login 3–64 belgi: kichik lotin harflari, raqamlar va . _ - (masalan, dr.karimov).",
-    "amount": "Summani to'g'ri kiriting."
+    "amount": "Summani to'g'ri kiriting.",
+    "bufferRange": "Zaxira 0 dan 30 daqiqagacha bo'lishi kerak.",
+    "intervalDays": "Kunlar soni 7 dan 365 gacha bo'lishi kerak.",
+    "httpsUrl": "Havola https:// bilan boshlanishi kerak.",
+    "percentRange": "Foiz 0 dan 100 gacha bo'lishi kerak."
   },
   "errors": {
     "generic": "Nimadir notoʻgʻri ketdi. Qayta urinib koʻring.",
@@ -1759,7 +1842,10 @@
     "noFile": "Fayl tanlanmagan.",
     "tooManyFiles": "Bitta natijaga 20 tagacha fayl.",
     "nextVisitPast": "Keyingi tashrif sanasi bugundan keyin boʻlishi kerak.",
-    "usernameTaken": "Bu login band. Boshqasini tanlang."
+    "usernameTaken": "Bu login band. Boshqasini tanlang.",
+    "schemeNothingChosen": "Sxemadan kamida bitta dorini belgilang.",
+    "dateInPast": "Sana o'tib ketgan.",
+    "dispensaryExists": "Bu bemor shu guruh bo'yicha sizning kuzatuvingizda allaqachon bor."
   },
   "supportScope": {
     "CONFIGURATION": "Sozlamalar",
@@ -2225,7 +2311,8 @@
     "appointmentBooked": "Yozilish tasdigʻi",
     "appointmentReminder": "Qabul eslatmasi",
     "appointmentCancelled": "Bekor qilish xabari",
-    "resultsReady": "Natijalar portalda"
+    "resultsReady": "Natijalar portalda",
+    "dispensaryReminder": "Nazorat tashrifi eslatmasi"
   },
   "notificationStatus": {
     "PENDING": "Kutilmoqda",
@@ -2273,6 +2360,11 @@
       "sms": "{clinic}: bemor portalingizda yangi natijalar bor: {link}",
       "subject": "{clinic}: bemor portalida yangi natijalar",
       "body": "Bemor portalingizda yangi natijalar paydo boʻldi: {link}"
+    },
+    "DISPENSARY_REMINDER": {
+      "sms": "{clinic}: rejali nazorat tashrifingiz vaqti keldi — {date}. Qulay vaqtga yoziling.",
+      "subject": "{clinic}: {date} — nazorat tashrifi",
+      "body": "{clinic}: shifokoringiz belgilagan rejali nazorat tashrifi {date} kuni. Iltimos, qulay vaqtga yoziling: {link}"
     }
   },
   "moduleHint": {
@@ -2514,7 +2606,7 @@
     "printHint": "Bu qabul uchun bemor ma'lumotlari to'ldirilgan hujjatni chop eting.",
     "std": {
       "summaryName": "Qabul xulosasi",
-      "summaryBody": "Bemor: [[patient.fullName]], tug'ilgan sana [[patient.birthDate]], karta [[patient.mrn]]\nQabul sanasi: [[visit.date]]\n\nShikoyatlar:\n[[note.complaints]]\n\nKo'rik:\n[[note.examination]]\n\nXulosa:\n[[note.assessment]]\n\nTashxis:\n[[diagnoses]]\n\nTavsiyalar:\n[[note.plan]]\n\nRetseptlar:\n[[prescriptions]]\n\nDorilarni qabul qilish jadvali:\n[[prescriptions.schedule]]\n\nKeyingi tashrif: [[visit.nextVisit]]\nSavollar uchun: [[doctor.phone]] [[doctor.telegram]]\n\nShifokor: [[doctor.fullName]] ([[doctor.specialty]])\nImzo: ______________",
+      "summaryBody": "Bemor: [[patient.fullName]], tug'ilgan sana [[patient.birthDate]], karta [[patient.mrn]]\nQabul sanasi: [[visit.date]]\n\nShikoyatlar:\n[[note.complaints]]\n\nKo'rik:\n[[note.examination]]\n\nXulosa:\n[[note.assessment]]\n\nTashxis:\n[[diagnoses]]\n\nTavsiyalar:\n[[note.plan]]\n\nRetseptlar:\n[[prescriptions]]\n\nDorilarni qabul qilish jadvali:\n[[prescriptions.schedule]]\n\nTopshirilishi kerak bo'lgan tahlillar:\n[[labs]]\n\nKeyingi tashrif: [[visit.nextVisit]]\nSavollar uchun: [[doctor.phone]] [[doctor.telegram]]\n\nShifokor: [[doctor.fullName]] ([[doctor.specialty]])\nImzo: ______________",
       "referralName": "Yo'llanma",
       "referralBody": "Kimga: ______________________________\n\nBemor [[patient.fullName]], tug'ilgan sana [[patient.birthDate]] (karta [[patient.mrn]]), quyidagi uchun yo'llanadi: ______________________________\n\nTashxis:\n[[diagnoses]]\n\nSabab / topilmalar:\n[[note.assessment]]\n\nYo'llagan shifokor: [[doctor.fullName]] ([[doctor.specialty]]), [[clinic.name]], [[clinic.phone]]\nSana: [[today]]\nImzo: ______________",
       "certificateName": "Ma'lumotnoma",
@@ -2561,7 +2653,8 @@
       "prescriptions_schedule": "Dorilarni qabul qilish jadvali (soatlar boʻyicha)",
       "visit_nextVisit": "Keyingi tashrif sanasi",
       "doctor_phone": "Shifokor telefoni",
-      "doctor_telegram": "Shifokor Telegrami"
+      "doctor_telegram": "Shifokor Telegrami",
+      "labs": "topshirilishi kerak bo'lgan tahlillar (rangli ajratib chiqadi)"
     },
     "qrAlt": "Bemor portali QR kodi",
     "qrHint": "Natijalaringizni telefonda koʻrish uchun QR kodni skanerlang (bemor portali).",
@@ -2573,7 +2666,13 @@
     "fieldsHint": "kalit | Nomi | birlik | min-max | meʼyordagi matn. Masalan: fhr | Yurak urishi, 1 daqiqada | marta | 115-160 |. Meʼyor oraligʻi va meʼyordagi matn ixtiyoriy.",
     "reportText": "Hisobot matni",
     "reportTextHint": "Qiymat oʻrniga '{{'kalit'}}' yozing. Barcha qiymatlari boʻsh qator chop etilmaydi.",
-    "defaultConclusion": "Standart xulosa"
+    "defaultConclusion": "Standart xulosa",
+    "schemes": "Retsept sxemalari",
+    "schemesHint": "Tez-tez yoziladigan davolash sxemalari: qabulda bir bosishda retseptga qo'shiladi. Dozalarni klinika shifokori o'zi yozadi.",
+    "newScheme": "Yangi retsept sxemasi",
+    "schemeLines": "Dorilar (har biri alohida qatorda)",
+    "schemeLinesHint": "Har bir qator: Dori | Xalqaro nomi | Doza | Qabul qilish tartibi | Soatlar | Kun | Ko'rsatma. Birinchi 4 tasi majburiy, qolganini bo'sh qoldirish mumkin.",
+    "schemeLinesPlaceholder": "Bisoprolol 5 mg | bisoprolol | 1 tabletka | kuniga 1 marta | 08:00 | 30 | ovqatdan keyin\nVeroshpiron 25 mg | spironolakton | 1/2 tabletka | kuniga 1 marta | 09:00 | 30"
   },
   "connect": {
     "title": "Qurilmani ulash",

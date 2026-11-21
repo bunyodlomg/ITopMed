@@ -39,6 +39,15 @@ describe("availability engine", () => {
     { weekday: 2, startMinute: 9 * 60, endMinute: 10 * 60, branchId: B, roomId: null },
   ];
 
+  it("leaves a buffer after each slot when the doctor sets one", () => {
+    const at = (m: number) => localToInstant("2026-11-16", m, "Asia/Tashkent");
+    const slots = daySlots({ date: "2026-11-16", timeZone: "Asia/Tashkent", blocks: [{ weekday: 1, startMinute: 9 * 60, endMinute: 10 * 60, branchId: B, roomId: null }], hasException: false, slotMinutes: 15, bufferMinutes: 2 });
+    // 09:00, 09:17, 09:34 (09:51 + 15 = 10:06 would cross the block end); each slot lasts 15 minutes.
+    expect(slots.map((x) => x.start)).toEqual([at(540), at(557), at(574)]);
+    expect(slots.every((x) => x.end.getTime() - x.start.getTime() === 15 * 60_000)).toBe(true);
+    expect(() => daySlots({ date: "2026-11-16", timeZone: "Asia/Tashkent", blocks: [], hasException: false, slotMinutes: 15, bufferMinutes: 31 })).toThrow();
+  });
+
   it("generates aligned slots that never cross the end of a block", () => {
     const s = daySlots({ date: "2026-11-16", timeZone: "Asia/Tashkent", blocks, hasException: false, slotMinutes: 30 });
     expect(s).toHaveLength(6 + 2); // 09:00–12:00 → 6, 14:00–15:10 → 2 (15:00–15:30 would cross)

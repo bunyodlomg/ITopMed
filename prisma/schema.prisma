@@ -153,6 +153,8 @@ model Tenant {
   /// Letterhead on printed documents: small logo (data URL, PNG/JPEG/WebP) and licence line.
   logoDataUrl      String?
   licenseText      String?
+  /// Map link (https) printed as a QR code on the letterhead so patients find the clinic.
+  locationUrl     String?
   /// Setup chosen by the platform when the clinic was created; applied when the owner first opens the clinic.
   setupPreset      Json?
   /// Network (franchise / group of clinics) this clinic belongs to, if any.
@@ -229,6 +231,7 @@ model Tenant {
   servicePackages      ServicePackage[]
   servicePackageItems  ServicePackageItem[]
   displayScreens       DisplayScreen[]
+  dispensaryPlans      DispensaryPlan[]
 
   @@index([status])
   @@index([networkId])
@@ -679,6 +682,10 @@ model DoctorProfile {
   departmentId         String?   @db.Uuid
   licenseNumber        String?
   defaultSlotMinutes   Int       @default(20)
+  /// Minutes kept free after each appointment (0–30) so the queue does not drift; slots step by slot + buffer.
+  bufferMinutes        Int       @default(0)
+  /// Doctor's share (%) of the money received for their patients; null = not set.
+  commissionPercent    Int?
   acceptsOnlineBooking Boolean   @default(false)
   /// Room / cabinet named when the patient is called (e.g. "3-xona").
   cabinet              String?
@@ -689,15 +696,16 @@ model DoctorProfile {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  membership   Membership          @relation(fields: [membershipId], references: [id], onDelete: Restrict)
-  department   Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  schedules    WorkSchedule[]
-  exceptions   ScheduleException[]
-  services     DoctorService[]
-  appointments Appointment[]
-  encounters   Encounter[]
-  labOrders    LabOrder[]
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  membership      Membership          @relation(fields: [membershipId], references: [id], onDelete: Restrict)
+  department      Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  schedules       WorkSchedule[]
+  exceptions      ScheduleException[]
+  services        DoctorService[]
+  appointments    Appointment[]
+  encounters      Encounter[]
+  labOrders       LabOrder[]
+  dispensaryPlans DispensaryPlan[]
 
   @@index([tenantId])
 }
@@ -907,6 +915,7 @@ model Patient {
   dispenses         StockMovement[]
   notifications     Notification[]
   dentalChart       DentalChartEntry[]
+  dispensaryPlans   DispensaryPlan[]
 
   @@unique([tenantId, mrn])
   @@index([tenantId, lastName, firstName])
@@ -1973,6 +1982,8 @@ enum NotificationKind {
   APPOINTMENT_REMINDER
   APPOINTMENT_CANCELLED
   RESULTS_READY
+  /// The day before a dispensary patient's follow-up is due (no clinical content in the message).
+  DISPENSARY_REMINDER
 }
 
 enum NotificationStatus {
@@ -2140,6 +2151,9 @@ model Prescription {
   prescribedById  String             @db.Uuid
   /// Medicine name (international non-proprietary name or trade name) and strength, e.g. "Bisoprolol 5 mg".
   drug            String
+  /// International non-proprietary name (INN), printed in brackets after a trade name so the
+  /// pharmacy can dispense an equivalent, e.g. drug "Trombonet 75 mg", inn "klopidogrel".
+  inn             String?
   /// e.g. "1 tablet"
   dose            String
   /// e.g. "once daily in the morning"
@@ -2223,6 +2237,8 @@ enum TemplateKind {
   DOCUMENT
   /// A diagnostic report (UZI, echo, ECG…): fields with the clinic's normal ranges + report text.
   DIAGNOSTIC
+  /// A ready-made prescription scheme: the doctor's medicines for a typical case, applied to a visit in one step.
+  PRESCRIPTION
 }
 
 /// Templates the clinic creates itself. Generic text only — never patient data.
@@ -2309,4 +2325,45 @@ model BillingSettings {
   suspendAfterDays Int      @default(15)
   autoSuspend      Boolean  @default(true)
   updatedAt        DateTime @default(now()) @updatedAt
+}
+
+/// Long-term follow-up groups ("dispanser kuzatuvi") the doctor puts a patient in.
+enum DispensaryGroup {
+  HYPERTENSION
+  HEART_FAILURE
+  ATRIAL_FIBRILLATION
+  POST_MI
+  ANTICOAGULANT
+  OTHER
+}
+
+/// A patient under the doctor's long-term follow-up: how often to come, when next, which tests.
+model DispensaryPlan {
+  id              String          @id @db.Uuid
+  tenantId        String          @db.Uuid
+  patientId       String          @db.Uuid
+  /// Responsible doctor.
+  doctorProfileId String          @db.Uuid
+  group           DispensaryGroup
+  /// Follow-up every N days (7–365).
+  intervalDays    Int
+  /// Local date of the next follow-up visit.
+  nextDueDate     DateTime        @db.Date
+  /// Tests to repeat, in the doctor's words (e.g. "Koagulogramma (INR)").
+  labs            String?
+  note            String?
+  createdById     String          @db.Uuid
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  /// Last time the doctor marked a follow-up visit done.
+  lastSeenAt      DateTime?
+  closedAt        DateTime?
+  closedById      String?         @db.Uuid
+
+  tenant  Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  patient Patient       @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  doctor  DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, doctorProfileId, nextDueDate])
+  @@index([tenantId, patientId])
 }

@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { TabletFractionPicture } from "@/components/tablet-fraction";
+import { rxDrugLabel } from "@/lib/rx";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { formatBirthDate, patientName } from "@/components/patients";
 import { PrintButton } from "@/components/print-button";
@@ -23,6 +25,8 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
   });
   const e = data.encounter;
   const items = e.prescriptions.filter((p) => p.status === "ACTIVE");
+  // Lab tests ordered in this visit and not yet taken: highlighted so the patient does not skip them.
+  const labsToTake = [...new Set(data.labOrders.filter((o) => o.status === "ORDERED").flatMap((o) => o.items.map((i) => i.name)))];
   if (items.length === 0) notFound();
   const [t, format] = await Promise.all([getTranslations(), getFormatter()]);
   const info = await withAppContext({ tenantId: ctx.tenant.id, userId: ctx.principal.user.id }, async (tx) => {
@@ -64,13 +68,40 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
           {items.map((p, i) => (
             <li key={p.id} className="border-t border-border pt-3">
               <p className="font-semibold">
-                {i + 1}. Rp.: {p.drug}
+                {i + 1}. Rp.: {rxDrugLabel(p)}
               </p>
-              <p>{[p.dose, p.frequency, p.route, p.durationDays ? t("clinic.rx.days", { count: p.durationDays }) : null].filter(Boolean).join(" · ")}</p>
+              <p>
+                <TabletFractionPicture dose={p.dose} />{" "}
+                {[p.dose, p.frequency, p.route, p.durationDays ? t("clinic.rx.days", { count: p.durationDays }) : null].filter(Boolean).join(" · ")}
+              </p>
+              {p.times ? (
+                // Intake hours stand out in red, the way doctors mark them by hand, so patients do not miss a dose.
+                <p className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-text-2">{t("clinic.rx.intakeTimes")}:</span>
+                  {p.times.split(",").map((time) => (
+                    <span key={time} data-intake-time className="rounded-[6px] border-2 border-danger px-1.5 font-bold text-danger tabular-nums [print-color-adjust:exact] [-webkit-print-color-adjust:exact]">
+                      {time.trim()}
+                    </span>
+                  ))}
+                </p>
+              ) : null}
               {p.instructions ? <p className="text-text-2">{p.instructions}</p> : null}
             </li>
           ))}
         </ol>
+
+        {labsToTake.length > 0 ? (
+          <section className="space-y-1 border-t border-border pt-3">
+            <p className="font-semibold">{t("clinic.rx.labsToTake")}</p>
+            <ul className="space-y-1">
+              {labsToTake.map((name) => (
+                <li key={name} data-highlight className="border-l-4 border-warning bg-warning-soft px-2 py-0.5 font-semibold [print-color-adjust:exact] [-webkit-print-color-adjust:exact]">
+                  {name}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <footer className="space-y-6 border-t border-border pt-4">
           <p>

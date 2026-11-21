@@ -1,4 +1,5 @@
 import "server-only";
+import QRCode from "qrcode";
 import { z } from "zod";
 import type { ClinicContext } from "../auth/clinic-auth";
 import type { RequestMeta } from "../auth/platform-auth";
@@ -13,20 +14,37 @@ export interface Letterhead {
   taxId: string | null;
   logo: string | null;
   license: string | null;
+  /** Map link and its QR code (data URL) for the letterhead. */
+  locationUrl: string | null;
+  locationQr: string | null;
 }
 
 /** The clinic's letterhead for printed documents, receipts and tickets (no clinical data). */
 export async function getLetterhead(ctx: ClinicContext): Promise<Letterhead> {
   const t = await inClinic(ctx, (tx) =>
-    tx.tenant.findUniqueOrThrow({ where: { id: ctx.tenant.id }, select: { name: true, legalName: true, address: true, contactPhone: true, taxId: true, logoDataUrl: true, licenseText: true } }),
+    tx.tenant.findUniqueOrThrow({ where: { id: ctx.tenant.id }, select: { name: true, legalName: true, address: true, contactPhone: true, taxId: true, logoDataUrl: true, licenseText: true, locationUrl: true } }),
   );
-  return { name: t.name, legalName: t.legalName, address: t.address, phone: t.contactPhone, taxId: t.taxId, logo: t.logoDataUrl, license: t.licenseText };
+  const locationQr = t.locationUrl ? await QRCode.toDataURL(t.locationUrl, { margin: 1, width: 120, errorCorrectionLevel: "M" }) : null;
+  return { name: t.name, legalName: t.legalName, address: t.address, phone: t.contactPhone, taxId: t.taxId, logo: t.logoDataUrl, license: t.licenseText, locationUrl: t.locationUrl, locationQr };
 }
 
 export const LOGO_MAX_BYTES = 300 * 1024;
 const LOGO_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
-const letterheadSchema = z.object({ licenseText: z.string().trim().max(300, "validation.tooLong").default(""), removeLogo: z.preprocess((v) => v === "on" || v === true, z.boolean()).default(false) });
+const locationUrl = z
+  .string()
+  .trim()
+  .max(500, "validation.tooLong")
+  .refine((v) => {
+    if (v === "") return true;
+    try {
+      return new URL(v).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, "validation.httpsUrl")
+  .default("");
+const letterheadSchema = z.object({ licenseText: z.string().trim().max(300, "validation.tooLong").default(""), locationUrl, removeLogo: z.preprocess((v) => v === "on" || v === true, z.boolean()).default(false) });
 
 /** Logo is checked by its real bytes (PNG/JPEG/WebP signature), not only by the name or the browser's claim. */
 function sniff(b: Buffer): string | null {
@@ -36,9 +54,9 @@ function sniff(b: Buffer): string | null {
   return null;
 }
 
-export async function saveLetterhead(ctx: ClinicContext, raw: { licenseText?: unknown; removeLogo?: unknown; logo?: File | null }, meta: RequestMeta) {
+export async function saveLetterhead(ctx: ClinicContext, raw: { licenseText?: unknown; locationUrl?: unknown; removeLogo?: unknown; logo?: File | null }, meta: RequestMeta) {
   requirePermission(ctx, "clinic.settings.manage");
-  const input = letterheadSchema.parse({ licenseText: raw.licenseText ?? "", removeLogo: raw.removeLogo });
+  const input = letterheadSchema.parse({ licenseText: raw.licenseText ?? "", locationUrl: raw.locationUrl ?? "", removeLogo: raw.removeLogo });
   let logo: string | null | undefined; // undefined = keep
   if (input.removeLogo) logo = null;
   else if (raw.logo && raw.logo.size > 0) {
@@ -49,7 +67,7 @@ export async function saveLetterhead(ctx: ClinicContext, raw: { licenseText?: un
     logo = `data:${type};base64,${bytes.toString("base64")}`;
   }
   await inClinic(ctx, async (tx) => {
-    await tx.tenant.update({ where: { id: ctx.tenant.id }, data: { licenseText: input.licenseText || null, ...(logo !== undefined ? { logoDataUrl: logo } : {}) } });
+    await tx.tenant.update({ where: { id: ctx.tenant.id }, data: { licenseText: input.licenseText || null, locationUrl: input.locationUrl || null, ...(logo !== undefined ? { logoDataUrl: logo } : {}) } });
     await auditClinic(tx, ctx, meta, { action: "clinic.letterhead_updated", entityType: "Tenant", entityId: ctx.tenant.id, metadata: { logo: logo === undefined ? "kept" : logo === null ? "removed" : "uploaded" } });
   });
 }

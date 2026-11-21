@@ -8,8 +8,9 @@ import { canUseBranch, listOperationalBranches } from "@/server/clinic/context";
 import { EXCEPTION_KINDS, doctorSlots, getDoctorDetail, listDoctors } from "@/server/clinic/doctors";
 import { listDepartments, listRooms, listServices } from "@/server/clinic/resources";
 import { SPECIALTIES } from "@/server/scheduling/specialties";
+import { canSetCommission } from "@/server/billing/earnings";
 import { isLocalDate, todayIn } from "@/server/scheduling/time";
-import { addBlockAction, addExceptionAction, doctorProfileAction, doctorServicesAction, removeScheduleItemAction } from "../../../../workspace-actions";
+import { addBlockAction, addExceptionAction, commissionAction, doctorProfileAction, doctorServicesAction, removeScheduleItemAction } from "../../../../workspace-actions";
 
 const choice =
   "flex min-h-11 cursor-pointer items-center gap-3 rounded-[var(--radius-control)] border border-border bg-surface-2 px-3 text-[14px] has-[:checked]:border-accent has-[:checked]:bg-accent-soft";
@@ -62,6 +63,7 @@ export default async function DoctorPage({ params, searchParams }: { params: Pro
               <SelectField name="departmentId" label={t("clinic.doctors.department")} defaultValue={p?.departmentId ?? ""} options={[{ value: "", label: t("clinic.services.noDepartment") }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
               <TextField name="licenseNumber" label={t("clinic.doctors.license")} defaultValue={p?.licenseNumber} optionalLabel={t("common.optional")} />
               <TextField name="defaultSlotMinutes" label={t("clinic.doctors.slot")} hint={t("clinic.doctors.slotHint")} inputMode="numeric" defaultValue={String(p?.defaultSlotMinutes ?? 20)} />
+              <TextField name="bufferMinutes" label={t("clinic.doctors.buffer")} hint={t("clinic.doctors.bufferHint")} inputMode="numeric" defaultValue={String(p?.bufferMinutes ?? 0)} />
               <TextField name="contactPhone" type="tel" label={t("clinic.doctors.contactPhone")} hint={t("clinic.doctors.contactHint")} defaultValue={p?.contactPhone ?? ""} optionalLabel={t("common.optional")} />
               <TextField name="contactTelegram" label={t("clinic.doctors.contactTelegram")} hint={t("clinic.doctors.contactTelegramHint")} defaultValue={p?.contactTelegram ?? ""} optionalLabel={t("common.optional")} />
               <label className={`${choice} sm:col-span-2`}>
@@ -77,6 +79,21 @@ export default async function DoctorPage({ params, searchParams }: { params: Pro
           </Form>
         </CardBody>
       </Card>
+
+      {p && canSetCommission(ctx) ? (
+        <Card>
+          <CardHeader title={t("clinic.doctors.commission")} description={t("clinic.doctors.commissionHint")} />
+          <CardBody>
+            <Form action={commissionAction} className="flex flex-wrap items-end gap-3 space-y-0">
+              {hidden}
+              <div className="w-40">
+                <TextField name="commissionPercent" label={t("clinic.doctors.commissionPercent")} inputMode="numeric" defaultValue={p.commissionPercent === null ? "" : String(p.commissionPercent)} />
+              </div>
+              <SubmitButton variant="secondary">{t("common.save")}</SubmitButton>
+            </Form>
+          </CardBody>
+        </Card>
+      ) : null}
 
       {p && detail ? (
         <>

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { registerWalkIn } from "@/server/appointments/appointments";
 import { addStaffMember, listBranches, listStaff } from "@/server/clinic/admin";
 import { saveDoctorProfile } from "@/server/clinic/doctors";
+import { createService } from "@/server/clinic/resources";
+import { cancelLabOrder, createLabOrder } from "@/server/lab/lab";
 import { addStandardTemplates, archiveTemplate, listTemplates, parseNoteContent, renderDocument, saveTemplate } from "@/server/clinic/templates";
 import { platformDb } from "@/server/db";
 import { applyNoteTemplate, documentForVisit } from "@/server/emr/documents";
@@ -25,6 +27,7 @@ describe("clinic templates", () => {
     const summary = all.find((x) => x.name === "Qabul xulosasi")!; // clinic language uz-Latn
     expect(summary.kind).toBe("DOCUMENT");
     expect(summary.content).toContain("{{patient.fullName}}"); // [[…]] in the catalog became {{…}}
+    expect(summary.content).toContain("{{labs}}"); // lab tests still to take, printed highlighted
     expect(all.find((x) => x.kind === "NOTE" && x.specialty === "cardiology")).toBeTruthy();
 
     const doctor = await staff(a, ["doctor"]);
@@ -43,6 +46,8 @@ describe("clinic templates", () => {
     expect(renderDocument("{{patient.fullName}} · {{ today }} · {{nope}}", { "patient.fullName": "Sintetik Bemor", today: "14.11.2026" })).toBe("Sintetik Bemor · 14.11.2026 · {{nope}}");
     // A line whose placeholders are all empty disappears; other lines stay.
     expect(renderDocument("Tashxis: {{diagnoses.primary}}\nAsorati: {{diagnoses.complications}}\nTavsiya:", { "diagnoses.primary": "I10" })).toBe("Tashxis: I10\nTavsiya:");
+    // Lab tests to take keep their "!! " marker line by line (the printed text highlights them).
+    expect(renderDocument("Tahlillar:\n{{labs}}", { labs: "!! Qon tahlili\n!! Lipid spektri" })).toBe("Tahlillar:\n!! Qon tahlili\n!! Lipid spektri");
     expect(parseNoteContent("not json")).toEqual({ complaints: "", history: "", examination: "", assessment: "", plan: "" });
   });
 
@@ -69,7 +74,13 @@ describe("clinic templates", () => {
     await expect(applyNoteTemplate(doctorCtx, enc, docT, META)).rejects.toThrow("errors.notFound"); // wrong kind
 
     await addDiagnosis(doctorCtx, enc, { icd10Code: "I10", description: "Essential hypertension (synthetic)", kind: "PRIMARY" }, META);
+    // Lab tests ordered in this visit and not yet taken are listed for the paper; cancelled ones are not.
+    const cbc = await createService(a.ctx, { code: "TCBC", name: "Synthetic blood count", kind: "LAB_TEST", durationMinutes: 10, price: "1000", currency: "UZS" }, META);
+    const lipids = await createService(a.ctx, { code: "TLIP", name: "Synthetic lipid panel", kind: "LAB_TEST", durationMinutes: 10, price: "1000", currency: "UZS" }, META);
+    await createLabOrder(doctorCtx, enc, { serviceIds: [cbc] }, META);
+    await cancelLabOrder(doctorCtx, (await createLabOrder(doctorCtx, enc, { serviceIds: [lipids] }, META)).id, META);
     const d = await documentForVisit(doctorCtx, enc, docT, META);
+    expect(d.labsToTake).toEqual(["Synthetic blood count"]);
     expect(d.encounter.diagnoses[0]!.icd10Code).toBe("I10");
     expect(d.note?.examination).toBe("Exam from template");
 

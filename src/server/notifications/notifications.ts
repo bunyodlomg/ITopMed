@@ -13,6 +13,7 @@ import { logger } from "../logger";
 import { uuidv7 } from "../security/crypto";
 import { sendTelegram, telegramChatFor, telegramReady } from "./telegram";
 import { sendSms, smsEnabled } from "./sms";
+import { addDays, localToInstant, type LocalDate } from "../scheduling/time";
 
 /**
  * Patient notifications through a transactional outbox.
@@ -30,7 +31,7 @@ import { sendSms, smsEnabled } from "./sms";
  *    EMAIL rows in the outbox are skipped.
  */
 
-export const NOTIFICATION_KINDS = ["APPOINTMENT_BOOKED", "APPOINTMENT_REMINDER", "APPOINTMENT_CANCELLED", "RESULTS_READY"] as const satisfies readonly NotificationKind[];
+export const NOTIFICATION_KINDS = ["APPOINTMENT_BOOKED", "APPOINTMENT_REMINDER", "APPOINTMENT_CANCELLED", "RESULTS_READY", "DISPENSARY_REMINDER"] as const satisfies readonly NotificationKind[];
 const CONSENT_FOR: Record<NotificationChannel, ConsentPurpose> = { SMS: "SMS_REMINDERS", EMAIL: "EMAIL_NOTIFICATIONS", TELEGRAM: "TELEGRAM_NOTIFICATIONS" };
 const MAX_ATTEMPTS = 3;
 const RETRY_MINUTES = [5, 30, 120];
@@ -55,6 +56,8 @@ function enabled(s: Settings, kind: NotificationKind) {
     APPOINTMENT_REMINDER: s.appointmentReminder,
     APPOINTMENT_CANCELLED: s.appointmentCancelled,
     RESULTS_READY: s.resultsReady,
+    // Follow-up reminders are reminders: the same clinic switch turns them on or off.
+    DISPENSARY_REMINDER: s.appointmentReminder,
   }[kind];
 }
 
@@ -73,7 +76,7 @@ async function reachableChannels(tx: Tx, tenantId: string, patientId: string): P
   return out;
 }
 
-async function enqueue(tx: Tx, tenantId: string, e: { patientId: string; kind: NotificationKind; subjectId: string; dueAt: Date }) {
+async function enqueue(tx: Tx, tenantId: string, e: { patientId: string; kind: NotificationKind; subjectId: string; dueAt: Date; cycle?: string }) {
   const s = await settingsIn(tx, tenantId);
   if (!enabled(s, e.kind)) return 0;
   if (e.kind === "RESULTS_READY") {
@@ -93,7 +96,8 @@ async function enqueue(tx: Tx, tenantId: string, e: { patientId: string; kind: N
       kind: e.kind,
       subjectId: e.subjectId,
       dueAt: e.dueAt,
-      dedupeKey: `${e.kind}:${e.subjectId}:${c.channel}`,
+      // A recurring subject (a follow-up plan) gets one message per cycle, e.g. per due date.
+      dedupeKey: e.cycle ? `${e.kind}:${e.subjectId}:${e.cycle}:${c.channel}` : `${e.kind}:${e.subjectId}:${c.channel}`,
     })),
     skipDuplicates: true,
   });
@@ -132,6 +136,20 @@ export async function notifyAppointmentCancelled(tx: Tx, tenantId: string, a: { 
 
 export async function notifyResultsReady(tx: Tx, tenantId: string, o: { id: string; patientId: string }) {
   await enqueue(tx, tenantId, { patientId: o.patientId, kind: "RESULTS_READY", subjectId: o.id, dueAt: new Date() });
+}
+
+/**
+ * Follow-up ("dispanser") reminder at 10:00 the day before the due date (or now,
+ * if that moment has passed but the due day has not begun). Earlier pending
+ * reminders of the plan are dropped, so only the current due date is announced.
+ */
+export async function notifyDispensaryDue(tx: Tx, tenantId: string, plan: { id: string; patientId: string; nextDueDate: LocalDate }, timeZone: string) {
+  await tx.notification.updateMany({ where: { tenantId, subjectId: plan.id, kind: "DISPENSARY_REMINDER", status: "PENDING" }, data: { status: "SKIPPED", lastError: "rescheduled" } });
+  const now = new Date();
+  const dayStart = localToInstant(plan.nextDueDate, 0, timeZone);
+  if (dayStart <= now) return;
+  const remindAt = localToInstant(addDays(plan.nextDueDate, -1), 10 * 60, timeZone);
+  await enqueue(tx, tenantId, { patientId: plan.patientId, kind: "DISPENSARY_REMINDER", subjectId: plan.id, dueAt: remindAt > now ? remindAt : now, cycle: plan.nextDueDate });
 }
 
 // ───────────── Rendering ─────────────
@@ -204,7 +222,7 @@ async function dispatchOne(tx: Tx, tenantId: string, id: string, now: Date): Pro
   };
   if (n.channel === "EMAIL") return skip("email_removed");
 
-  const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { name: true, slug: true, timezone: true, defaultLocale: true, status: true } });
+  const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { name: true, slug: true, timezone: true, defaultLocale: true, status: true, contactPhone: true } });
   if (!tenant || (tenant.status !== "ACTIVE" && tenant.status !== "TRIAL")) return skip("clinic_inactive");
   // Local-only clinic: nothing leaves this computer.
   if (await isLocalOnly(tx, tenantId)) return skip("local_mode");
@@ -220,7 +238,14 @@ async function dispatchOne(tx: Tx, tenantId: string, id: string, now: Date): Pro
 
   let startsAt: Date | undefined;
   let branch: { name: string; phone: string | null } | undefined;
-  if (n.kind !== "RESULTS_READY") {
+  if (n.kind === "DISPENSARY_REMINDER") {
+    const plan = n.subjectId ? await tx.dispensaryPlan.findUnique({ where: { id: n.subjectId }, select: { closedAt: true, nextDueDate: true } }) : null;
+    if (!plan) return skip("subject_missing");
+    const due = plan.nextDueDate.toISOString().slice(0, 10);
+    if (plan.closedAt || localToInstant(addDays(due, 1), 0, tenant.timezone) <= now) return skip("stale");
+    startsAt = localToInstant(due, 9 * 60, tenant.timezone); // only its date is shown
+    branch = { name: "", phone: tenant.contactPhone };
+  } else if (n.kind !== "RESULTS_READY") {
     const a = n.subjectId ? await tx.appointment.findUnique({ where: { id: n.subjectId }, select: { status: true, startsAt: true, branch: { select: { name: true, phone: true } } } }) : null;
     if (!a) return skip("subject_missing");
     if (n.kind === "APPOINTMENT_CANCELLED" ? a.status !== "CANCELLED" : a.status !== "BOOKED") return skip("stale");

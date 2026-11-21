@@ -10,8 +10,11 @@ import { getClinicPolicy, updateClinicPolicy } from "@/server/clinic/policy";
 import { completeSetup } from "@/server/clinic/practice";
 import { createService } from "@/server/clinic/resources";
 import { platformDb } from "@/server/db";
-import { addPrescription, allergyMatches, cancelPrescription } from "@/server/emr/prescriptions";
+import { addPrescription, allergyMatches, applyPrescriptionScheme, cancelPrescription } from "@/server/emr/prescriptions";
+import { saveTemplate } from "@/server/clinic/templates";
+import { parseSchemeLines, schemeLines } from "@/lib/rx-scheme";
 import { addAllergy, getEncounter, startVisit } from "@/server/emr/record";
+import { rxDrugLabel } from "@/lib/rx";
 import { registerPatient } from "@/server/patients/patients";
 import { addDays, isoWeekday, localToInstant, todayIn } from "@/server/scheduling/time";
 import { META, PASSWORD, clinicContext, clinicWithOwner, platformActor, uniq } from "./helpers/fixtures";
@@ -124,6 +127,67 @@ describe("prescriptions", () => {
     await expect(owner.query(`DELETE FROM "Prescription" WHERE id = $1`, [id])).rejects.toThrow(/cannot be deleted/);
     await owner.end();
     await expect(platformDb().$queryRawUnsafe(`SELECT count(*) FROM "Prescription"`)).rejects.toThrow(/permission denied/);
+  });
+
+  it("keeps the international name (INN) next to the trade name and screens allergies by it", async () => {
+    const s = await setup();
+    const appt = await registerWalkIn(s.reception.ctx, { patientId: s.patientId, doctorProfileId: s.profileId, branchId: s.branch.id }, META);
+    const enc = await startVisit(s.doctorCtx, appt, META);
+    await addAllergy(s.doctorCtx, s.patientId, { substance: "Klopidogrel", severity: "MODERATE" }, META);
+
+    const rx = { drug: "Veroshpiron 25 mg", inn: "spironolakton", dose: "1 tablet", frequency: "once daily" };
+    await addPrescription(s.doctorCtx, enc, rx, META);
+    // The brand name alone does not reveal the allergy; the INN does.
+    await expect(addPrescription(s.doctorCtx, enc, { ...rx, drug: "Trombonet 75 mg", inn: "klopidogrel" }, META)).rejects.toThrow("errors.allergyConflict");
+    await addPrescription(s.doctorCtx, enc, { ...rx, drug: "Bisoprolol 5 mg", inn: "" }, META);
+
+    const view = await getEncounter(s.doctorCtx, enc, META);
+    expect(view.encounter.prescriptions.map((p) => rxDrugLabel(p))).toEqual(["Veroshpiron 25 mg (spironolakton)", "Bisoprolol 5 mg"]);
+  });
+
+  it("ready-made scheme: the doctor's own lines, ticked lines added in one step, allergy screen on each", async () => {
+    const s = await setup();
+    const appt = await registerWalkIn(s.reception.ctx, { patientId: s.patientId, doctorProfileId: s.profileId, branchId: s.branch.id }, META);
+    const enc = await startVisit(s.doctorCtx, appt, META);
+    const text = ["Bisoprolol 5 mg | bisoprolol | 1 tabletka | kuniga 1 marta | 08:00 | 30 | ovqatdan keyin", "Trombonet 75 mg | klopidogrel | 1 tabletka | kuniga 1 marta | 20:00", "Veroshpiron 25 mg | spironolakton | 1/2 tabletka | kuniga 1 marta"].join("\n");
+    // Only administrators write schemes; every line must be a valid prescription.
+    await expect(saveTemplate(s.doctorCtx, null, { kind: "PRESCRIPTION", name: "Synthetic AG scheme", schemeText: text }, META)).rejects.toThrow("errors.forbidden");
+    await expect(saveTemplate(s.a.ctx, null, { kind: "PRESCRIPTION", name: "Broken", schemeText: "Bisoprolol 5 mg | | 1 tabletka" }, META)).rejects.toThrow();
+    await expect(saveTemplate(s.a.ctx, null, { kind: "PRESCRIPTION", name: "Bad time", schemeText: "Bisoprolol | | 1 | daily | 25:00" }, META)).rejects.toThrow();
+    const scheme = await saveTemplate(s.a.ctx, null, { kind: "PRESCRIPTION", name: "Synthetic AG scheme", schemeText: text }, META);
+
+    await expect(applyPrescriptionScheme(s.doctorCtx, enc, scheme, { lines: [] }, META)).rejects.toThrow("errors.schemeNothingChosen");
+    await expect(applyPrescriptionScheme(s.reception.ctx, enc, scheme, { lines: [0] }, META)).rejects.toThrow("errors.forbidden");
+    await expect(applyPrescriptionScheme(s.doctorCtx, enc, scheme, { lines: [7] }, META)).rejects.toThrow("errors.invalidInput");
+
+    await addAllergy(s.doctorCtx, s.patientId, { substance: "Klopidogrel", severity: "MODERATE" }, META);
+    // All or nothing: the allergy on line 2 blocks the whole step until confirmed.
+    await expect(applyPrescriptionScheme(s.doctorCtx, enc, scheme, { lines: [0, 1] }, META)).rejects.toThrow("errors.allergyConflict");
+    expect((await getEncounter(s.doctorCtx, enc, META)).encounter.prescriptions).toHaveLength(0);
+
+    expect(await applyPrescriptionScheme(s.doctorCtx, enc, scheme, { lines: ["2", "0"] }, META)).toEqual({ count: 2, allergyOverride: false });
+    const rx = (await getEncounter(s.doctorCtx, enc, META)).encounter.prescriptions;
+    expect(rx.map((p) => [rxDrugLabel(p), p.dose, p.times, p.durationDays, p.instructions])).toEqual([
+      ["Bisoprolol 5 mg", "1 tabletka", "08:00", 30, "ovqatdan keyin"], // the name already is the INN
+      ["Veroshpiron 25 mg (spironolakton)", "1/2 tabletka", null, null, null],
+    ]);
+    const forced = await applyPrescriptionScheme(s.doctorCtx, enc, scheme, { lines: [1], allergyOverride: true }, META);
+    expect(forced.allergyOverride).toBe(true);
+    expect((await getEncounter(s.doctorCtx, enc, META)).encounter.prescriptions.find((p) => p.drug.startsWith("Trombonet"))?.allergyOverride).toBe(true);
+  });
+
+  it("scheme lines round-trip and report the lines that miss a required column", () => {
+    const { items, badLines } = parseSchemeLines("Aspirin 100 mg | | 1 tabletka | kuniga 1 marta\n\nonly a name\nA | b | c | d | e | f | g | h");
+    expect(items).toEqual([{ drug: "Aspirin 100 mg", dose: "1 tabletka", frequency: "kuniga 1 marta" }]);
+    expect(badLines).toEqual([3, 4]);
+    expect(schemeLines({ items })).toBe("Aspirin 100 mg |  | 1 tabletka | kuniga 1 marta");
+  });
+
+  it("prints the INN in brackets unless the name already contains it", () => {
+    expect(rxDrugLabel({ drug: "Roxera 10 mg", inn: "rozuvastatin" })).toBe("Roxera 10 mg (rozuvastatin)");
+    expect(rxDrugLabel({ drug: "Rozuvastatin 10 mg", inn: "rozuvastatin" })).toBe("Rozuvastatin 10 mg");
+    expect(rxDrugLabel({ drug: "Aspirin 100 mg", inn: null })).toBe("Aspirin 100 mg");
+    expect(rxDrugLabel({ drug: "Aspirin 100 mg", inn: "  " })).toBe("Aspirin 100 mg");
   });
 
   it("allergy screen matches the substance or a word of it, case-insensitively", () => {

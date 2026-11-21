@@ -90,6 +90,7 @@ export async function saveTemplateAction(_: FormState, fd: FormData): Promise<Fo
         body: s("body"),
         note: kind === "NOTE" ? { complaints: s("complaints"), history: s("history"), examination: s("examination"), assessment: s("assessment"), plan: s("plan") } : undefined,
         ...(kind === "DIAGNOSTIC" ? { study: s("study"), fieldsText: s("fieldsText"), conclusion: s("conclusion") } : {}),
+        ...(kind === "PRESCRIPTION" ? { schemeText: s("schemeText") } : {}),
       },
       await requestMeta(),
     );

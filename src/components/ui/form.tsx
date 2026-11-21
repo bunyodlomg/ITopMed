@@ -93,8 +93,11 @@ export function TextField({
   inputMode,
   required,
   autoFocus,
+  list,
   ...field
 }: FieldProps & {
+  /** id of a <datalist> with suggested values (the field stays free text). */
+  list?: string;
   type?: string;
   defaultValue?: string | null;
   autoComplete?: string;
@@ -118,6 +121,7 @@ export function TextField({
         inputMode={inputMode}
         required={required}
         autoFocus={autoFocus}
+        list={list}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : field.hint ? `${id}-hint` : undefined}
         className={cx(inputClass, "h-11")}

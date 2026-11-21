@@ -81,7 +81,7 @@ export async function letterheadAction(_: FormState, fd: FormData): Promise<Form
   const { slug, ctx } = await clinicFrom(fd);
   const logo = fd.get("logo");
   try {
-    await saveLetterhead(ctx, { licenseText: fd.get("licenseText"), removeLogo: fd.get("removeLogo"), logo: logo instanceof File ? logo : null }, await requestMeta());
+    await saveLetterhead(ctx, { licenseText: fd.get("licenseText"), locationUrl: fd.get("locationUrl"), removeLogo: fd.get("removeLogo"), logo: logo instanceof File ? logo : null }, await requestMeta());
   } catch (e) {
     return toFormState(e, fd);
   }

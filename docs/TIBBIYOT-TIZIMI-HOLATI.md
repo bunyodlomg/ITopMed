@@ -157,17 +157,64 @@ Qo'shimcha:
   Blankadan klinika rekvizitlari ham olindi (litsenziya №102180, manzil, "DOCTORLAR NFF" XK) — faqat bo'sh maydonlarga.
 - ✅ Tana yuzasi (BSA, Mosteller) — BMI bilan birga avtomatik.
 
+## Shifokorning ovozli xabarlari bo'yicha (21.11.2026)
+- ✅ **Dorining xalqaro nomi (tarkibi) qavs ichida.**
+  - Retseptda alohida maydon bor: "Xalqaro nomi (tarkibi)".
+  - Ekranda, chop etilgan retseptda, qabul xulosasida va Excel eksportda shunday chiqadi: «Trombonet 75 mg (klopidogrel)». Dorixonada shu brend bo'lmasa, bemor tarkibi bir xil dorini oladi.
+  - Allergiya tekshiruvi xalqaro nom bo'yicha ham ishlaydi: klopidogrelga allergiyasi bor bemorga Trombonet yozilsa, ogohlantirish chiqadi.
+- ✅ **Tabletka bo'lagi rasm va rang bilan.**
+  - Dozada 1/2, 1/4, 3/4, 1/8, 1 1/2, ½, "yarim" yoki "chorak" yozilsa, retseptda tabletka doirasi chiziladi va ichiladigan qismi bo'yaladi.
+  - Ranglar: yarim — qizil, chorak — sariq, uch chorak — ko'k, sakkizdan bir — yashil.
+  - Doza maydonida tayyor variantlar bor.
+- ✅ **Tayyor retsept sxemalari.**
+  - Qayerda yoziladi: Shablonlar → «Retsept sxemalari».
+  - Har bir dori alohida qatorda: `Dori | Xalqaro nomi | Doza | Tartib | Soatlar | Kun | Ko'rsatma`.
+  - Qabulda sxema ochiladi, keraksiz dorilar belgisi olib tashlanadi, qolganlari bitta tugma bilan retseptga qo'shiladi.
+  - Har bir dori allergiyaga tekshiriladi. Biror dori allergiyaga to'g'ri kelsa, shifokor tasdiqlamaguncha birorta ham dori qo'shilmaydi.
+  - ITop Med o'zidan tayyor sxema yoki doza qo'ymaydi: sxemalarni faqat klinika shifokori yozadi.
+  - Sxemani klinika administratori (egasi) yozadi.
+- ✅ **Dispanser kuzatuvi.**
+  - Guruhlar: AG, yurak yetishmovchiligi, bo'lmachalar fibrillyatsiyasi, infarktdan keyingi, antikoagulyant qabul qiladi, boshqa.
+  - Qabul sahifasida «Dispanser kuzatuviga olish» bo'limi bor. Unda bemor har necha kunda kelishi, birinchi nazorat sanasi va takrorlanadigan tahlillar (masalan koagulogramma, INR) yoziladi.
+  - Keyin «Ko'rildi — keyingi muddat» tugmasi bosiladi: keyingi nazorat sanasi bugundan oraliq kunlar soni qo'shib hisoblanadi.
+  - **Dispanser** sahifasida shifokorning o'z bemorlari chiqadi: eng yaqin muddat birinchi, muddati o'tganlar qizil. Bosh shifokor klinikaning barcha bemorlarini ko'radi.
+  - Bemorga nazoratdan bir kun oldin, soat 10:00 da Telegram yoki SMS orqali eslatma boradi. Xabarda faqat sana yoziladi: tashxis ham, tahlil ham yozilmaydi.
+  - Faqat davolovchi shifokor o'zgartiradi. Har bir harakat audit jurnaliga yoziladi.
+- ✅ **Shifokor ulushi va «Daromadim».**
+  - Rahbar yoki buxgalter shifokor sahifasida ulush foizini belgilaydi.
+  - Shifokor **Daromadim** sahifasida o'z bemorlari uchun kassaga tushgan pulni (qaytarilganlari ayirilgan) va o'z ulushini ko'radi: bugun, shu hafta, shu oy, kunma-kun.
+  - Hisobotlarda «Shifokorlar ulushi» bo'limi bor.
+  - Boshqa shifokorning raqamlarini ko'rib bo'lmaydi.
+  - Oylik to'lovi Xarajatlar → «Ish haqi» orqali yoziladi.
+- ✅ **Qabullar orasida zaxira vaqt.**
+  - Qayerda sozlanadi: Shifokorlar → shifokor profili → «Qabullar orasidagi zaxira», 0 dan 30 daqiqagacha.
+  - Masalan, qabul 15 daqiqa va zaxira 2 daqiqa bo'lsa, vaqtlar shunday chiqadi: 09:00, 09:17, 09:34…
+  - Registraturada ham, onlayn yozilishda ham shunday ishlaydi. Onlayn bemor eski vaqtga yozila olmaydi.
+- ✅ **Qabul qilish soatlari qizil ramkada, qalin harfda.**
+  - Ekranda ham, chop etilgan retseptda ham shunday chiqadi.
+  - Shifokor ularni qo'lda qizil bilan belgilardi: bemorning ko'zi birinchi bo'lib yorqin rangga tushadi.
+  - Avval soatlar retsept varag'ida umuman chiqmas edi.
+  - Termoprinterda ranglar chiqmaydi, lekin rasm baribir tushunarli.
+- ✅ **Topshirilishi kerak bo'lgan tahlillar ajratib chiqadi.**
+  - Qabulda buyurilgan, lekin hali topshirilmagan tahlillar retsept varag'ida va qabul xulosasida (`{{labs}}`) sariq marker foni bilan, qalin harfda chiqadi. Bemor ularni o'tkazib yubormasligi uchun.
+  - Mavjud klinikalarning "Qabul xulosasi" shabloniga quyidagi qatorni **Shablonlar** sahifasida qo'lda qo'shish kerak. Yangi klinikalarda bu qator avtomatik bo'ladi.
+    ```
+    Topshirilishi kerak bo'lgan tahlillar:
+    {{labs}}
+    ```
+  - Retsept varag'ida bu blok hamma klinikalarda darhol ishlaydi.
+
 ## Keyingi bosqichlar
 Navbat bilan:
 1. **ExoKG, EKG va boshqa UZI turlarining blankalari.** Ularni yuborsangiz, xuddi shu usulda shablonga aylantiraman. Segmentlarni (akineziya va boshqalar) yurak sxemasida belgilash va dinamika grafigi ExoKG blankasi kelgach qilinadi.
-2. **Dori bazasi va tayyor davolash sxemalari:**
+2. **Dori bazasi** (tayyor sxemalar, xalqaro nom, tabletka bo'laklari va soatlar allaqachon bor):
    - INN, shakl, doza;
    - 1/2, 1/4, 1/8 tabletka;
    - ovqatdan oldin yoki keyin;
    - dozani bosqichma-bosqich oshirish yoki kamaytirish.
 
    Dori-dori o'zaro ta'siri va QT ogohlantirishlari faqat tekshirilgan manba bo'lsa qilinadi (litsenziyalangan baza yoki rasmiy qo'llanma). Taxminiy ogohlantirish yozilmaydi.
-3. **Dispanser kuzatuvi:** AG, SYuYe, bo'lmachalar fibrillyatsiyasi, infarktdan keyingi va antikoagulyant qabul qiladigan bemorlar. Reja, keyingi tashrif, tahlillar va eslatmalar bilan.
+3. ~~Dispanser kuzatuvi~~ — tayyor (yuqoriga qarang).
 4. **Telegram:**
    - bemor bosim va pulsni yuboradi;
    - qabulga kelmagan bemorga qayta yozilish taklifi;
@@ -175,15 +222,13 @@ Navbat bilan:
    - dori eslatmalari.
 
    Qabul eslatmalari allaqachon bor.
-5. **Moliya va statistika:**
-   - shifokor va xizmat bo'yicha daromad;
-   - shifokorga oylik yoki foiz;
-   - yuborgan shifokorga komissiya;
+5. **Moliya va statistika** (shifokor va xizmat bo'yicha daromad, shifokor ulushi allaqachon bor):
+   - yuborgan tashqi shifokorga komissiya (yuboruvchilar ro'yxati kerak);
    - tashxis va dori guruhlari bo'yicha hisobot;
    - Excel/PDF eksport.
-6. **Navbat:**
+6. **Navbat** (qabullar orasidagi zaxira allaqachon bor):
    - "chaqirildi" holatini statistikaga kiritish;
    - onlayn bemorga taxminiy qabul vaqtini ko'rsatish;
    - kechikish yoki erta kelishni boshqarish.
-7. **Blankada lokatsiya QR kodi** (sozlama).
+7. ~~Blankada lokatsiya QR kodi~~ — tayyor: Sozlamalar → Blanka → «Joylashuv havolasi (xarita)». Havola kiritilsa, A4 blankalar sarlavhasining o'ng tomonida QR kod chiqadi.
 8. **Oflayn ishlash va server bilan sinxronlash.** Alohida loyihalanadi: to'qnashuvlarni hal qilish qoidalari bilan; localStorage taqlidi qilinmaydi.

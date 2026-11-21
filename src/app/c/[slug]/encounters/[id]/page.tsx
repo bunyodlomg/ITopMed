@@ -1,4 +1,11 @@
 import { notFound } from "next/navigation";
+import { TabletFractionPicture } from "@/components/tablet-fraction";
+import { DOSE_SUGGESTIONS } from "@/lib/tablet-fraction";
+import { rxDrugLabel } from "@/lib/rx";
+import { instantToLocalDate } from "@/server/scheduling/time";
+import { DispensaryCard } from "@/components/dispensary";
+import { patientDispensary } from "@/server/emr/dispensary";
+import { parseSchemeContent } from "@/lib/rx-scheme";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { AllergyBanner, AllergyForm, DiagnosisList, SignedNote, VitalsForm, VitalsTable } from "@/components/clinical";
 import { formatBirthDate, patientName } from "@/components/patients";
@@ -8,7 +15,7 @@ import { requireClinic } from "@/server/auth/guards";
 import { NOTE_SECTIONS, amendmentHash, getEncounter, noteHash } from "@/server/emr/record";
 import { requestMeta } from "@/server/http";
 import { DomainError } from "@/server/tenancy/provisioning";
-import { allergyAction, amendAction, applyNoteTemplateAction, cancelPrescriptionAction, clinicalStatusAction, diagnosisAction, finishVisitAction, noteAction, prescriptionAction, vitalsAction } from "../../../../care-actions";
+import { allergyAction, amendAction, applyNoteTemplateAction, applySchemeAction, cancelPrescriptionAction, clinicalStatusAction, diagnosisAction, finishVisitAction, noteAction, prescriptionAction, vitalsAction } from "../../../../care-actions";
 import { labOrderAction } from "../../../../lab-actions";
 import { labReleaseAction } from "../../../../portal-actions";
 import { LabResultsList } from "@/components/lab";
@@ -51,6 +58,7 @@ export default async function EncounterPage({ params, searchParams }: { params: 
   const canPrescribe = isOwn && open && ctx.permissions.has("prescriptions.write");
   const templates = await listTemplates(ctx);
   const noteTemplates = templates.filter((x) => x.kind === "NOTE");
+  const rxSchemes = templates.filter((x) => x.kind === "PRESCRIPTION").map((x) => ({ ...x, items: parseSchemeContent(x.content).items }));
   const docTemplates = templates.filter((x) => x.kind === "DOCUMENT");
   const hasDraft = e.notes.some((n) => n.status === "DRAFT" && n.authorId === ctx.principal.user.id);
   const authors = new Map([[ctx.principal.user.id, ctx.principal.user.fullName]]);
@@ -63,7 +71,7 @@ export default async function EncounterPage({ params, searchParams }: { params: 
   ]);
   const paidToday = billing.today.get(e.patient.id);
   const meta = await requestMeta();
-  const [history, frequent, tv, tdx, tcalc, tan, studies, tdg] = await Promise.all([
+  const [history, frequent, tv, tdx, tcalc, tan, studies, tdg, dispensary] = await Promise.all([
     getPatientHistory(ctx, e.patient.id, meta),
     canWrite ? frequentDiagnoses(ctx) : Promise.resolve([]),
     getTranslations("clinic.visit"),
@@ -72,6 +80,7 @@ export default async function EncounterPage({ params, searchParams }: { params: 
     getTranslations("anamnesis"),
     listDiagnosticResults(ctx, e.patient.id, meta),
     getTranslations("diagnostics"),
+    patientDispensary(ctx, e.patient.id, meta),
   ]);
   const canStudy = open && ctx.permissions.has("emr.write");
   const studyTemplates = templates
@@ -436,7 +445,7 @@ export default async function EncounterPage({ params, searchParams }: { params: 
             {e.prescriptions.map((p) => (
               <li key={p.id} className={p.status === "CANCELLED" ? "text-[14px] text-text-3 line-through" : "text-[14px]"}>
                 <p className="font-medium">
-                  {p.drug}
+                  {rxDrugLabel(p)}
                   {p.allergyOverride ? (
                     <span className="ml-2 inline-block align-middle">
                       <Badge tone="danger">{t("clinic.rx.allergyOverride")}</Badge>
@@ -445,8 +454,19 @@ export default async function EncounterPage({ params, searchParams }: { params: 
                   {p.status === "CANCELLED" ? <span className="ml-2 no-underline">({t("clinic.rx.cancelledLabel")})</span> : null}
                 </p>
                 <p className="text-text-2">
-                  {[p.dose, p.frequency, p.route, p.durationDays ? t("clinic.rx.days", { count: p.durationDays }) : null, p.times ? `⏰ ${p.times}` : null].filter(Boolean).join(" · ")}
+                  <TabletFractionPicture dose={p.dose} />{" "}
+                  {[p.dose, p.frequency, p.route, p.durationDays ? t("clinic.rx.days", { count: p.durationDays }) : null, null].filter(Boolean).join(" · ")}
                 </p>
+                {p.times ? (
+                  <p className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-text-2">{t("clinic.rx.intakeTimes")}:</span>
+                    {p.times.split(",").map((time) => (
+                      <span key={time} className="rounded-[6px] border-2 border-danger px-1.5 font-bold text-danger tabular-nums">
+                        {time.trim()}
+                      </span>
+                    ))}
+                  </p>
+                ) : null}
                 {p.instructions ? <p className="text-text-2">{p.instructions}</p> : null}
                 {p.status === "ACTIVE" && p.prescribedById === ctx.principal.user.id && ctx.permissions.has("prescriptions.write") ? (
                   <Form action={cancelPrescriptionAction} className="mt-1 space-y-0">
@@ -465,7 +485,13 @@ export default async function EncounterPage({ params, searchParams }: { params: 
               <input type="hidden" name="encounterId" value={e.id} />
               <div className="grid gap-3 sm:grid-cols-2">
                 <TextField name="drug" label={t("clinic.rx.drug")} hint={t("clinic.rx.drugHint")} required />
-                <TextField name="dose" label={t("clinic.rx.dose")} placeholder={t("clinic.rx.dosePlaceholder")} required />
+                <TextField name="inn" label={t("clinic.rx.inn")} hint={t("clinic.rx.innHint")} optionalLabel={t("common.optional")} />
+                <TextField name="dose" label={t("clinic.rx.dose")} placeholder={t("clinic.rx.dosePlaceholder")} hint={t("clinic.rx.doseHint")} list="rx-dose-suggestions" required />
+                <datalist id="rx-dose-suggestions">
+                  {DOSE_SUGGESTIONS.map((d) => (
+                    <option key={d} value={`${d} ${t("clinic.rx.tabletWord")}`} />
+                  ))}
+                </datalist>
                 <TextField name="frequency" label={t("clinic.rx.frequency")} placeholder={t("clinic.rx.frequencyPlaceholder")} required />
                 <TextField name="route" label={t("clinic.rx.route")} placeholder={t("clinic.rx.routePlaceholder")} optionalLabel={t("common.optional")} />
                 <TextField name="durationDays" label={t("clinic.rx.duration")} inputMode="numeric" optionalLabel={t("common.optional")} />
@@ -483,6 +509,48 @@ export default async function EncounterPage({ params, searchParams }: { params: 
               ) : null}
               <SubmitButton variant="secondary">{t("clinic.rx.add")}</SubmitButton>
             </Form>
+          ) : null}
+          {canPrescribe && rxSchemes.length > 0 ? (
+            <div className="space-y-2 border-t border-border pt-4">
+              <p className="text-[14px] font-semibold">{t("clinic.rx.schemes")}</p>
+              <p className="text-[12.5px] text-text-3">{t("clinic.rx.schemesHint")}</p>
+              {rxSchemes.map((x) => (
+                <details key={x.id} className="rounded-[12px] border border-border">
+                  <summary className="flex min-h-11 cursor-pointer flex-wrap items-center gap-2 px-4 py-2 font-medium">
+                    <span className="min-w-0">{x.name}</span>
+                    <Badge tone="neutral">{t("clinic.rx.schemeCount", { count: x.items.length })}</Badge>
+                  </summary>
+                  <Form action={applySchemeAction} className="space-y-3 border-t border-border p-4">
+                    <input type="hidden" name="$slug" value={s} />
+                    <input type="hidden" name="encounterId" value={e.id} />
+                    <input type="hidden" name="templateId" value={x.id} />
+                    <ul className="space-y-2">
+                      {x.items.map((it, i) => (
+                        <li key={i}>
+                          <label className="flex items-start gap-2 text-[14px]">
+                            <input type="checkbox" name="line" value={i} defaultChecked className="mt-1 size-4 shrink-0 accent-[var(--accent)]" />
+                            <span className="min-w-0">
+                              <span className="font-medium">{rxDrugLabel(it)}</span>
+                              <span className="text-text-2"> · {[it.dose, it.frequency, it.times ? `${t("clinic.rx.intakeTimes")} ${it.times}` : null, it.durationDays ? t("clinic.rx.days", { count: Number(it.durationDays) }) : null, it.instructions].filter(Boolean).join(" · ")}</span>
+                            </span>
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                    {allergies.length > 0 ? (
+                      <div className="space-y-2 rounded-[var(--radius-control)] border border-border bg-sunken p-3 text-[14px]">
+                        <p>{t("clinic.rx.allergyCheck", { list: allergies.map((a) => a.substance).join(", ") })}</p>
+                        <label className="flex items-start gap-2">
+                          <input type="checkbox" name="allergyOverride" className="mt-0.5 size-4 accent-[var(--accent)]" />
+                          <span>{t("clinic.rx.allergyConfirm")}</span>
+                        </label>
+                      </div>
+                    ) : null}
+                    <SubmitButton variant="secondary">{t("clinic.rx.schemeApply")}</SubmitButton>
+                  </Form>
+                </details>
+              ))}
+            </div>
           ) : null}
         </CardBody>
       </Card>
@@ -528,6 +596,8 @@ export default async function EncounterPage({ params, searchParams }: { params: 
           </CardBody>
         </Card>
       ) : null}
+
+      <DispensaryCard plans={dispensary} slug={s} patientId={e.patient.id} encounterId={e.id} doctorProfileId={e.doctorProfileId} canWrite={canWrite} today={instantToLocalDate(new Date(), tz)} />
 
       {canWrite ? (
         <Card>

@@ -1,5 +1,6 @@
 "use server";
 
+import { setDoctorCommission } from "@/server/billing/earnings";
 import { revalidatePath } from "next/cache";
 import type { FormState } from "@/lib/form-state";
 import { toFormState } from "@/server/actions-util";
@@ -113,6 +114,7 @@ export async function doctorProfileAction(_: FormState, fd: FormData): Promise<F
         departmentId: fd.get("departmentId") ?? "",
         licenseNumber: fd.get("licenseNumber") ?? "",
         defaultSlotMinutes: fd.get("defaultSlotMinutes"),
+        bufferMinutes: fd.get("bufferMinutes") ?? "",
         acceptsOnlineBooking: fd.get("acceptsOnlineBooking") === "on",
         contactPhone: String(fd.get("contactPhone") ?? ""),
         contactTelegram: String(fd.get("contactTelegram") ?? ""),
@@ -124,6 +126,17 @@ export async function doctorProfileAction(_: FormState, fd: FormData): Promise<F
   }
   revalidatePath(`/c/${slug}/doctors`, "layout");
   return ok("clinic.doctors.profileSaved");
+}
+
+export async function commissionAction(_: FormState, fd: FormData): Promise<FormState> {
+  const { slug, ctx } = await clinicFrom(fd);
+  try {
+    await setDoctorCommission(ctx, String(fd.get("profileId") ?? ""), String(fd.get("commissionPercent") ?? "").trim(), await requestMeta());
+  } catch (e) {
+    return toFormState(e, fd);
+  }
+  revalidatePath(`/c/${slug}/doctors`, "layout");
+  return ok("clinic.doctors.commissionSaved");
 }
 
 export async function doctorServicesAction(_: FormState, fd: FormData): Promise<FormState> {

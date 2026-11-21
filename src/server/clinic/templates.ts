@@ -11,6 +11,8 @@ import { SPECIALTIES } from "../scheduling/specialties";
 import { uuidv7 } from "../security/crypto";
 import { DIAGNOSTIC_KINDS } from "@/lib/diagnostics";
 import { parseFieldLines, unknownPlaceholders, type DiagnosticTemplateContent } from "@/lib/diagnostic-template";
+import { parseSchemeLines, type RxSchemeContent } from "@/lib/rx-scheme";
+import { prescriptionSchema } from "../emr/prescriptions";
 import { auditClinic, inClinic, requirePermission } from "./context";
 
 /**
@@ -48,6 +50,7 @@ export const PLACEHOLDERS = [
   "vitals.height",
   "prescriptions",
   "prescriptions.schedule",
+  "labs",
   "visit.nextVisit",
   "doctor.phone",
   "doctor.telegram",
@@ -79,7 +82,7 @@ export type NoteContent = z.infer<typeof noteContentSchema>;
 
 export const templateSchema = z
   .object({
-    kind: z.enum(["NOTE", "DOCUMENT", "DIAGNOSTIC"]),
+    kind: z.enum(["NOTE", "DOCUMENT", "DIAGNOSTIC", "PRESCRIPTION"]),
     name: z.string().trim().min(2, "validation.required").max(120, "validation.tooLong"),
     specialty: z.union([z.literal("").transform(() => undefined), z.enum(SPECIALTIES)]).optional(),
     body: z.string().max(20_000, "validation.tooLong").default(""),
@@ -88,8 +91,27 @@ export const templateSchema = z
     study: z.enum(DIAGNOSTIC_KINDS).optional(),
     fieldsText: z.string().max(20_000, "validation.tooLong").default(""),
     conclusion: z.string().max(5_000, "validation.tooLong").default(""),
+    /** PRESCRIPTION: one medicine per line, see src/lib/rx-scheme.ts. */
+    schemeText: z.string().max(20_000, "validation.tooLong").default(""),
   })
   .transform((v, c) => {
+    if (v.kind === "PRESCRIPTION") {
+      const { items, badLines } = parseSchemeLines(v.schemeText);
+      // Each line must also be a valid prescription (lengths, intake times, days), so applying it never fails later.
+      items.forEach((it, i) => {
+        if (!prescriptionSchema.safeParse(it).success) badLines.push(i + 1);
+      });
+      if (badLines.length) {
+        c.addIssue({ code: "custom", message: "validation.templateFieldLines", path: ["schemeText"], params: { lines: [...new Set(badLines)].sort((a, b) => a - b).join(", ") } });
+        return z.NEVER;
+      }
+      if (!items.length || items.length > 30) {
+        c.addIssue({ code: "custom", message: items.length ? "validation.tooLong" : "validation.required", path: ["schemeText"] });
+        return z.NEVER;
+      }
+      const content: RxSchemeContent = { items };
+      return { kind: "PRESCRIPTION" as TemplateKind, name: v.name, specialty: v.specialty ?? null, content: JSON.stringify(content) };
+    }
     if (v.kind === "DIAGNOSTIC") {
       const { fields, badLines } = parseFieldLines(v.fieldsText);
       if (badLines.length) {
