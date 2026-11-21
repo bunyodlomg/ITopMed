@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "i18n:check": "tsx scripts/check-i18n.ts",
     "db:start": "tsx scripts/dev-db.ts",
+    "dev:demo": "tsx --conditions=react-server scripts/dev-demo.ts",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:generate": "prisma generate",
