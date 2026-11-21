@@ -37,7 +37,7 @@ export async function AppointmentItem({ a, timeZone, slug, cancelAction }: { a: 
           <Form action={cancelAction} className="space-y-0">
             <input type="hidden" name="$slug" value={slug} />
             <input type="hidden" name="appointmentId" value={a.id} />
-            <SubmitButton variant="secondary" className="h-9 px-3 text-[13px]">
+            <SubmitButton variant="secondary" size="sm">
               {t("portal.appointments.cancel")}
             </SubmitButton>
           </Form>

@@ -94,7 +94,7 @@ export default async function IntegrationsPage({ params, searchParams }: { param
             canManage ? (
               <Form action={dispatchNowAction} className="space-y-2">
                 <input type="hidden" name="$slug" value={ctx.tenant.slug} />
-                <SubmitButton variant="secondary" className="h-9 px-3 text-[13px]">
+                <SubmitButton variant="secondary" size="sm">
                   {t("clinic.integrations.sendNow")}
                 </SubmitButton>
               </Form>

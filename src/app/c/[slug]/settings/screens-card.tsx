@@ -26,7 +26,7 @@ export async function ScreensCard({ ctx }: { ctx: ClinicContext }) {
                 <Form action={revokeScreenAction}>
                   {hidden}
                   <input type="hidden" name="id" value={s.id} />
-                  <SubmitButton variant="secondary" className="h-9 px-3 text-[13px]">
+                  <SubmitButton variant="secondary" size="sm">
                     {t("clinic.screens.revoke")}
                   </SubmitButton>
                 </Form>

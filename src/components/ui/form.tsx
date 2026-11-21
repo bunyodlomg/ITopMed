@@ -10,6 +10,11 @@ type Action = (state: FormState, fd: FormData) => Promise<FormState>;
 
 const Ctx = createContext<FormState>({});
 
+/** Whether a Form className sets its own child layout. */
+function ownLayout(className?: string) {
+  return !!className && /(^|\s)(space-y-|flex|grid|inline-block|inline-flex)/.test(className);
+}
+
 /**
  * Progressive-enhancement form bound to a server action. Works without
  * JavaScript; with JS, shows localized field errors inline and keeps input.
@@ -29,7 +34,9 @@ export function Form({
   const t = useTranslations();
   return (
     <Ctx.Provider value={state}>
-      <form action={formAction} className={cx("space-y-5", className)} noValidate>
+      {/* A className with its own layout (space-y-*, flex, grid) replaces the default spacing:
+          two space-y utilities in one list fight over CSS order (an inline Save button would drop 20px). */}
+      <form action={formAction} className={ownLayout(className) ? className : cx("space-y-5", className)} noValidate>
         {state.message ? (
           <Alert tone={state.ok ? "success" : "danger"} key={state.nonce}>
             {t(state.message as never, state.messageValues as never)}
@@ -177,10 +184,10 @@ export function CheckboxGroup({ name, label, hint, options }: { name: string; la
   );
 }
 
-export function SubmitButton({ children, pendingLabel, variant = "primary", className, full }: { children: ReactNode; pendingLabel?: string; variant?: "primary" | "secondary" | "danger"; className?: string; full?: boolean }) {
+export function SubmitButton({ children, pendingLabel, variant = "primary", size = "md", className, full }: { children: ReactNode; pendingLabel?: string; variant?: "primary" | "secondary" | "danger"; /** md = the height of a field (44px), to sit next to inputs; sm for row actions. */ size?: "sm" | "md"; className?: string; full?: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} aria-busy={pending} className={buttonClass(variant, "lg", cx(full && "w-full", className))}>
+    <button type="submit" disabled={pending} aria-busy={pending} className={buttonClass(variant, size, cx(full && "w-full", className))}>
       {pending ? (
         <>
           <span aria-hidden className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent" />

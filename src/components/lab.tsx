@@ -68,7 +68,7 @@ export async function LabResultsList({
             <Form action={release.action} className="mt-2 space-y-2">
               <input type="hidden" name="$slug" value={release.slug} />
               <input type="hidden" name="orderId" value={o.id} />
-              <SubmitButton variant="secondary" className="h-9 px-3 text-[13px]">
+              <SubmitButton variant="secondary" size="sm">
                 {t("clinic.labOrder.release")}
               </SubmitButton>
             </Form>

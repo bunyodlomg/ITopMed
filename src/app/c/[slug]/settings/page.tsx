@@ -108,7 +108,7 @@ export default async function ClinicSettingsPage({ params }: { params: Promise<{
                     <input type="hidden" name="$slug" value={ctx.tenant.slug} />
                     <input type="hidden" name="module" value={m.key} />
                     <input type="hidden" name="op" value={m.enabled ? "off" : "on"} />
-                    <SubmitButton variant="secondary" className="h-9 px-3 text-[13px]">
+                    <SubmitButton variant="secondary" size="sm">
                       {t(m.enabled ? "clinic.modules.turnOff" : "clinic.modules.turnOn")}
                     </SubmitButton>
                   </Form>

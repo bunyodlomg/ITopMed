@@ -144,7 +144,7 @@ export default async function InventoryItemPage({ params, searchParams }: { para
                                     <TextField name="quantity" label={t("clinic.inventory.quantity")} inputMode="numeric" defaultValue={expired ? String(b.quantity) : undefined} required />
                                     <SelectField name="reason" label={t("clinic.inventory.reason")} defaultValue={expired ? "EXPIRED" : "DAMAGED"} options={WRITE_OFF_REASONS.map((r) => ({ value: r, label: t(`stockReason.${r}`) }))} />
                                   </div>
-                                  <SubmitButton variant="danger" className="h-9 px-3 text-[13px]">{t("clinic.inventory.writeOff")}</SubmitButton>
+                                  <SubmitButton variant="danger" size="sm">{t("clinic.inventory.writeOff")}</SubmitButton>
                                 </Form>
                               ) : null}
                               <Form action={stockAction} className="space-y-2">
@@ -152,7 +152,7 @@ export default async function InventoryItemPage({ params, searchParams }: { para
                                 <input type="hidden" name="batchId" value={b.id} />
                                 <input type="hidden" name="op" value="count" />
                                 <TextField name="counted" label={t("clinic.inventory.counted")} inputMode="numeric" defaultValue={String(b.quantity)} required />
-                                <SubmitButton variant="secondary" className="h-9 px-3 text-[13px]">{t("clinic.inventory.recordCount")}</SubmitButton>
+                                <SubmitButton variant="secondary" size="sm">{t("clinic.inventory.recordCount")}</SubmitButton>
                               </Form>
                             </div>
                           </details>

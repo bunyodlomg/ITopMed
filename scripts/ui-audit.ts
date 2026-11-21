@@ -57,6 +57,24 @@ function detect() {
     if (cs.overflowX === "hidden" && el.children.length === 0 && el.scrollWidth > el.clientWidth + 1 && cs.textOverflow !== "ellipsis")
       found.push({ kind: "CLIPPED", el, detail: `${el.scrollWidth}>${el.clientWidth}` });
   }
+  // A button beside a field in one row must line up with it (top and bottom), e.g. "Ulush, % [   ] [Saqlash]".
+  const fields = Array.from(root.querySelectorAll("input:not([type=hidden]):not([type=checkbox]):not([type=radio]), select")).filter((f) => f.getClientRects().length);
+  for (const b of Array.from(root.querySelectorAll("button, a[class*='rounded-full']"))) {
+    if (!(b instanceof HTMLElement) || !b.getClientRects().length || b.closest("[aria-hidden=true],.sr-only,nav,dialog:not([open])")) continue;
+    const br = b.getBoundingClientRect();
+    if (br.height < 30) continue;
+    for (const f of fields) {
+      const fr = f.getBoundingClientRect();
+      const sideBySide = fr.right <= br.left + 1 || br.right <= fr.left + 1;
+      const near = Math.min(Math.abs(fr.right - br.left), Math.abs(br.right - fr.left)) < 48;
+      const overlap = Math.min(fr.bottom, br.bottom) - Math.max(fr.top, br.top);
+      // Same layer only: a page button behind an open drawer is not beside the drawer's field.
+      if (!sideBySide || !near || overlap <= 0 || b.closest("dialog") !== f.closest("dialog")) continue;
+      const dTop = Math.abs(fr.top - br.top);
+      const dBottom = Math.abs(fr.bottom - br.bottom);
+      if (dTop > 3 && dBottom > 3) found.push({ kind: "MISALIGNED", el: b, detail: `top ${Math.round(dTop)}px bottom ${Math.round(dBottom)}px vs field` });
+    }
+  }
   // Keep the innermost element of each problem (a parent spills because its child does).
   const els = new Set(found.map((f) => f.el));
   const innermost = found.filter((f) => !Array.from(f.el.querySelectorAll("*")).some((c) => els.has(c)));

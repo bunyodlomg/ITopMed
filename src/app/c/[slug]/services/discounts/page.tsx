@@ -48,7 +48,7 @@ export default async function DiscountsPage({ params }: { params: Promise<{ slug
                       <Form action={archiveBenefitAction}>
                         {hidden}
                         <input type="hidden" name="id" value={b.id} />
-                        <SubmitButton variant="secondary" className="h-9 px-3 text-[13px]">
+                        <SubmitButton variant="secondary" size="sm">
                           {t("clinic.pricing.archive")}
                         </SubmitButton>
                       </Form>
@@ -95,7 +95,7 @@ export default async function DiscountsPage({ params }: { params: Promise<{ slug
                         <Form action={archivePackageAction}>
                           {hidden}
                           <input type="hidden" name="id" value={p.id} />
-                          <SubmitButton variant="secondary" className="h-9 px-3 text-[13px]">
+                          <SubmitButton variant="secondary" size="sm">
                             {t("clinic.pricing.archive")}
                           </SubmitButton>
                         </Form>
