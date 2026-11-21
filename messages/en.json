@@ -25,7 +25,13 @@
     "no": "No",
     "never": "Never",
     "total": "Total",
-    "accountSecurity": "Account security"
+    "accountSecurity": "Account security",
+    "all": "All",
+    "close": "Close",
+    "clearSearch": "Clear search",
+    "filters": "Filters",
+    "nothingFound": "Nothing found",
+    "nothingFoundHint": "Try another search or filter."
   },
   "a11y": {
     "skipToContent": "Skip to main content",
@@ -469,7 +475,8 @@
       "add": "Add staff member",
       "created": "Done: the account was created. They sign in with the login “{username}” and the password you gave.",
       "username": "Login",
-      "usernameHint": "The person signs in with this login (for example dr.karimov)."
+      "usernameHint": "The person signs in with this login (for example dr.karimov).",
+      "searchPlaceholder": "Name or login…"
     },
     "audit": {
       "title": "Activity log",
@@ -567,7 +574,10 @@
       "priceListHint": "One service and price per line. Existing services get the new price; new ones are added. For example:",
       "priceListSubmit": "Save",
       "priceListDone": "Done: {created} new services, {updated} prices updated{skipped, plural, =0 {} other {, # lines not understood}}.",
-      "priceListExample": "Cardiologist consultation — 100 000\nEcho — 120 000\nECG — 30 000"
+      "priceListExample": "Cardiologist consultation — 100 000\nEcho — 120 000\nECG — 30 000",
+      "pasteList": "Paste a list",
+      "filterNoPrice": "No price",
+      "searchPlaceholder": "Service name or code…"
     },
     "facilities": {
       "title": "Departments and rooms",
@@ -698,7 +708,11 @@
       "noAppointments": "No appointments yet.",
       "book": "Book appointment",
       "openRecord": "Open medical record",
-      "back": "All patients"
+      "back": "All patients",
+      "resultsTitle": "Found: {count}",
+      "recentTitle": "Recently added patients",
+      "noneYet": "No patients yet.",
+      "colRegistered": "Added"
     },
     "booking": {
       "title": "Book an appointment",

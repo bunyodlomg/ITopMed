@@ -25,7 +25,13 @@
     "no": "Yoʻq",
     "never": "Hech qachon",
     "total": "Jami",
-    "accountSecurity": "Hisob xavfsizligi"
+    "accountSecurity": "Hisob xavfsizligi",
+    "all": "Hammasi",
+    "close": "Yopish",
+    "clearSearch": "Qidiruvni tozalash",
+    "filters": "Filtrlar",
+    "nothingFound": "Hech narsa topilmadi",
+    "nothingFoundHint": "Qidiruv yoki filtrni oʻzgartirib koʻring."
   },
   "a11y": {
     "skipToContent": "Asosiy mazmunga oʻtish",
@@ -469,7 +475,8 @@
       "add": "Xodimni qoʻshish",
       "created": "Tayyor: hisob yaratildi. Xodim «{username}» logini va siz bergan parol bilan kiradi.",
       "username": "Login",
-      "usernameHint": "Xodim shu login bilan kiradi (masalan, dr.karimov)."
+      "usernameHint": "Xodim shu login bilan kiradi (masalan, dr.karimov).",
+      "searchPlaceholder": "Ism yoki login…"
     },
     "audit": {
       "title": "Faoliyat jurnali",
@@ -567,7 +574,10 @@
       "priceListHint": "Har qatorda bitta xizmat va narxi. Bor xizmatning narxi yangilanadi, yangisi qo'shiladi. Masalan:",
       "priceListSubmit": "Saqlash",
       "priceListDone": "Tayyor: {created} ta yangi xizmat, {updated} ta narx yangilandi{skipped, plural, =0 {} other {, # ta qator tushunilmadi}}.",
-      "priceListExample": "Kardiolog ko'ruvi — 100 000\nEXO — 120 ming\nEKG — 30 000"
+      "priceListExample": "Kardiolog ko'ruvi — 100 000\nEXO — 120 ming\nEKG — 30 000",
+      "pasteList": "Roʻyxatni joylash",
+      "filterNoPrice": "Narxi yoʻq",
+      "searchPlaceholder": "Xizmat nomi yoki kodi…"
     },
     "facilities": {
       "title": "Boʻlimlar va xonalar",
@@ -698,7 +708,11 @@
       "noAppointments": "Hozircha qabullar yoʻq.",
       "book": "Qabulga yozish",
       "openRecord": "Tibbiy kartani ochish",
-      "back": "Barcha bemorlar"
+      "back": "Barcha bemorlar",
+      "resultsTitle": "Topildi: {count}",
+      "recentTitle": "Oxirgi qoʻshilgan bemorlar",
+      "noneYet": "Hali bemorlar yoʻq.",
+      "colRegistered": "Qoʻshilgan"
     },
     "booking": {
       "title": "Qabulga yozish",

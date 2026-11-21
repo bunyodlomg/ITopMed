@@ -394,6 +394,21 @@ details[open] > .animate-drop { animation: itm-drop var(--dur-quick) var(--ease-
 }
 [data-shell][data-sidebar="folded"] [data-sidebar-text] { display: none; }
 
+/* Right-hand drawer (create / edit over a list): slides in, the page dims. */
+@keyframes itm-drawer-in {
+  from { transform: translateX(32px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes itm-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+dialog.drawer[open] .drawer-panel { animation: itm-drawer-in var(--dur-panel) var(--ease-out) both; }
+dialog.drawer[open]::backdrop { animation: itm-fade-in var(--dur-panel) var(--ease-out) both; }
+@media (prefers-reduced-motion: reduce) {
+  dialog.drawer[open] .drawer-panel, dialog.drawer[open]::backdrop { animation: none; }
+}
+
 /* Printing (receipts, reports): only the document, no app chrome. */
 @media print {
   aside, details, nav.fixed, a[href="#main"], [data-chrome] { display: none !important; }

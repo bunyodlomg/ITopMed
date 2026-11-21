@@ -100,7 +100,9 @@ function routes(ids: Awaited<ReturnType<typeof sampleIds>>): string[] {
     c, `${c}/control`, `${c}/setup`, `${c}/patients`, `${c}/patients/new`, `${c}/appointments`, `${c}/queue`, `${c}/desk`, `${c}/my-queue`, `${c}/my-schedule`, `${c}/nurse`,
     `${c}/lab`, `${c}/lab/tests`, `${c}/billing`, `${c}/cash`, `${c}/reports`, `${c}/expenses`, `${c}/inventory`, `${c}/inventory/suppliers`,
     `${c}/hr`, `${c}/doctors`, `${c}/services`, `${c}/staff`, `${c}/roles`, `${c}/facilities`, `${c}/branches`, `${c}/integrations`,
-    `${c}/settings`, `${c}/audit`, `${c}/support-access`, `${c}/templates`, `${c}/templates/new?kind=DOCUMENT`, `${c}/templates/new?kind=NOTE`,
+    `${c}/settings`, `${c}/audit`, `${c}/support-access`, `${c}/templates`,
+    // Right-hand drawers (create over a list).
+    `${c}/services?panel=new`, `${c}/services?panel=paste`, `${c}/staff?panel=new`, `${c}/templates/new?kind=DOCUMENT`, `${c}/templates/new?kind=NOTE`,
   ];
   const dyn: [string | undefined, string][] = [
     [ids.invoice, `${c}/billing/${ids.invoice}`], [ids.invoice, `${c}/billing/${ids.invoice}/receipt`],

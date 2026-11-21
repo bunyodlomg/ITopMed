@@ -65,13 +65,16 @@ export function CardBody({ className, children }: { className?: string; children
   return <div className={cx("px-5 py-5 sm:px-6", className)}>{children}</div>;
 }
 
-export function PageHeader({ title, description, action, eyebrow }: { title: ReactNode; description?: ReactNode; action?: ReactNode; eyebrow?: ReactNode }) {
+export function PageHeader({ title, description, action, eyebrow, count }: { title: ReactNode; description?: ReactNode; action?: ReactNode; eyebrow?: ReactNode; /** How many records the list holds, shown quietly after the title. */ count?: number }) {
   return (
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8">
       <div className="min-w-0 max-w-3xl">
         {eyebrow ? <p className="mb-2 text-[13.5px] font-medium text-text-3">{eyebrow}</p> : null}
         {/* Large but not heavy: size and tight tracking carry the title, weight stays calm. */}
-        <h1 className="text-balance text-[28px] font-semibold leading-[1.1] tracking-[-0.035em] [overflow-wrap:anywhere] sm:text-[34px] xl:text-[38px]">{title}</h1>
+        <h1 className="text-balance text-[28px] font-semibold leading-[1.1] tracking-[-0.035em] [overflow-wrap:anywhere] sm:text-[34px] xl:text-[38px]">
+          {title}
+          {count !== undefined ? <>{" "}<span className="ml-1.5 align-middle text-[0.55em] font-medium tracking-normal text-text-3 tabular-nums">{count}</span></> : null}
+        </h1>
         {description ? <p className="mt-2.5 text-pretty text-[15.5px] leading-relaxed text-text-2">{description}</p> : null}
       </div>
       {/* Wraps on narrow screens instead of pushing the page wider than the phone. */}

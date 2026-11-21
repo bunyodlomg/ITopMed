@@ -5,7 +5,7 @@ import { addStaffMember, listBranches, listClinicAudit, listStaff } from "@/serv
 import { listOperationalBranches } from "@/server/clinic/context";
 import { addScheduleBlock, addScheduleException, doctorSlots, saveDoctorProfile } from "@/server/clinic/doctors";
 import { addAllergy, addDiagnosis, amendNote, finishEncounter, getEncounter, getMedicalRecord, recordVitals, saveDraft, signNote, startVisit } from "@/server/emr/record";
-import { getPatient, registerPatient, searchPatients } from "@/server/patients/patients";
+import { getPatient, listRecentPatients, registerPatient, searchPatients } from "@/server/patients/patients";
 import { addDays, isoWeekday, localToInstant, todayIn } from "@/server/scheduling/time";
 import { META, PASSWORD, clinicContext, clinicWithOwner, platformActor, uniq } from "./helpers/fixtures";
 
@@ -85,6 +85,22 @@ describe("patient registry", () => {
     expect(await names("40407920000011")).toEqual(["Rahimova"]);
     expect(await names("04.07.1992")).toEqual(["Rahimova"]);
     expect(await names("x")).toEqual([]);
+  });
+
+  it("lists the latest registrations first and only this clinic's", async () => {
+    const { reception, a } = await setup();
+    const first = await registerPatient(reception.ctx, person({ lastName: "Avvalgi" }), { confirmNotDuplicate: true }, META);
+    const second = await registerPatient(reception.ctx, person({ lastName: "Keyingi" }), { confirmNotDuplicate: true }, META);
+    const other = await setup();
+    await registerPatient(other.reception.ctx, person({ lastName: "Begona" }), { confirmNotDuplicate: true }, META);
+
+    const recent = await listRecentPatients(reception.ctx);
+    expect(recent.map((p) => p.lastName)).toEqual(["Keyingi", "Avvalgi"]);
+    expect(first.ok && second.ok).toBe(true);
+    expect((await listRecentPatients(reception.ctx, 1)).map((p) => p.lastName)).toEqual(["Keyingi"]);
+    // The other clinic's patient never shows here (and the reverse).
+    expect((await listRecentPatients(other.reception.ctx)).map((p) => p.lastName)).toEqual(["Begona"]);
+    expect(a.ctx.tenant.id).not.toBe(other.a.ctx.tenant.id);
   });
 
   it("demographic views are audited without personal data in the audit trail", async () => {

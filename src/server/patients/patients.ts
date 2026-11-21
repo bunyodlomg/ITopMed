@@ -245,6 +245,19 @@ export async function searchPatients(ctx: ClinicContext, qRaw: string) {
   });
 }
 
+/** The most recently registered patients (the list before anything is typed). Same columns as search. */
+export async function listRecentPatients(ctx: ClinicContext, take = 30) {
+  requirePermission(ctx, "patients.read");
+  return inClinic(ctx, (tx) =>
+    tx.patient.findMany({
+      where: { tenantId: ctx.tenant.id, status: { not: "MERGED" } },
+      select: { id: true, mrn: true, lastName: true, firstName: true, middleName: true, birthDate: true, sex: true, phone: true, status: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: Math.min(Math.max(take, 1), 100),
+    }),
+  );
+}
+
 /** Demographics, identifiers, consents and appointments — no clinical content. Audited. */
 export async function getPatient(ctx: ClinicContext, id: string, meta: RequestMeta) {
   requirePermission(ctx, "patients.read");
