@@ -5,6 +5,8 @@ import { moneyFormatter } from "@/components/money";
 import { patientName } from "@/components/patients";
 import { Form } from "@/components/ui/form";
 import { Badge, Card, CardHeader, EmptyState, PageHeader, STATUS_TONE, Table, Td, Th, buttonClass } from "@/components/ui/primitives";
+import { SearchBox } from "@/components/ui/search-box";
+import { FilterChips, Toolbar, hrefWith } from "@/components/ui/toolbar";
 import type { InvoiceStatus } from "@/generated/prisma/client";
 import { requireClinic } from "@/server/auth/guards";
 import { listInvoices, uninvoicedVisits } from "@/server/billing/billing";
@@ -12,61 +14,59 @@ import { createInvoiceAction } from "../../../billing-actions";
 
 const STATUSES: InvoiceStatus[] = ["DRAFT", "ISSUED", "PARTIALLY_PAID", "PAID", "VOID"];
 
-export default async function BillingPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ status?: string }> }) {
+export default async function BillingPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ status?: string; q?: string }> }) {
   const { slug } = await params;
   const ctx = await requireClinic(slug, "billing.read");
   const sp = await searchParams;
   const status = STATUSES.find((s) => s === sp.status);
   const canInvoice = ctx.permissions.has("billing.invoice");
-  const [t, format, money, invoices, toBill] = await Promise.all([getTranslations(), getFormatter(), moneyFormatter(), listInvoices(ctx, { status }), canInvoice ? uninvoicedVisits(ctx) : Promise.resolve([])]);
+  const [t, format, money, invoices, toBill] = await Promise.all([getTranslations(), getFormatter(), moneyFormatter(), listInvoices(ctx, { status, q: sp.q }), canInvoice ? uninvoicedVisits(ctx) : Promise.resolve([])]);
   const tz = ctx.tenant.timezone;
   const base = `/c/${ctx.tenant.slug}/billing`;
 
   return (
-    <div className="space-y-6">
+    <>
       <PageHeader title={t("clinic.billing.title")} description={t("clinic.billing.subtitle")} />
 
-      {canInvoice ? (
-        <Card>
-          <CardHeader title={t("clinic.billing.toBill")} />
-          {toBill.length === 0 ? (
-            <p className="px-6 py-4 text-[14px] text-text-2">{t("clinic.billing.toBillEmpty")}</p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {toBill.map((v) => (
-                <li key={v.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-3">
-                  <div className="min-w-0">
-                    <p className="font-medium">{patientName(v.patient)}</p>
-                    <p className="text-[13px] text-text-2">
-                      {format.dateTime(v.startsAt, { timeStyle: "short", timeZone: tz })} · {v.doctor.membership.user.fullName}
-                      {v.service ? ` · ${v.service.name} · ${money(v.service.priceMinor, v.service.currency)}` : ""}
-                    </p>
-                  </div>
-                  <Form action={createInvoiceAction} className="space-y-0">
-                    <input type="hidden" name="$slug" value={ctx.tenant.slug} />
-                    <input type="hidden" name="patientId" value={v.patient.id} />
-                    <input type="hidden" name="branchId" value={v.branchId} />
-                    <input type="hidden" name="appointmentId" value={v.id} />
-                    <button className={buttonClass("primary", "sm")}>{t("clinic.billing.createInvoice")}</button>
-                  </Form>
-                </li>
-              ))}
-            </ul>
-          )}
+      {canInvoice && toBill.length ? (
+        <Card className="mb-6">
+          <CardHeader title={`${t("clinic.billing.toBill")} · ${toBill.length}`} />
+          <ul className="divide-y divide-border">
+            {toBill.map((v) => (
+              <li key={v.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-3">
+                <div className="min-w-0">
+                  <p className="font-medium">{patientName(v.patient)}</p>
+                  <p className="text-[13px] text-text-2">
+                    {format.dateTime(v.startsAt, { timeStyle: "short", timeZone: tz })} · {v.doctor.membership.user.fullName}
+                    {v.service ? ` · ${v.service.name} · ${money(v.service.priceMinor, v.service.currency)}` : ""}
+                  </p>
+                </div>
+                <Form action={createInvoiceAction} className="space-y-0">
+                  <input type="hidden" name="$slug" value={ctx.tenant.slug} />
+                  <input type="hidden" name="patientId" value={v.patient.id} />
+                  <input type="hidden" name="branchId" value={v.branchId} />
+                  <input type="hidden" name="appointmentId" value={v.id} />
+                  <button className={buttonClass("primary", "sm")}>{t("clinic.billing.createInvoice")}</button>
+                </Form>
+              </li>
+            ))}
+          </ul>
         </Card>
       ) : null}
 
-      <nav aria-label={t("clinic.billing.colStatus")} className="flex flex-wrap gap-2">
-        {[undefined, ...STATUSES].map((s) => (
-          <Link key={s ?? "all"} href={s ? `${base}?status=${s}` : base} aria-current={s === status ? "page" : undefined} className={buttonClass(s === status ? "primary" : "secondary", "sm")}>
-            {s ? t(`status.${s}`) : t("clinic.billing.filterAll")}
-          </Link>
-        ))}
-      </nav>
+      <Toolbar
+        search={<SearchBox placeholder={t("clinic.billing.searchPlaceholder")} label={t("common.search")} clearLabel={t("common.clearSearch")} />}
+        filters={
+          <FilterChips
+            label={t("clinic.billing.colStatus")}
+            chips={[undefined, ...STATUSES].map((s) => ({ label: s ? t(`status.${s}`) : t("common.all"), href: hrefWith(base, { q: sp.q }, { status: s }), active: s === status }))}
+          />
+        }
+      />
 
       <Card className="overflow-hidden">
         {invoices.length === 0 ? (
-          <EmptyState icon={<Receipt className="size-6" />} title={t("clinic.billing.empty")} />
+          <EmptyState icon={<Receipt className="size-6" />} title={sp.q || status ? t("common.nothingFound") : t("clinic.billing.empty")} />
         ) : (
           <Table caption={t("clinic.billing.title")}>
             <thead>
@@ -103,6 +103,6 @@ export default async function BillingPage({ params, searchParams }: { params: Pr
           </Table>
         )}
       </Card>
-    </div>
+    </>
   );
 }

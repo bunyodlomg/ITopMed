@@ -165,6 +165,11 @@ describe("permissions, reports and isolation", () => {
     await expect(financialReport(s.cashier.ctx, todayIn(TZ), todayIn(TZ))).rejects.toThrow("errors.forbidden");
     await expect(createExpense(s.cashier.ctx, { category: "RENT", amount: "1", currency: "UZS", spentOn: todayIn(TZ) }, META)).rejects.toThrow("errors.forbidden");
     expect((await listInvoices(s.a.ctx)).length).toBe(1); // owner: billing.read
+    // Search by the patient's name (any case), card number or invoice number; no match → empty.
+    const issuedNumber = (await getInvoice(s.a.ctx, id))!.number!;
+    expect((await listInvoices(s.a.ctx, { q: "sintetik" })).map((i) => i.id)).toEqual([id]);
+    expect((await listInvoices(s.a.ctx, { q: issuedNumber.slice(-4) })).map((i) => i.id)).toEqual([id]);
+    expect(await listInvoices(s.a.ctx, { q: "Begona" })).toEqual([]);
 
     // The activity log names the clinic user who acted (not just "USER").
     const audit = await listClinicAudit(s.a.ctx, 50);

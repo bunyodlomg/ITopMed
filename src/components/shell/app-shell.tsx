@@ -3,12 +3,13 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
+import { setThemeAction } from "@/app/actions/preferences";
 import { InstallApp } from "../install-app";
 import { AccountMenu } from "./account-menu";
+import { RailForm, RailLink, RailNav, SectionRail, SectionTopNav, TopNav } from "./frame-nav";
 import { MobileTabBar } from "./mobile-tab-bar";
 import { NavLinks, type NavGroup, type NavItem } from "./nav-links";
 import { Preferences } from "./preferences";
-import { Breadcrumb, SIDEBAR_COOKIE, Sidebar } from "./sidebar";
 
 export async function currentTheme(): Promise<"light" | "dark" | "system"> {
   const v = (await cookies()).get("itm_theme")?.value;
@@ -37,11 +38,15 @@ function Brand({ context }: { context: string }) {
   );
 }
 
+/** At most this many screens fit the top capsule; the rest go to the icon rail. */
+const TOP_MAX = 6;
+
 /**
- * Workspace chrome. Desktop: a sidebar fixed to the left edge (labelled sections,
- * foldable to icons) and a top bar fixed above the page (where you are, the
- * person's menu); only the page scrolls. Phones and tablets: a sticky header with
- * the full labelled menu (native <details>) and the bottom tab bar.
+ * Workspace chrome. Desktop: one large rounded frame on the grey ground — a fixed top bar
+ * (brand, the primary screens as a capsule with the current one as the ink pill,
+ * the person's chip) and a left rail of capsules (appearance, the remaining
+ * sections as icons with tooltips, security + sign out). Phones and tablets: a
+ * header with the full labelled menu (native <details>) and the bottom tab bar.
  */
 export async function AppShell({
   context,
@@ -56,7 +61,7 @@ export async function AppShell({
 }: {
   context: string;
   nav: NavItem[];
-  /** Titled sections of the navigation (items name theirs with `group`). */
+  /** Titled sections of the navigation (items name theirs with `group`); used by the phone menu. */
   navGroups?: NavGroup[];
   user: { name: string; detail: string };
   signOut: () => Promise<void>;
@@ -69,38 +74,31 @@ export async function AppShell({
 }) {
   const t = await getTranslations();
   const theme = await currentTheme();
-  const folded = (await cookies()).get(SIDEBAR_COOKIE)?.value === "folded";
-  const home = nav[0]?.href ?? "/";
+  // Sections mode: every group has a rail icon → the rail lists sections and the
+  // top bar the pages of the current one. Otherwise: first screens on top, rest in the rail.
+  const sections = !!navGroups?.length && navGroups.every((g) => g.icon);
+  const top = nav.length <= TOP_MAX ? nav : nav.slice(0, TOP_MAX - 1);
+  const rail = nav.slice(top.length);
 
   return (
-    <div data-shell data-sidebar={folded ? "folded" : "open"} className="min-h-dvh bg-frame">
+    <div className="min-h-dvh lg:p-3 xl:p-4">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-surface focus:px-4 focus:py-2 focus:shadow-pop">
         {t("a11y.skipToContent")}
       </a>
 
-      <Sidebar
-        items={nav}
-        groups={navGroups}
-        label={t("a11y.mainNav")}
-        folded={folded}
-        foldLabel={t("a11y.foldSidebar")}
-        unfoldLabel={t("a11y.unfoldSidebar")}
-        brand={
-          <Link href={home} className="flex min-w-0 items-center gap-3 rounded-full">
+      <div data-frame className="mx-auto min-h-dvh max-w-[1680px] bg-frame lg:min-h-[calc(100dvh-1.5rem)] lg:rounded-[40px] lg:bg-frame lg:px-6 lg:pb-10 lg:pt-2 xl:min-h-[calc(100dvh-2rem)] xl:px-8">
+        {/* Desktop top bar: stays at the top while the page scrolls (80px: 12 + 56 + 12). */}
+        <header data-chrome className="sticky top-0 z-30 hidden items-center gap-3 bg-frame py-3 lg:flex">
+          <Link href={nav[0]?.href ?? "/"} className="flex h-14 min-w-0 shrink-0 items-center gap-3 rounded-full bg-surface py-2 pl-2 pr-2 shadow-control xl:max-w-[260px] xl:pr-5">
             <Mark />
-            <span data-sidebar-text className="min-w-0 leading-tight">
+            <span className="hidden min-w-0 leading-tight xl:block">
               <span className="block text-[16px] font-bold tracking-[-0.02em]">ITop Med</span>
               <span className="block truncate text-[12px] text-text-3">{context}</span>
             </span>
+            <span className="sr-only xl:hidden">ITop Med · {context}</span>
           </Link>
-        }
-      />
-
-      <div data-frame className="shell-main">
-        {/* Desktop top bar: fixed above the page. */}
-        <header data-chrome className="sticky top-0 z-20 hidden h-[84px] items-center gap-4 bg-frame/85 pr-6 pt-3 backdrop-blur-md lg:flex xl:pr-8">
-          <div className="min-w-0 flex-1">
-            <Breadcrumb items={nav} groups={navGroups} label={t("a11y.breadcrumb")} />
+          <div className="flex min-w-0 flex-1">
+            {sections ? <SectionTopNav items={nav} groups={navGroups!} label={t("a11y.mainNav")} /> : <TopNav items={top} label={t("a11y.mainNav")} />}
           </div>
           <AccountMenu name={user.name} detail={user.detail} signOut={signOut} securityHref={securityHref} theme={theme} />
         </header>
@@ -139,12 +137,27 @@ export async function AppShell({
           </div>
         </details>
 
-        <main id="main" className={primary && primary.length > 1 ? "min-w-0 pb-[calc(56px+env(safe-area-inset-bottom))] lg:pb-0" : "min-w-0"}>
-          <div className="mx-auto max-w-[1560px] lg:pr-6 xl:pr-8">
+        <div className="lg:mt-3 lg:flex lg:gap-6 xl:gap-8">
+          {/* Desktop rail: fixed under the top bar; short enough to clear the frame's bottom padding, so it never slides up. */}
+          <aside data-chrome className="sticky top-[92px] hidden h-[calc(100dvh-152px)] w-14 shrink-0 flex-col items-center justify-between gap-3 self-start lg:flex">
+            <div className="flex flex-col gap-1 rounded-full bg-surface p-1.5 shadow-control">
+              <RailForm action={setThemeAction} label={t("common.themeLight")} icon="sun" field={{ name: "theme", value: "light" }} pressed={theme === "light"} />
+              <RailForm action={setThemeAction} label={t("common.themeDark")} icon="moon" field={{ name: "theme", value: "dark" }} pressed={theme === "dark"} />
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col justify-center">
+              {sections ? <SectionRail items={nav} groups={navGroups!} label={t("a11y.sectionsNav")} /> : <RailNav items={rail} label={t("a11y.sectionsNav")} />}
+            </div>
+            <div className="flex flex-col gap-1 rounded-full bg-surface p-1.5 shadow-control">
+              {securityHref ? <RailLink href={securityHref} label={t("common.accountSecurity")} icon="security" /> : null}
+              <RailForm action={signOut} label={t("common.signOut")} icon="signOut" />
+            </div>
+          </aside>
+
+          <main id="main" className={primary && primary.length > 1 ? "min-w-0 flex-1 pb-[calc(56px+env(safe-area-inset-bottom))] lg:pb-0" : "min-w-0 flex-1"}>
             {banner}
-            <div className="page-enter px-4 pb-8 pt-2 sm:px-6 lg:px-0 lg:pb-10 lg:pt-3">{children}</div>
-          </div>
-        </main>
+            <div className="page-enter px-4 pb-8 pt-2 sm:px-6 lg:p-0">{children}</div>
+          </main>
+        </div>
       </div>
       {primary ? <MobileTabBar items={primary.slice(0, 4)} label={t("a11y.mainNav")} /> : null}
     </div>

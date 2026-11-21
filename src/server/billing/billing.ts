@@ -310,12 +310,16 @@ const invoiceListInclude = {
   branch: { select: { name: true } },
 } satisfies Prisma.InvoiceInclude;
 
-export async function listInvoices(ctx: ClinicContext, opts: { status?: InvoiceStatus; patientId?: string; take?: number } = {}) {
+/** `q`: part of the invoice number, the patient's name or card number (case-insensitive). */
+export async function listInvoices(ctx: ClinicContext, opts: { status?: InvoiceStatus; patientId?: string; take?: number; q?: string } = {}) {
   requirePermission(ctx, "billing.read");
+  const q = opts.q?.trim().slice(0, 100);
+  const like = { contains: q, mode: "insensitive" as const };
   return inClinic(ctx, (tx) =>
     tx.invoice.findMany({
       where: {
         ...(opts.status ? { status: opts.status } : {}),
+        ...(q ? { OR: [{ number: like }, { patient: { OR: [{ lastName: like }, { firstName: like }, { mrn: like }] } }] } : {}),
         ...(opts.patientId && uuid.safeParse(opts.patientId).success ? { patientId: opts.patientId } : {}),
         ...(ctx.branchIds ? { branchId: { in: ctx.branchIds } } : {}),
       },

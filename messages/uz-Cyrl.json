@@ -40,10 +40,7 @@
     "closeMenu": "Менюни ёпиш",
     "loading": "Юкланмоқда…",
     "sectionsNav": "Бошқа бўлимлар",
-    "accountMenu": "Ҳисоб менюси",
-    "foldSidebar": "Менюни йиғиш",
-    "unfoldSidebar": "Менюни ёйиш",
-    "breadcrumb": "Сиз турган жой"
+    "accountMenu": "Ҳисоб менюси"
   },
   "nav": {
     "dashboard": "Бош саҳифа",
@@ -84,13 +81,11 @@
     "subscriptions": "Обуна ва тўловлар",
     "dispensary": "Диспансер",
     "myEarnings": "Даромадим",
-    "groupReception": "Қабулхона",
-    "groupDoctor": "Қабулларим",
-    "groupPatients": "Беморлар",
-    "groupCash": "Касса ва тўловлар",
-    "groupReports": "Ҳисобот ва назорат",
-    "groupStock": "Омбор",
-    "groupSettings": "Созламалар"
+    "groupDaily": "Кундалик иш",
+    "groupCare": "Даволаш",
+    "groupFinance": "Молия",
+    "groupClinic": "Клиника",
+    "groupAdmin": "Бошқарув"
   },
   "auth": {
     "adminTitle": "ITop Med бошқаруви",
@@ -953,7 +948,8 @@
       "debtHint": "Бемор қолган суммани кейин тўлайди: рухсат берсангиз, регистратор якуний ҳужжатни чоп эта олади.",
       "debtApprovedAt": "Қарзга рухсат берилган: {date}",
       "approveDebt": "Қарзга рухсат бериш",
-      "debtApproved": "Қарзга рухсат берилди."
+      "debtApproved": "Қарзга рухсат берилди.",
+      "searchPlaceholder": "Бемор, карта № ёки ҳисоб рақами…"
     },
     "cash": {
       "title": "Касса",
@@ -1029,7 +1025,14 @@
       "added": "Харажат қўшилди.",
       "void": "Бекор қилиш",
       "voided": "Харажат бекор қилинди.",
-      "empty": "Бу даврда харажатлар йўқ."
+      "empty": "Бу даврда харажатлар йўқ.",
+      "period": "Давр",
+      "period7d": "7 кун",
+      "period30d": "30 кун",
+      "periodMonth": "Шу ой",
+      "periodLastMonth": "Ўтган ой",
+      "total": "Жами",
+      "voidedBadge": "Бекор қилинган"
     },
     "lab": {
       "title": "Лаборатория",

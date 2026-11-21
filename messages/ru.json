@@ -40,10 +40,7 @@
     "closeMenu": "Закрыть меню",
     "loading": "Загрузка…",
     "sectionsNav": "Другие разделы",
-    "accountMenu": "Меню аккаунта",
-    "foldSidebar": "Свернуть меню",
-    "unfoldSidebar": "Развернуть меню",
-    "breadcrumb": "Вы находитесь здесь"
+    "accountMenu": "Меню аккаунта"
   },
   "nav": {
     "dashboard": "Обзор",
@@ -84,13 +81,11 @@
     "subscriptions": "Подписки и оплаты",
     "dispensary": "Диспансер",
     "myEarnings": "Мой доход",
-    "groupReception": "Регистратура",
-    "groupDoctor": "Мои приёмы",
-    "groupPatients": "Пациенты",
-    "groupCash": "Касса и оплаты",
-    "groupReports": "Отчёты и контроль",
-    "groupStock": "Склад",
-    "groupSettings": "Настройки"
+    "groupDaily": "Ежедневная работа",
+    "groupCare": "Лечение",
+    "groupFinance": "Финансы",
+    "groupClinic": "Клиника",
+    "groupAdmin": "Управление"
   },
   "auth": {
     "adminTitle": "Администрирование ITop Med",
@@ -953,7 +948,8 @@
       "debtHint": "Пациент оплатит остаток позже: после разрешения регистратура может распечатать итоговый документ.",
       "debtApprovedAt": "Долг разрешён: {date}",
       "approveDebt": "Разрешить долг",
-      "debtApproved": "Долг разрешён."
+      "debtApproved": "Долг разрешён.",
+      "searchPlaceholder": "Пациент, № карты или номер счёта…"
     },
     "cash": {
       "title": "Касса",
@@ -1029,7 +1025,14 @@
       "added": "Расход добавлен.",
       "void": "Отменить",
       "voided": "Расход отменён.",
-      "empty": "За этот период расходов нет."
+      "empty": "За этот период расходов нет.",
+      "period": "Период",
+      "period7d": "7 дней",
+      "period30d": "30 дней",
+      "periodMonth": "Этот месяц",
+      "periodLastMonth": "Прошлый месяц",
+      "total": "Итого",
+      "voidedBadge": "Отменён"
     },
     "lab": {
       "title": "Лаборатория",

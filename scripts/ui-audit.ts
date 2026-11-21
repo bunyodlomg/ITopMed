@@ -102,7 +102,7 @@ function routes(ids: Awaited<ReturnType<typeof sampleIds>>): string[] {
     `${c}/hr`, `${c}/doctors`, `${c}/services`, `${c}/staff`, `${c}/roles`, `${c}/facilities`, `${c}/branches`, `${c}/integrations`,
     `${c}/settings`, `${c}/audit`, `${c}/support-access`, `${c}/templates`,
     // Right-hand drawers (create over a list).
-    `${c}/services?panel=new`, `${c}/services?panel=paste`, `${c}/staff?panel=new`, `${c}/templates/new?kind=DOCUMENT`, `${c}/templates/new?kind=NOTE`,
+    `${c}/services?panel=new`, `${c}/services?panel=paste`, `${c}/staff?panel=new`, `${c}/expenses?panel=new`, `${c}/templates/new?kind=DOCUMENT`, `${c}/templates/new?kind=NOTE`,
   ];
   const dyn: [string | undefined, string][] = [
     [ids.invoice, `${c}/billing/${ids.invoice}`], [ids.invoice, `${c}/billing/${ids.invoice}/receipt`],

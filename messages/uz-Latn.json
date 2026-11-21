@@ -40,10 +40,7 @@
     "closeMenu": "Menyuni yopish",
     "loading": "Yuklanmoqda…",
     "sectionsNav": "Boshqa boʻlimlar",
-    "accountMenu": "Hisob menyusi",
-    "foldSidebar": "Menyuni yigʻish",
-    "unfoldSidebar": "Menyuni yoyish",
-    "breadcrumb": "Siz turgan joy"
+    "accountMenu": "Hisob menyusi"
   },
   "nav": {
     "dashboard": "Bosh sahifa",
@@ -84,13 +81,11 @@
     "subscriptions": "Obuna va to'lovlar",
     "dispensary": "Dispanser",
     "myEarnings": "Daromadim",
-    "groupReception": "Qabulxona",
-    "groupDoctor": "Qabullarim",
-    "groupPatients": "Bemorlar",
-    "groupCash": "Kassa va toʻlovlar",
-    "groupReports": "Hisobot va nazorat",
-    "groupStock": "Ombor",
-    "groupSettings": "Sozlamalar"
+    "groupDaily": "Kundalik ish",
+    "groupCare": "Davolash",
+    "groupFinance": "Moliya",
+    "groupClinic": "Klinika",
+    "groupAdmin": "Boshqaruv"
   },
   "auth": {
     "adminTitle": "ITop Med boshqaruvi",
@@ -953,7 +948,8 @@
       "debtHint": "Bemor qolgan summani keyin toʻlaydi: ruxsat bersangiz, registrator yakuniy hujjatni chop eta oladi.",
       "debtApprovedAt": "Qarzga ruxsat berilgan: {date}",
       "approveDebt": "Qarzga ruxsat berish",
-      "debtApproved": "Qarzga ruxsat berildi."
+      "debtApproved": "Qarzga ruxsat berildi.",
+      "searchPlaceholder": "Bemor, karta № yoki hisob raqami…"
     },
     "cash": {
       "title": "Kassa",
@@ -1029,7 +1025,14 @@
       "added": "Xarajat qoʻshildi.",
       "void": "Bekor qilish",
       "voided": "Xarajat bekor qilindi.",
-      "empty": "Bu davrda xarajatlar yoʻq."
+      "empty": "Bu davrda xarajatlar yoʻq.",
+      "period": "Davr",
+      "period7d": "7 kun",
+      "period30d": "30 kun",
+      "periodMonth": "Shu oy",
+      "periodLastMonth": "Oʻtgan oy",
+      "total": "Jami",
+      "voidedBadge": "Bekor qilingan"
     },
     "lab": {
       "title": "Laboratoriya",
