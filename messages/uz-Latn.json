@@ -1884,7 +1884,8 @@
     "schemeNothingChosen": "Sxemadan kamida bitta dorini belgilang.",
     "dateInPast": "Sana o'tib ketgan.",
     "dispensaryExists": "Bu bemor shu guruh bo'yicha sizning kuzatuvingizda allaqachon bor.",
-    "purgeConfirm": "Klinika manzili noto'g'ri yozildi — hech narsa o'chirilmadi."
+    "purgeConfirm": "Klinika manzili noto'g'ri yozildi — hech narsa o'chirilmadi.",
+    "templateFileInvalid": "Bu ITop Med shablonlar fayli emas yoki fayl buzilgan."
   },
   "supportScope": {
     "CONFIGURATION": "Sozlamalar",
@@ -2769,7 +2770,15 @@
     "newScheme": "Yangi retsept sxemasi",
     "schemeLines": "Dorilar (har biri alohida qatorda)",
     "schemeLinesHint": "Har bir qator: Dori | Xalqaro nomi | Doza | Qabul qilish tartibi | Soatlar | Kun | Ko'rsatma. Birinchi 4 tasi majburiy, qolganini bo'sh qoldirish mumkin.",
-    "schemeLinesPlaceholder": "Bisoprolol 5 mg | bisoprolol | 1 tabletka | kuniga 1 marta | 08:00 | 30 | ovqatdan keyin\nVeroshpiron 25 mg | spironolakton | 1/2 tabletka | kuniga 1 marta | 09:00 | 30"
+    "schemeLinesPlaceholder": "Bisoprolol 5 mg | bisoprolol | 1 tabletka | kuniga 1 marta | 08:00 | 30 | ovqatdan keyin\nVeroshpiron 25 mg | spironolakton | 1/2 tabletka | kuniga 1 marta | 09:00 | 30",
+    "import": "Import",
+    "export": "Eksport",
+    "importTitle": "Shablonlarni fayldan yuklash",
+    "importHint": "ITop Med shablonlar fayli (.json). Nomi mavjud shablonlar o'zgartirilmaydi.",
+    "importFile": "Fayl",
+    "importSubmit": "Yuklash",
+    "importDone": "{created} ta shablon qo'shildi, {skipped} tasi avvaldan bor edi.",
+    "importDoneInvalid": "{created} ta shablon qo'shildi, {skipped} tasi avvaldan bor edi. {invalid} tasi qabul qilinmadi: {names}."
   },
   "connect": {
     "title": "Qurilmani ulash",

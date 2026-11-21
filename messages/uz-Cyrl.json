@@ -1884,7 +1884,8 @@
     "schemeNothingChosen": "Схемадан камида битта дорини белгиланг.",
     "dateInPast": "Сана ўтиб кетган.",
     "dispensaryExists": "Бу бемор шу гуруҳ бўйича сизнинг кузатувингизда аллақачон бор.",
-    "purgeConfirm": "Клиника манзили нотўғри ёзилди — ҳеч нарса ўчирилмади."
+    "purgeConfirm": "Клиника манзили нотўғри ёзилди — ҳеч нарса ўчирилмади.",
+    "templateFileInvalid": "Бу ITop Med шаблонлар файли эмас ёки файл бузилган."
   },
   "supportScope": {
     "CONFIGURATION": "Созламалар",
@@ -2769,7 +2770,15 @@
     "newScheme": "Янги рецепт схемаси",
     "schemeLines": "Дорилар (ҳар бири алоҳида қаторда)",
     "schemeLinesHint": "Ҳар бир қатор: Дори | Халқаро номи | Доза | Қабул қилиш тартиби | Соатлар | Кун | Кўрсатма. Биринчи 4 таси мажбурий, қолганини бўш қолдириш мумкин.",
-    "schemeLinesPlaceholder": "Bisoprolol 5 mg | bisoprolol | 1 tabletka | kuniga 1 marta | 08:00 | 30 | ovqatdan keyin\nVeroshpiron 25 mg | spironolakton | 1/2 tabletka | kuniga 1 marta | 09:00 | 30"
+    "schemeLinesPlaceholder": "Bisoprolol 5 mg | bisoprolol | 1 tabletka | kuniga 1 marta | 08:00 | 30 | ovqatdan keyin\nVeroshpiron 25 mg | spironolakton | 1/2 tabletka | kuniga 1 marta | 09:00 | 30",
+    "import": "Импорт",
+    "export": "Экспорт",
+    "importTitle": "Шаблонларни файлдан юклаш",
+    "importHint": "ITop Med шаблонлар файли (.json). Номи мавжуд шаблонлар ўзгартирилмайди.",
+    "importFile": "Файл",
+    "importSubmit": "Юклаш",
+    "importDone": "{created} та шаблон қўшилди, {skipped} таси аввалдан бор эди.",
+    "importDoneInvalid": "{created} та шаблон қўшилди, {skipped} таси аввалдан бор эди. {invalid} таси қабул қилинмади: {names}."
   },
   "connect": {
     "title": "Қурилмани улаш",

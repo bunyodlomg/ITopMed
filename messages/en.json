@@ -1884,7 +1884,8 @@
     "schemeNothingChosen": "Tick at least one medicine of the scheme.",
     "dateInPast": "The date has passed.",
     "dispensaryExists": "This patient is already under your follow-up in this group.",
-    "purgeConfirm": "The clinic address does not match — nothing was removed."
+    "purgeConfirm": "The clinic address does not match — nothing was removed.",
+    "templateFileInvalid": "This is not an ITop Med template file, or the file is damaged."
   },
   "supportScope": {
     "CONFIGURATION": "Configuration",
@@ -2769,7 +2770,15 @@
     "newScheme": "New prescription scheme",
     "schemeLines": "Medicines (one per line)",
     "schemeLinesHint": "Each line: Medicine | INN | Dose | How often | Times | Days | Instructions. The first 4 are required; the rest may be left empty.",
-    "schemeLinesPlaceholder": "Bisoprolol 5 mg | bisoprolol | 1 tablet | once daily | 08:00 | 30 | after food\nVeroshpiron 25 mg | spironolactone | 1/2 tablet | once daily | 09:00 | 30"
+    "schemeLinesPlaceholder": "Bisoprolol 5 mg | bisoprolol | 1 tablet | once daily | 08:00 | 30 | after food\nVeroshpiron 25 mg | spironolactone | 1/2 tablet | once daily | 09:00 | 30",
+    "import": "Import",
+    "export": "Export",
+    "importTitle": "Load templates from a file",
+    "importHint": "An ITop Med template file (.json). Templates whose names already exist are left unchanged.",
+    "importFile": "File",
+    "importSubmit": "Load",
+    "importDone": "{created} templates added, {skipped} already existed.",
+    "importDoneInvalid": "{created} templates added, {skipped} already existed. {invalid} not accepted: {names}."
   },
   "connect": {
     "title": "Connect this device",

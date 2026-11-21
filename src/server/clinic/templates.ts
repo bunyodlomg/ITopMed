@@ -10,8 +10,8 @@ import { NOTE_SECTIONS } from "../emr/record";
 import { SPECIALTIES } from "../scheduling/specialties";
 import { uuidv7 } from "../security/crypto";
 import { DIAGNOSTIC_KINDS } from "@/lib/diagnostics";
-import { parseFieldLines, unknownPlaceholders, type DiagnosticTemplateContent } from "@/lib/diagnostic-template";
-import { parseSchemeLines, type RxSchemeContent } from "@/lib/rx-scheme";
+import { fieldLines, parseFieldLines, parseTemplateContent, unknownPlaceholders, type DiagnosticTemplateContent } from "@/lib/diagnostic-template";
+import { parseSchemeContent, parseSchemeLines, schemeLines, type RxSchemeContent } from "@/lib/rx-scheme";
 import { prescriptionSchema } from "../emr/prescriptions";
 import { auditClinic, inClinic, requirePermission } from "./context";
 
@@ -238,5 +238,108 @@ export async function addStandardTemplates(ctx: ClinicContext, meta: RequestMeta
       await auditClinic(tx, ctx, meta, { action: "template.standard_added", entityType: "Tenant", entityId: ctx.tenant.id, metadata: { count: fresh.length } });
     }
     return fresh.length;
+  });
+}
+
+// ───────────── Template files (export / import) ─────────────
+
+/**
+ * A clinic's templates as one JSON file, so they can be backed up, moved to
+ * another clinic, or prepared from the clinic's own paper/Word forms and loaded
+ * at once. Multi-line texts may be written as arrays of lines (easier to read
+ * and review); the clinic's own wording and norms are kept exactly as given.
+ */
+export const TEMPLATE_FILE_FORMAT = "itopmed.templates";
+const lines = z.union([z.string(), z.array(z.string())]).optional().transform((v) => (Array.isArray(v) ? v.join("\n") : (v ?? "")));
+const fileEntry = z.object({
+  kind: z.enum(["NOTE", "DOCUMENT", "DIAGNOSTIC", "PRESCRIPTION"]),
+  name: z.string(),
+  specialty: z.string().optional(),
+  study: z.string().optional(),
+  fields: lines,
+  body: lines,
+  conclusion: lines,
+  scheme: lines,
+  note: z.record(z.string(), lines).optional(),
+});
+const templateFile = z.object({ format: z.literal(TEMPLATE_FILE_FORMAT), version: z.literal(1), templates: z.array(z.unknown()).max(200) });
+export type TemplateFileEntry = z.input<typeof fileEntry>;
+
+export interface ImportResult {
+  created: number;
+  /** Names that already exist in the clinic (left untouched). */
+  skipped: string[];
+  /** Entries that are not valid templates (with the reason's message key). */
+  invalid: { name: string; message: string }[];
+}
+
+/** Adds the templates of a file; names that already exist are skipped, invalid entries reported. */
+export async function importTemplates(ctx: ClinicContext, json: string, meta: RequestMeta): Promise<ImportResult> {
+  requirePermission(ctx, "clinic.settings.manage");
+  if (json.length > 10_000_000) throw new DomainError("errors.fileTooLarge");
+  let file: z.infer<typeof templateFile>;
+  try {
+    file = templateFile.parse(JSON.parse(json));
+  } catch {
+    throw new DomainError("errors.templateFileInvalid");
+  }
+  const result: ImportResult = { created: 0, skipped: [], invalid: [] };
+  const ready: { kind: TemplateKind; name: string; specialty: string | null; content: string }[] = [];
+  const seen = new Set<string>();
+  for (const raw of file.templates) {
+    const e = fileEntry.safeParse(raw);
+    const name = e.success ? e.data.name.trim() : String((raw as { name?: unknown })?.name ?? "?").slice(0, 120);
+    if (!e.success) {
+      result.invalid.push({ name, message: "errors.invalidInput" });
+      continue;
+    }
+    const t = templateSchema.safeParse({
+      kind: e.data.kind,
+      name: e.data.name,
+      specialty: e.data.specialty ?? "",
+      study: e.data.study,
+      fieldsText: e.data.fields,
+      body: e.data.body,
+      conclusion: e.data.conclusion,
+      schemeText: e.data.scheme,
+      ...(e.data.note ? { note: e.data.note } : {}),
+    });
+    if (!t.success) {
+      result.invalid.push({ name, message: t.error.issues[0]?.message ?? "errors.invalidInput" });
+      continue;
+    }
+    if (seen.has(t.data.name)) continue;
+    seen.add(t.data.name);
+    ready.push(t.data);
+  }
+  return inClinic(ctx, async (tx) => {
+    const existing = new Set((await tx.clinicTemplate.findMany({ where: { tenantId: ctx.tenant.id, archivedAt: null }, select: { name: true } })).map((x) => x.name));
+    const fresh = ready.filter((d) => !existing.has(d.name));
+    result.skipped = ready.filter((d) => existing.has(d.name)).map((d) => d.name);
+    if (fresh.length) await tx.clinicTemplate.createMany({ data: fresh.map((d) => ({ id: uuidv7(), tenantId: ctx.tenant.id, ...d, createdById: ctx.principal.user.id })) });
+    result.created = fresh.length;
+    await auditClinic(tx, ctx, meta, { action: "template.imported", entityType: "Tenant", entityId: ctx.tenant.id, metadata: { created: fresh.length, skipped: result.skipped.length, invalid: result.invalid.length } });
+    return result;
+  });
+}
+
+/** The clinic's active templates as a template file (no patient data: templates never hold any). */
+export async function exportTemplates(ctx: ClinicContext, meta: RequestMeta): Promise<{ format: string; version: 1; templates: TemplateFileEntry[] }> {
+  requirePermission(ctx, "clinic.settings.manage");
+  return inClinic(ctx, async (tx) => {
+    const rows = await tx.clinicTemplate.findMany({ where: { tenantId: ctx.tenant.id, archivedAt: null }, orderBy: [{ kind: "asc" }, { name: "asc" }] });
+    await auditClinic(tx, ctx, meta, { action: "template.exported", entityType: "Tenant", entityId: ctx.tenant.id, metadata: { count: rows.length } });
+    const split = (text: string) => text.split(/\r?\n/);
+    const templates = rows.map((r): TemplateFileEntry => {
+      const base = { kind: r.kind, name: r.name, ...(r.specialty ? { specialty: r.specialty } : {}) };
+      if (r.kind === "DIAGNOSTIC") {
+        const c = parseTemplateContent(r.content);
+        return c ? { ...base, study: c.study, fields: split(fieldLines(c.fields)), body: split(c.body), ...(c.conclusion ? { conclusion: split(c.conclusion) } : {}) } : { ...base, body: split(r.content) };
+      }
+      if (r.kind === "PRESCRIPTION") return { ...base, scheme: split(schemeLines(parseSchemeContent(r.content))) };
+      if (r.kind === "NOTE") return { ...base, note: Object.fromEntries(Object.entries(parseNoteContent(r.content)).filter(([, v]) => v.trim()).map(([k, v]) => [k, split(v)])) };
+      return { ...base, body: split(r.content) };
+    });
+    return { format: TEMPLATE_FILE_FORMAT, version: 1, templates };
   });
 }

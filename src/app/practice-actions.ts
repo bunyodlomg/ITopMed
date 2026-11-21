@@ -7,7 +7,7 @@ import { toFormState } from "@/server/actions-util";
 import { requireClinic } from "@/server/auth/guards";
 import { completeSetup, setClinicModule } from "@/server/clinic/practice";
 import { updateClinicPolicy } from "@/server/clinic/policy";
-import { addStandardTemplates, archiveTemplate, saveTemplate } from "@/server/clinic/templates";
+import { addStandardTemplates, archiveTemplate, importTemplates, saveTemplate } from "@/server/clinic/templates";
 import { requestMeta } from "@/server/http";
 
 export async function setupAction(_: FormState, fd: FormData): Promise<FormState> {
@@ -125,4 +125,23 @@ export async function standardTemplatesAction(_: FormState, fd: FormData): Promi
   }
   revalidatePath(`/c/${slug}/templates`);
   return { ok: true, message: "templates.standardAdded", messageValues: { count: added }, nonce: Date.now() };
+}
+
+/** Loads a template file (.json, see importTemplates); reports what was added, skipped and rejected. */
+export async function importTemplatesAction(_: FormState, fd: FormData): Promise<FormState> {
+  const slug = String(fd.get("$slug") ?? "");
+  const ctx = await requireClinic(slug, "clinic.settings.manage");
+  const file = fd.get("file");
+  if (!(file instanceof File) || file.size === 0) return { ok: false, message: "validation.required", nonce: Date.now() };
+  if (file.size > 10 * 1024 * 1024) return { ok: false, message: "errors.fileTooLarge", nonce: Date.now() };
+  let r;
+  try {
+    r = await importTemplates(ctx, await file.text(), await requestMeta());
+  } catch (e) {
+    return toFormState(e);
+  }
+  revalidatePath(`/c/${slug}/templates`);
+  return r.invalid.length
+    ? { ok: true, message: "templates.importDoneInvalid", messageValues: { created: r.created, skipped: r.skipped.length, invalid: r.invalid.length, names: r.invalid.map((i) => i.name).join(", ") }, nonce: Date.now() }
+    : { ok: true, message: "templates.importDone", messageValues: { created: r.created, skipped: r.skipped.length }, nonce: Date.now() };
 }
