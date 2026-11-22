@@ -1604,6 +1604,17 @@
         "week": "Shu hafta",
         "month": "Shu oy"
       }
+    },
+    "purge": {
+      "title": "Sinov bemorlarini tozalash",
+      "hint": "Ishni boshlashdan oldin: dasturni sinab ko'rishda kiritilgan barcha bemorlarni o'chirish.",
+      "warningTitle": "Bu amalni qaytarib bo'lmaydi",
+      "warning": "Barcha bemorlar va ularning navbatlari, qabullari, ko'rik yozuvlari, tashxislari, retseptlari, tekshiruv natijalari, hisob-fakturalari, to'lovlari va kassa smenalari butunlay o'chiriladi. Xodimlar, xizmatlar, narxlar, shablonlar, jadval va sozlamalar saqlanib qoladi. Haqiqiy bemorlar kiritilgandan keyin ishlatmang.",
+      "confirmLabel": "Tasdiqlash uchun klinika manzilini yozing: {slug}",
+      "confirmHint": "Yuqoridagi manzilni aynan shunday yozing (katta-kichik harf farqi yo'q).",
+      "submit": "Barcha bemorlarni o'chirish",
+      "working": "O'chirilmoqda…",
+      "done": "Tozalandi: {patients} ta bemor, {appointments} ta navbat yozuvi o'chirildi."
     }
   },
   "status": {
@@ -1872,7 +1883,8 @@
     "usernameTaken": "Bu login band. Boshqasini tanlang.",
     "schemeNothingChosen": "Sxemadan kamida bitta dorini belgilang.",
     "dateInPast": "Sana o'tib ketgan.",
-    "dispensaryExists": "Bu bemor shu guruh bo'yicha sizning kuzatuvingizda allaqachon bor."
+    "dispensaryExists": "Bu bemor shu guruh bo'yicha sizning kuzatuvingizda allaqachon bor.",
+    "purgeConfirm": "Klinika manzili noto'g'ri yozildi — hech narsa o'chirilmadi."
   },
   "supportScope": {
     "CONFIGURATION": "Sozlamalar",

@@ -28,6 +28,15 @@ sudo /opt/itopmed/bin/itopmed-clinic farhod-medservis --update
 ```
 Keyin **Shablonlar** sahifasida eski «Kardiolog ko'ruvi» hujjati kerak bo'lmasa — arxivlang.
 
+## 0.2. Ishga tushirish kuni: sinov bemorlarini tozalash
+Sinab ko'rishda kiritilgan bemorlar haqiqiy ish boshlanishidan oldin o'chiriladi:
+1. Farhod aka (klinika egasi) **Sozlamalar** → **«Sinov bemorlarini tozalash»** kartasini ochadi.
+2. Maydonga klinika manzilini yozadi: `farhod-medservis` → **Barcha bemorlarni o'chirish**.
+3. O'chadi: barcha bemorlar, navbat, qabullar, ko'rik yozuvlari, tashxislar, retseptlar, tekshiruv natijalari, hisoblar, to'lovlar, kassa smenalari. Navbat raqamlari yana 1 dan boshlanadi.
+4. Qoladi: xodimlar, xizmatlar va narxlar, shablonlar, jadval, sozlamalar, blank, audit jurnali (faqat sonlar yoziladi).
+
+Faqat klinika egasi bajara oladi (dastur va ma'lumotlar bazasi ikkalasi tekshiradi). **Qaytarib bo'lmaydi** — haqiqiy bemorlar kiritilgandan keyin ishlatilmaydi.
+
 ## 1. Klinikada — Farhod akaning kompyuterida (10 daqiqa)
 1. Chrome yoki Edge'da **itopmed.itoppos.uz/login** ni oching → login va parol bilan kiring.
 2. Telefoniga **Google Authenticator** o'rnating → ekrandagi QR kodni skanerlang → 6 xonali kodni kiriting.

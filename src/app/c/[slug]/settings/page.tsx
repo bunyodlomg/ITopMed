@@ -13,6 +13,7 @@ import { Letterhead } from "@/components/letterhead";
 import { getLetterhead } from "@/server/clinic/branding";
 import { letterheadAction } from "../../../desk-actions";
 import { DataCard } from "./data-card";
+import { PurgeCard } from "./purge-card";
 import { ScreensCard } from "./screens-card";
 
 export default async function ClinicSettingsPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -58,6 +59,8 @@ export default async function ClinicSettingsPage({ params }: { params: Promise<{
       </Form>
 
       <DataCard ctx={ctx} />
+
+      <PurgeCard ctx={ctx} />
 
       <ScreensCard ctx={ctx} />
 

@@ -1604,6 +1604,17 @@
         "week": "This week",
         "month": "This month"
       }
+    },
+    "purge": {
+      "title": "Remove test patients",
+      "hint": "Before real work starts: remove every patient entered while trying the system out.",
+      "warningTitle": "This cannot be undone",
+      "warning": "All patients and their queue entries, visits, notes, diagnoses, prescriptions, study results, invoices, payments and cash shifts are deleted for good. Staff, services, prices, templates, schedules and settings stay. Do not use it once real patients are entered.",
+      "confirmLabel": "To confirm, type the clinic address: {slug}",
+      "confirmHint": "Type the address exactly as shown above (case does not matter).",
+      "submit": "Remove all patients",
+      "working": "Removing…",
+      "done": "Done: {patients} patients and {appointments} queue entries removed."
     }
   },
   "status": {
@@ -1872,7 +1883,8 @@
     "usernameTaken": "This login is already taken. Choose another one.",
     "schemeNothingChosen": "Tick at least one medicine of the scheme.",
     "dateInPast": "The date has passed.",
-    "dispensaryExists": "This patient is already under your follow-up in this group."
+    "dispensaryExists": "This patient is already under your follow-up in this group.",
+    "purgeConfirm": "The clinic address does not match — nothing was removed."
   },
   "supportScope": {
     "CONFIGURATION": "Configuration",

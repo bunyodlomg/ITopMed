@@ -81,7 +81,10 @@ async function main() {
   await ok(page, "walk-in: patient joins the doctor's queue", async () => {
     await page.goto(`${C}/queue?patient=${patientId}`);
     const doctor = page.locator('select[name="doctorProfileId"]');
-    const option = await doctor.locator("option", { hasText: /Maxammadov/ }).first().getAttribute("value");
+    // The doctor named by ITM_E2E_DOCTOR, else the first doctor of the clinic (the account itself must be that doctor to start the visit).
+    const wanted = process.env.ITM_E2E_DOCTOR;
+    const named = wanted ? doctor.locator("option", { hasText: wanted }) : null;
+    const option = named && (await named.count()) ? await named.first().getAttribute("value") : await doctor.locator("option:not([value=''])").first().getAttribute("value");
     await doctor.selectOption(option!);
     // Wait for the server action to finish (the name is already visible in the walk-in card before that).
     await Promise.all([
