@@ -102,8 +102,10 @@ async function main() {
   } else if (task === "update-clinic") {
     const specFile = process.argv[3];
     if (!specFile) throw new Error("Usage: tasks.mjs update-clinic <spec.json>");
-    const r = await applyClinicExtras(clinicSpecSchema.parse(JSON.parse(fs.readFileSync(specFile, "utf8"))));
-    console.log(`Klinika yangilandi: ${r.templatesAdded} ta yangi diagnostika shabloni; blankada to'ldirildi: ${r.letterhead.join(", ") || "-"}`);
+    const r = await applyClinicExtras(clinicSpecSchema.parse(JSON.parse(fs.readFileSync(specFile, "utf8"))), path.dirname(specFile));
+    const s = r.services;
+    console.log(`Klinika yangilandi: ${r.templatesAdded} ta yangi shablon; blankada to'ldirildi: ${r.letterhead.join(", ") || "-"}`);
+    console.log(`Xizmatlar: ${s.created} yangi, ${s.updated} narxi yangilandi, ${s.renamed} nomi o'zgardi, ${s.retired} arxivlandi`);
   } else if (task === "check-db") {
     const c = new pg.Client({ connectionString: need("MIGRATION_DATABASE_URL") });
     await c.connect();

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Open a clinic ready to work from a spec (asks for the owner's password; it is never put on the command line).
 #   sudo /opt/itopmed/bin/itopmed-clinic farhod-medservis owner.login "Owner Full Name"   (asks the password)
-#   sudo /opt/itopmed/bin/itopmed-clinic farhod-medservis --update     (existing clinic: add new templates, fill empty letterhead fields)
+#   sudo /opt/itopmed/bin/itopmed-clinic farhod-medservis --update     (existing clinic: add new templates, apply the price list, fill empty letterhead fields)
 set -euo pipefail
 SPEC="${1:?clinic spec name, e.g. farhod-medservis}"
 FILE="/opt/itopmed/current/clinics/$SPEC.json"

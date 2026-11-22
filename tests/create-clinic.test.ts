@@ -13,6 +13,7 @@ describe("server task: open a clinic ready to work", () => {
     const spec = JSON.parse(fs.readFileSync("scripts/deploy/clinics/farhod-medservis.json", "utf8"));
     const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "itm-spec-")), "spec.json");
     fs.writeFileSync(file, JSON.stringify({ ...spec, name: "Synthetic Farhod", slug }));
+    fs.copyFileSync(path.join("scripts/deploy/clinics", spec.logoFile), path.join(path.dirname(file), spec.logoFile));
     const login = uniq("owner");
 
     const r = await createClinicFromSpec(file, login, "Synthetic Owner Doctor", PASSWORD);
@@ -24,7 +25,10 @@ describe("server task: open a clinic ready to work", () => {
     const services = await listServices(ctx);
     expect(services).toHaveLength(spec.priceList.length);
     expect(services.every((s) => s.priceMinor > 0n)).toBe(true);
-    expect(services.find((s) => s.name === "EXO (yurak UZI)")?.priceMinor).toBe(12_000_000n);
+    expect(services.find((s) => s.name === "EhoKG (transtorakal)")?.priceMinor).toBe(12_000_000n);
+    expect(services.find((s) => s.name === "Yorg'oq UTT")?.kind).toBe("IMAGING");
+    expect(r.extras.letterhead).toEqual(expect.arrayContaining(["logoDataUrl", "doctorPhone"]));
+    expect(r.extras.templatesAdded).toBe(15);
     // The owner's session used by the task is signed out again; the owner still signs in normally.
     expect(ctx.tenant.status).toBe("ACTIVE");
   });

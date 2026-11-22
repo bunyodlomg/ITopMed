@@ -9,14 +9,19 @@
  * on the server (see scripts/deploy/itopmed-clinic.sh).
  */
 import fs from "node:fs";
+import path from "node:path";
 import { z } from "zod";
 import { loginClinicUser, logoutClinic, resolveClinic, validateClinicSession } from "../../src/server/auth/clinic-auth";
 import type { PlatformPrincipal, RequestMeta } from "../../src/server/auth/platform-auth";
 import { applyPendingSetup } from "../../src/server/clinic/practice";
-import { importPriceList } from "../../src/server/clinic/price-list";
+import { importPriceList, parsePriceLine, upsertPriceItems, type PriceLine } from "../../src/server/clinic/price-list";
+import { LOGO_MAX_BYTES } from "../../src/server/clinic/branding";
+import { PLACEHOLDERS } from "../../src/server/clinic/templates";
+import { NOTE_SECTIONS } from "../../src/server/emr/record";
+import { SPECIALTIES } from "../../src/server/scheduling/specialties";
 import { listServices, setServiceArchived } from "../../src/server/clinic/resources";
 import { recordAudit } from "../../src/server/audit";
-import { platformDb, withAppContext, withPlatform } from "../../src/server/db";
+import { platformDb, withAppContext, withPlatform, type Tx } from "../../src/server/db";
 import { changeTenantStatus, createClinicWithOwner } from "../../src/server/tenancy/provisioning";
 import { DIAGNOSTIC_KINDS } from "../../src/lib/diagnostics";
 import { parseFieldLines, unknownPlaceholders, type DiagnosticTemplateContent } from "../../src/lib/diagnostic-template";
@@ -43,6 +48,29 @@ export const clinicSpecSchema = z.object({
   diagnosticTemplates: z
     .array(z.object({ name: z.string().min(2).max(120), study: z.enum(DIAGNOSTIC_KINDS), fields: z.string(), body: z.string().min(1), conclusion: z.string().default("") }))
     .default([]),
+  /** Printable documents from the clinic's own forms; text with {{placeholders}} (PLACEHOLDERS in src/server/clinic/templates.ts). */
+  documentTemplates: z.array(z.object({ name: z.string().min(2).max(120), specialty: z.enum(SPECIALTIES).optional(), body: z.string().min(1).max(20_000) })).default([]),
+  /** Visit note templates: pre-filled note sections. */
+  noteTemplates: z
+    .array(
+      z.object({
+        name: z.string().min(2).max(120),
+        specialty: z.enum(SPECIALTIES).optional(),
+        sections: z.partialRecord(z.enum(NOTE_SECTIONS), z.string().max(10_000)),
+      }),
+    )
+    .default([]),
+  /**
+   * Live clinic whose price list changed names: the service called `from` is renamed
+   * to `to` (keeping its visits and invoices) while no service is called `to` yet.
+   */
+  serviceRenames: z.array(z.object({ from: z.string().min(2), to: z.string().min(2) })).default([]),
+  /** Live clinic: services (exact names) no longer on the price list are archived (restorable on the Services page). */
+  retiredServices: z.array(z.string().min(2)).default([]),
+  /** Printed on the owner-doctor's documents as {{doctor.phone}}; filled only while empty. */
+  ownerDoctorPhone: z.string().max(40).default(""),
+  /** Letterhead logo, a PNG/JPEG next to the spec file; set only while the clinic has none. */
+  logoFile: z.string().regex(/^[a-z0-9-]+\.(png|jpe?g)$/).optional(),
 });
 export type ClinicSpec = z.infer<typeof clinicSpecSchema>;
 
@@ -113,49 +141,129 @@ export async function createClinicFromSpec(specFile: string, ownerLogin: string,
         }
       }
     }
-    const extras = await applyClinicExtras(spec);
+    const extras = await applyClinicExtras(spec, path.dirname(specFile));
     return { slug: created.slug, prices, archived, extras };
   } finally {
     await logoutClinic(login.token);
   }
 }
 
+export interface ExtrasResult {
+  templatesAdded: number;
+  letterhead: string[];
+  services: { created: number; updated: number; renamed: number; retired: number };
+}
+
+type AuditEntry = { action: string; entityType: string; entityId: string; metadata?: Record<string, string> };
+
 /**
- * Adds the spec's diagnostic templates (by name, never replacing one the clinic
- * already has) and fills letterhead details that are still EMPTY. Safe to run
- * again on a live clinic: `node tasks.mjs update-clinic <spec.json>`.
+ * Brings a clinic up to its spec without overwriting what the clinic changed itself:
+ * - templates (diagnostic, document, note) are added by kind + name; an existing one is left alone;
+ * - letterhead details, the owner-doctor's phone and the logo are filled only while EMPTY;
+ * - price list: `serviceRenames` first, then new names are added and listed names get the
+ *   spec's price; `retiredServices` are archived.
+ * Safe to run again on a live clinic: `node tasks.mjs update-clinic <spec.json>`.
  * Runs as a system job in the clinic's tenant context; audited.
  */
-export async function applyClinicExtras(spec: ClinicSpec): Promise<{ templatesAdded: number; letterhead: string[] }> {
-  const tenant = await platformDb().tenant.findUnique({ where: { slug: spec.slug }, select: { id: true } });
+export async function applyClinicExtras(spec: ClinicSpec, specDir?: string): Promise<ExtrasResult> {
+  const tenant = await platformDb().tenant.findUnique({ where: { slug: spec.slug }, select: { id: true, currency: true } });
   if (!tenant) throw new Error(`No clinic with slug ${spec.slug}`);
-  const contents = spec.diagnosticTemplates.map((t) => {
-    const { fields, badLines } = parseFieldLines(t.fields);
-    if (badLines.length || !fields.length) throw new Error(`Template "${t.name}": bad field lines ${badLines.join(", ")}`);
-    const unknown = unknownPlaceholders(t.body, fields);
-    if (unknown.length) throw new Error(`Template "${t.name}": unknown placeholders ${unknown.join(", ")}`);
-    const content: DiagnosticTemplateContent = { study: t.study, fields, body: t.body, ...(t.conclusion.trim() ? { conclusion: t.conclusion.trim() } : {}) };
-    return { name: t.name, content: JSON.stringify(content) };
+  const templates = specTemplates(spec);
+  const prices = spec.priceList.map((l) => {
+    const p = parsePriceLine(l, tenant.currency);
+    if (!p) throw new Error(`Price list: cannot read "${l}"`);
+    return p;
   });
+  const logo = spec.logoFile && specDir ? logoDataUrl(path.join(specDir, spec.logoFile)) : null;
   return withAppContext({ tenantId: tenant.id }, async (tx) => {
-    const owner = await tx.membership.findFirst({ where: { tenantId: tenant.id, status: "ACTIVE", roles: { some: { role: { key: "clinic_owner" } } } }, select: { userId: true }, orderBy: { createdAt: "asc" } });
+    const owner = await tx.membership.findFirst({ where: { tenantId: tenant.id, status: "ACTIVE", roles: { some: { role: { key: "clinic_owner" } } } }, select: { id: true, userId: true }, orderBy: { createdAt: "asc" } });
     if (!owner) throw new Error("The clinic has no active owner");
+    const audit = (e: AuditEntry) => recordAudit(tx, { ...e, tenantId: tenant.id, actorType: "SYSTEM", metadata: { ...e.metadata, by: "clinic-spec" } });
+
     let templatesAdded = 0;
-    for (const c of contents) {
-      if (await tx.clinicTemplate.findFirst({ where: { tenantId: tenant.id, kind: "DIAGNOSTIC", name: c.name, archivedAt: null }, select: { id: true } })) continue;
-      await tx.clinicTemplate.create({ data: { id: uuidv7(), tenantId: tenant.id, kind: "DIAGNOSTIC", name: c.name, content: c.content, createdById: owner.userId } });
+    for (const c of templates) {
+      if (await tx.clinicTemplate.findFirst({ where: { tenantId: tenant.id, kind: c.kind, name: c.name, archivedAt: null }, select: { id: true } })) continue;
+      await tx.clinicTemplate.create({ data: { id: uuidv7(), tenantId: tenant.id, kind: c.kind, name: c.name, specialty: c.specialty, content: c.content, createdById: owner.userId } });
       templatesAdded++;
     }
-    const current = await tx.tenant.findUniqueOrThrow({ where: { id: tenant.id }, select: { legalName: true, address: true, licenseText: true, contactPhone: true } });
+
+    const current = await tx.tenant.findUniqueOrThrow({ where: { id: tenant.id }, select: { legalName: true, address: true, licenseText: true, contactPhone: true, logoDataUrl: true } });
     const fill: Record<string, string> = {};
     if (!current.legalName && spec.legalName) fill.legalName = spec.legalName;
     if (!current.address && spec.address) fill.address = spec.address;
     if (!current.licenseText && spec.licenseText) fill.licenseText = spec.licenseText;
     if (!current.contactPhone && spec.contactPhone) fill.contactPhone = spec.contactPhone;
+    if (!current.logoDataUrl && logo) fill.logoDataUrl = logo;
     if (Object.keys(fill).length) await tx.tenant.update({ where: { id: tenant.id }, data: fill, select: { id: true } });
-    if (templatesAdded || Object.keys(fill).length) {
-      await recordAudit(tx, { tenantId: tenant.id, actorType: "SYSTEM", action: "clinic.spec_applied", entityType: "Tenant", entityId: tenant.id, metadata: { templatesAdded, letterhead: Object.keys(fill) } });
+    const letterhead = Object.keys(fill);
+    if (spec.ownerDoctorPhone) {
+      const r = await tx.doctorProfile.updateMany({ where: { tenantId: tenant.id, membershipId: owner.id, OR: [{ contactPhone: null }, { contactPhone: "" }] }, data: { contactPhone: spec.ownerDoctorPhone } });
+      if (r.count) letterhead.push("doctorPhone");
     }
-    return { templatesAdded, letterhead: Object.keys(fill) };
+
+    const services = await applyServices(tx, tenant, spec, prices, audit);
+    if (templatesAdded || letterhead.length) {
+      await recordAudit(tx, { tenantId: tenant.id, actorType: "SYSTEM", action: "clinic.spec_applied", entityType: "Tenant", entityId: tenant.id, metadata: { templatesAdded, letterhead } });
+    }
+    return { templatesAdded, letterhead, services };
   });
+}
+
+export type SpecTemplate = { kind: "DIAGNOSTIC" | "DOCUMENT" | "NOTE"; name: string; specialty: string | null; content: string };
+
+/** Every template of the spec, checked the way the Templates page checks them (fields, placeholders). */
+export function specTemplates(spec: ClinicSpec): SpecTemplate[] {
+  const diagnostic = spec.diagnosticTemplates.map((t): SpecTemplate => {
+    const { fields, badLines } = parseFieldLines(t.fields);
+    if (badLines.length || !fields.length) throw new Error(`Template "${t.name}": bad field lines ${badLines.join(", ")}`);
+    const unknown = unknownPlaceholders(t.body, fields);
+    if (unknown.length) throw new Error(`Template "${t.name}": unknown placeholders ${unknown.join(", ")}`);
+    const content: DiagnosticTemplateContent = { study: t.study, fields, body: t.body, ...(t.conclusion.trim() ? { conclusion: t.conclusion.trim() } : {}) };
+    return { kind: "DIAGNOSTIC", name: t.name, specialty: null, content: JSON.stringify(content) };
+  });
+  const documents = spec.documentTemplates.map((t): SpecTemplate => {
+    const unknown = [...t.body.matchAll(/\{\{\s*([a-zA-Z.]+)\s*\}\}/g)].map((m) => m[1]!).filter((k) => !(PLACEHOLDERS as readonly string[]).includes(k));
+    if (unknown.length) throw new Error(`Document "${t.name}": unknown placeholders ${unknown.join(", ")}`);
+    return { kind: "DOCUMENT", name: t.name, specialty: t.specialty ?? null, content: t.body.trim() };
+  });
+  const notes = spec.noteTemplates.map((t): SpecTemplate => {
+    const sections = Object.fromEntries(NOTE_SECTIONS.map((k) => [k, t.sections[k] ?? ""]));
+    if (Object.values(sections).every((v) => !v.trim())) throw new Error(`Note template "${t.name}" is empty`);
+    return { kind: "NOTE", name: t.name, specialty: t.specialty ?? null, content: JSON.stringify(sections) };
+  });
+  return [...diagnostic, ...documents, ...notes];
+}
+
+async function applyServices(tx: Tx, tenant: { id: string; currency: string }, spec: ClinicSpec, prices: PriceLine[], audit: (e: AuditEntry) => Promise<void>): Promise<ExtrasResult["services"]> {
+  const all = await tx.service.findMany({ where: { tenantId: tenant.id }, select: { id: true, name: true, archivedAt: true } });
+  const byName = (n: string) => all.find((s) => s.name.trim().toLowerCase() === n.trim().toLowerCase());
+  let renamed = 0;
+  for (const r of spec.serviceRenames) {
+    const from = byName(r.from);
+    if (!from || byName(r.to)) continue;
+    await tx.service.update({ where: { id: from.id }, data: { name: r.to } });
+    await audit({ action: "service.renamed", entityType: "Service", entityId: from.id });
+    from.name = r.to;
+    renamed++;
+  }
+  const { created, updated } = prices.length ? await upsertPriceItems(tx, tenant, prices, audit) : { created: 0, updated: 0 };
+  let retired = 0;
+  for (const name of spec.retiredServices) {
+    const s = byName(name);
+    if (!s || s.archivedAt) continue;
+    await tx.service.update({ where: { id: s.id }, data: { archivedAt: new Date() } });
+    await audit({ action: "service.archived", entityType: "Service", entityId: s.id });
+    retired++;
+  }
+  return { created, updated, renamed, retired };
+}
+
+/** The logo as a data URL, checked by its real bytes and size like an uploaded one. */
+function logoDataUrl(file: string): string {
+  const b = fs.readFileSync(file);
+  const png = b.length > 8 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  const jpeg = b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
+  if (!png && !jpeg) throw new Error(`Logo ${file}: not a PNG or JPEG`);
+  if (b.length > LOGO_MAX_BYTES) throw new Error(`Logo ${file}: larger than ${LOGO_MAX_BYTES} bytes`);
+  return `data:${png ? "image/png" : "image/jpeg"};base64,${b.toString("base64")}`;
 }

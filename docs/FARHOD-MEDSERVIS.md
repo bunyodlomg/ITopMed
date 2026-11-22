@@ -14,6 +14,20 @@ Boshqa klinikani shu tarzda ochish (serverda):
 /opt/itopmed/bin/itopmed-clinic farhod-medservis farhod.admin "Ism Familiya"
 ```
 
+## 0.1. Shifokorning Word blankalari dasturda (22.11.2026)
+Farhod aka yuborgan 16 ta Word fayl (`scripts/deploy/clinics/farhod-medservis.json`) — kirillchadan lotinchaga o'girilgan, me'yorlar faqat blankada yozilganicha:
+- **Diagnostika shablonlari (12):** homiladorlik I va II–III trimestri, qorin bo'shlig'i umumiy (ayollar / erkaklar), hazm tizimi, oshqozon va 12 barmoqli ichak, buyraklar + siydik pufagi + prostata, bachadon va ortiqlari, qalqonsimon bez, yorg'oq, yuza a'zolar, transtorakal exokardiografiya.
+- **Hujjatlar:** «Kardiolog ko'ruvi varag'i» (pastida shifokor telefoni, Telegram savollar uchun), «Ambulator davolanish haqida ma'lumotnoma».
+- **Ko'rik shabloni:** «Kardiolog ko'ruvi: ko'rik va tavsiyalar» (ko'rik matni va sayr/ovqatlanish tavsiyalari).
+- **Narxnoma:** 13 ta xizmat, shifokor narxlari bilan. Eski nomlar (UZI) yangisiga o'zgartiriladi — tarix saqlanadi; «Umumiy erkaklar UZI» arxivlanadi (narxnomada umumiy qorin UTT bitta).
+- **Blank:** logotip (yurak belgisi) va shifokor telefoni — faqat bo'sh bo'lsa qo'yiladi.
+
+Serverda qo'llash (yangi versiya o'rnatilgandan keyin; klinika o'zgartirgan narsalar ustidan yozilmaydi, qayta ishga tushirish xavfsiz):
+```bash
+sudo /opt/itopmed/bin/itopmed-clinic farhod-medservis --update
+```
+Keyin **Shablonlar** sahifasida eski «Kardiolog ko'ruvi» hujjati kerak bo'lmasa — arxivlang.
+
 ## 1. Klinikada — Farhod akaning kompyuterida (10 daqiqa)
 1. Chrome yoki Edge'da **itopmed.itoppos.uz/login** ni oching → login va parol bilan kiring.
 2. Telefoniga **Google Authenticator** o'rnating → ekrandagi QR kodni skanerlang → 6 xonali kodni kiriting.
