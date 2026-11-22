@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>ITop Med — Farhod MedServis uchun qo'llanma</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .video { border-left: 1.2mm solid #d14b7a; background: #fdf0f5; border-radius: 0 2mm 2mm 0; padding: 2.5mm 4mm; margin: 2mm 0 4mm; break-inside: avoid; font-size: 9.8pt; }
+  .video b { color: #a8325c; }
+  .role { display: inline-block; border-radius: 99px; padding: 0.4mm 2.5mm; font-size: 8.5pt; font-weight: 600; margin-right: 1.5mm; }
+  .role.owner { background: #e8f1fd; color: #0a66d8; }
+  .role.desk { background: #e7f4ec; color: #146a39; }
+  .role.doc { background: #fdf3e2; color: #8a5300; }
+  .flow { display: flex; gap: 2mm; align-items: stretch; margin: 3mm 0 5mm; }
+  .flow div { flex: 1; border: 1px solid var(--border); border-radius: 2.5mm; padding: 2.5mm; font-size: 9pt; text-align: center; background: #fafbfc; }
+  .flow div b { display: block; font-size: 10pt; margin-bottom: 1mm; }
+  .flow .arrow { flex: 0 0 4mm; border: 0; background: none; padding: 0; display: grid; place-items: center; color: var(--muted); font-size: 12pt; }
+  figure img { width: auto; max-width: 100%; max-height: 92mm; margin: 0 auto; }
+  figure.half img { max-width: 78%; }
+  figure.small img { max-height: 70mm; }
+  .grid2 figure img { max-height: 60mm; }
+  .phones img, figure.phone img { max-height: 105mm; }
+  .tight p, .tight li { margin-bottom: 1.2mm; }
+</style>
+</head>
+<body>
+
+<section class="page cover">
+  <div class="brand"><div class="logo">+</div>ITop Med</div>
+  <div>
+    <div class="eyebrow">Farhod MedServis · "DOCTORLAR NFF" XK</div>
+    <h1>Dasturdan foydalanish:<br>boshidan oxirigacha</h1>
+    <p class="lead">Klinika egasi, shifokor va registrator uchun. Har bir bo'lim video-darsning bir qismi: nima bosiladi, nima chiqadi va videoda nimani ko'rsatish kerak.</p>
+  </div>
+  <div class="band"><p><strong>Manzil:</strong> itopmed.itoppos.uz/login &nbsp;·&nbsp; Kirish faqat <strong>login va parol</strong> bilan. Ma'lumotlar serverda saqlanadi, har kuni zaxira nusxa olinadi.</p></div>
+  <p class="small muted">Versiya: 2026-yil noyabr · Rasmlardagi bemorlar to'qima (namuna), haqiqiy odamlar emas.</p>
+</section>
+
+<section class="page">
+  <h2>Mundarija</h2>
+  <ol class="toc">
+    <li><span>0. Video tayyorlash bo'yicha maslahat</span><span>3</span></li>
+    <li><span>1. Dastur qanday ishlaydi: kim nima qiladi</span><span>3</span></li>
+    <li><span>2. Kirish, til, ekran, chiqish</span><span>4</span></li>
+    <li><span>3. Bosh sahifa</span><span>5</span></li>
+    <li><span>4. Birinchi sozlash (klinika egasi)</span><span>6</span></li>
+    <li><span>5. Registrator: Qabulxona</span><span>10</span></li>
+    <li><span>6. Shifokor: qabul, yozuv, tashxis, retsept</span><span>15</span></li>
+    <li><span>7. UTT va EXO: shifokorning o'z blankalari</span><span>18</span></li>
+    <li><span>8. Hujjatlarni chop etish</span><span>20</span></li>
+    <li><span>9. Qarz, kassa, hisobotlar</span><span>21</span></li>
+    <li><span>10. Bemorning tibbiy kartasi va Excel</span><span>22</span></li>
+    <li><span>11. Ishni boshlash kuni: sinov bemorlarini tozalash</span><span>23</span></li>
+    <li><span>12. Har kungi qisqa tartib</span><span>24</span></li>
+    <li><span>13. Muammolar va yechimlar</span><span>24</span></li>
+    <li><span>14. Video ssenariysi (jadval)</span><span>25</span></li>
+  </ol>
+</section>
+
+<section class="page">
+  <h2>0. Video tayyorlash bo'yicha maslahat</h2>
+  <ul>
+    <li>Videoni <strong>14 ta qisqa qism</strong>ga bo'ling (oxirgi sahifadagi jadval). Har biri 1–4 daqiqa — shifokor keyin kerakli joyini qayta ko'ra oladi.</li>
+    <li>Yozib olishdan oldin dasturda 2–3 ta <strong>namuna bemor</strong> kiriting (masalan "Aliyev Botir, 1962"). Haqiqiy bemorni ko'rsatmang. Video tugagach ularni 11-bo'limdagi tugma bilan o'chirasiz.</li>
+    <li>Ikki oyna oching: birida <strong>registrator</strong> hisobi, ikkinchisida <strong>shifokor</strong> hisobi (masalan Chrome'ning oddiy va "Inkognito" oynasi). Shunda bemor registratordan shifokorga qanday "o'tishi" ko'rinadi.</li>
+    <li>Brauzer masshtabini 110–125% qiling (<code>Ctrl</code> + <code>+</code>) — videoda yozuvlar yaxshi o'qiladi.</li>
+  </ul>
+  <div class="video"><b>Videoda:</b> har qism boshida "endi … ni ko'ramiz" deb ayting, oxirida qisqa xulosa qiling: "Demak, registrator 4 ta qadamni to'ldiradi va talonni beradi".</div>
+
+  <h2 style="margin-top:7mm">1. Dastur qanday ishlaydi: kim nima qiladi</h2>
+  <div class="flow">
+    <div><b>Registrator</b>Bemorni yozadi, xizmatni belgilaydi, pul oladi yoki qarzga yozadi</div>
+    <div class="arrow">→</div>
+    <div><b>Navbat</b>Talon raqami, bemor shifokor ro'yxatiga tushadi</div>
+    <div class="arrow">→</div>
+    <div><b>Shifokor</b>Qabul, ko'rik yozuvi, tashxis, retsept, UTT / EXO</div>
+    <div class="arrow">→</div>
+    <div><b>Hujjatlar</b>Kardiolog varag'i, UTT xulosasi, ma'lumotnoma chop etiladi</div>
+    <div class="arrow">→</div>
+    <div><b>Hisobot</b>Kassa, qarzlar, kunlik va oylik tushum</div>
+  </div>
+  <table>
+    <tr><th>Kim</th><th>Hisobi</th><th>Nimani ko'radi va qiladi</th></tr>
+    <tr><td><span class="role owner">Egasi</span><span class="role doc">Shifokor</span></td><td>Farhod aka</td><td>Hamma bo'lim: sozlamalar, xodimlar, narxlar, shablonlar, qabul, tibbiy yozuvlar, kassa va hisobotlar.</td></tr>
+    <tr><td><span class="role desk">Registrator</span><span class="role desk">Kassir</span></td><td>Registrator</td><td>Qabulxona, bemorlar ro'yxati, navbat, to'lov, qarz, talon va chek. <strong>Tibbiy yozuvlarni ko'rmaydi.</strong></td></tr>
+  </table>
+  <p class="small muted">Har bir xodim o'z logini bilan kiradi. Kim nima qilgani avtomatik yozib boriladi (audit jurnali).</p>
+</section>
+
+<section class="page">
+  <h2>2. Kirish, til, ekran, chiqish</h2>
+  <figure><img src="img/f-01-login.png"><figcaption>Kirish sahifasi: login va parol</figcaption></figure>
+  <ol class="tight">
+    <li>Chrome yoki Edge'da <strong>itopmed.itoppos.uz/login</strong> ni oching.</li>
+    <li><strong>Login</strong> va <strong>parol</strong>ni yozing → <strong>Kirish</strong>. Klinika avtomatik ochiladi.</li>
+    <li>Brauzer menyusidan <strong>"Ilovani o'rnatish"</strong> ni tanlasangiz, ish stolida ITop Med belgisi paydo bo'ladi — keyingi safar shu belgi bilan ochasiz.</li>
+  </ol>
+  <p><strong>Chap ustundagi tugmalar:</strong> ☀ / ☾ — yorug' yoki qorong'i ekran; <strong>UZ</strong> — til (o'zbekcha lotin/kirill, ruscha, inglizcha; har kim o'zi tanlaydi); pastda 🔒 — ekranni qulflash (kompyuterdan ketayotganda) va ⇥ — chiqish.</p>
+  <p><strong>Parolni unutsa:</strong> registratorga yangi parolni Farhod aka beradi (4-bo'lim, Xodimlar). Parol kamida 8 belgi.</p>
+  <div class="video"><b>Videoda:</b> kirishni ko'rsating → tilni almashtirib qaytaring → qorong'i rejimni yoqib-o'chiring → "Ilovani o'rnatish" ni ko'rsating. 1–2 daqiqa.</div>
+</section>
+
+<section class="page">
+  <h2>3. Bosh sahifa</h2>
+  <figure><img src="img/f-02-home.png"><figcaption>Bosh sahifa: bugungi va 7 kunlik tushum, qarzlar, 14 kunlik grafik, mening kunim</figcaption></figure>
+  <p>Yuqoridagi menyu bo'lim sahifalarini ko'rsatadi; chap ustundagi belgilar bo'limlarni almashtiradi: <strong>Bosh sahifa</strong>, <strong>Shifokor</strong> (stetoskop), <strong>Pul</strong> (hamyon), <strong>Klinika</strong> (bino), <strong>Sozlamalar</strong> (tishli g'ildirak).</p>
+</section>
+
+<section class="page">
+  <h2>4. Birinchi sozlash (klinika egasi)</h2>
+  <p><span class="role owner">Farhod aka</span> Bu ishlar bir marta qilinadi. Klinika ochilganda ko'pi allaqachon to'ldirilgan: blank, logotip, narxnoma va barcha shablonlar.</p>
+  <h3>4.1. Klinika sozlamalari va blank</h3>
+  <figure><img src="img/f-03-settings.png"><figcaption>Sozlamalar: nom, manzil, telefon, hujjat blanki (logotip, litsenziya), xarita QR kodi</figcaption></figure>
+  <ul class="tight">
+    <li><strong>Hujjat blanki</strong> — har bir chop etiladigan varaqning tepasida chiqadi: logotip, "DOCTORLAR NFF" XK, litsenziya №102180, manzil.</li>
+    <li>Telefon raqamini yozing — chek va talonda chiqadi.</li>
+  </ul>
+  <div class="video"><b>Videoda:</b> blankni ko'rsating, keyin istalgan chop etilgan hujjatda o'sha blank chiqishini (8-bo'lim) eslatib o'ting.</div>
+</section>
+
+<section class="page">
+  <h3>4.2. Registratorni qo'shish</h3>
+  <div class="grid2">
+    <figure><img src="img/f-04-staff-add.png"><figcaption>Xodimlar → "Xodim qo'shish": ism, rollar, login, parol</figcaption></figure>
+    <figure><img src="img/f-05-staff.png"><figcaption>Xodimlar ro'yxati</figcaption></figure>
+  </div>
+  <ol class="tight">
+    <li>Chap ustunda <strong>Klinika</strong> (bino belgisi) → yuqorida <strong>Xodimlar</strong> → <strong>Xodim qo'shish</strong>.</li>
+    <li>Ism-familiya; rollardan <strong>Registrator</strong> va <strong>Kassir</strong>ni belgilang.</li>
+    <li>Login (masalan <code>dilnoza</code>) va parol (dastur o'zi taklif qiladi, xohlasangiz o'zgartiring) → <strong>Qo'shish</strong>.</li>
+    <li>Login va parolni qog'ozga yozib registratorga bering.</li>
+  </ol>
+  <p><strong>Registrator parolini unutsa:</strong> Xodimlar → xodimni oching → <strong>Yangi parol berish</strong>. Ishdan ketgan xodim uchun <strong>Kirishni to'xtatish</strong> — u endi kira olmaydi, tarix saqlanadi.</p>
+
+  <h3>4.3. Xizmatlar va narxlar</h3>
+  <figure><img src="img/f-06-services.png"><figcaption>Xizmatlar va narxlar — Farhod akaning narxnomasi (13 ta xizmat)</figcaption></figure>
+  <p>Narxni o'zgartirish: xizmatni oching → yangi narx → <strong>Saqlash</strong>. Yangi narx shundan keyingi bemorlarga qo'llanadi; eski to'lovlar o'zgarmaydi. Kerak bo'lmagan xizmatni <strong>arxivlang</strong> — qabulxonada ko'rinmaydi.</p>
+  <div class="video"><b>Videoda:</b> bitta narxni o'zgartirib, qabulxonada yangi narx chiqqanini ko'rsating.</div>
+</section>
+
+<section class="page">
+  <h3>4.4. Shablonlar — shifokorning o'z blankalari</h3>
+  <figure><img src="img/f-07-templates.png"><figcaption>Shablonlar: hujjatlar, qabul yozuvi shablonlari, diagnostika (UTT/EXO) shablonlari</figcaption></figure>
+  <table>
+    <tr><th>Turi</th><th>Nima uchun</th><th>Farhod akaning shablonlari</th></tr>
+    <tr><td>Hujjatlar</td><td>Chop etiladigan varaq; bemor ma'lumotlari o'zi qo'yiladi</td><td>Kardiolog ko'ruvi varag'i, Ambulator davolanish haqida ma'lumotnoma, Qabul xulosasi, Yo'llanma</td></tr>
+    <tr><td>Qabul yozuvi</td><td>Ko'rik bayonnomasini bir bosishda to'ldiradi</td><td>Kardiolog ko'ruvi: ko'rik va tavsiyalar (sayr, ovqatlanish, suv)</td></tr>
+    <tr><td>Diagnostika</td><td>UTT / EXO bayonnomasi: maydonlar, me'yorlar, xulosa</td><td>12 ta: homiladorlik I va II–III trimestr, qorin bo'shlig'i (ayollar / erkaklar), hazm tizimi, oshqozon, buyraklar + prostata, bachadon va ortiqlari, qalqonsimon bez, yorg'oq, yuza a'zolar, exokardiografiya</td></tr>
+  </table>
+</section>
+
+<section class="page">
+  <h3>Diagnostika shablonining tuzilishi</h3>
+  <figure class="small"><img src="img/f-08-template-edit.png"><figcaption>Diagnostika shablonini tahrirlash (qalqonsimon bez)</figcaption></figure>
+  <p><strong>Maydonlar har qatorda bittadan:</strong> <code>kalit | Nomi | birlik | me'yor | odatiy matn</code>. Masalan: <code>rlLength | O'ng bo'lak uzunligi | sm | 4-6 |</code>. Me'yor yozilgan maydonga son kiritilsa, me'yordan tashqari bo'lsa qizil bo'lib belgilanadi. <strong>Hisobot matni</strong>da maydon <code>{{rlLength}}</code> ko'rinishida turadi.</p>
+  <p class="small muted">Me'yorlar faqat Farhod akaning Word blankalaridan olingan. O'zgartirsangiz, faqat keyingi bayonnomalarga ta'sir qiladi — eski bayonnomalar o'zgarmaydi.</p>
+
+  <h3>4.5. Shifokor va ish jadvali</h3>
+  <figure class="small"><img src="img/f-09-doctors.png"><figcaption>Shifokorlar va jadval</figcaption></figure>
+  <p>Standart jadval: dushanba–juma, 9:00–18:00. <strong>Shanba yoki yakshanba ishlasangiz — qo'shing.</strong> Jadval faqat oldindan yozilish (Qabulga yozish) uchun kerak; qabulxonadan "hozir kelgan" bemor har doim navbatga qo'shiladi.</p>
+  <div class="video"><b>Videoda:</b> 4-bo'limni egasi nomidan bir marta ko'rsating (5–6 daqiqa). Shifokor uchun bu qism "ma'lumot uchun".</div>
+</section>
+
+<section class="page">
+  <h2>5. Registrator: Qabulxona</h2>
+  <p><span class="role desk">Registrator</span> Butun ish bitta sahifada: <strong>Qabulxona</strong>. Tepada bugungi bemorlar, navbatdagilar, bugun to'langan pul va qarz.</p>
+  <figure><img src="img/f-10-desk.png"><figcaption>Qabulxona: 1. Bemor — qidirish yoki yangi bemor</figcaption></figure>
+</section>
+
+<section class="page">
+  <h3>5.1. Bemorni navbatga qo'shish — 4 qadam</h3>
+  <div class="step"><div class="n">1</div><div><strong>Bemor.</strong> Avval qidiring: familiya, telefon, karta raqami (P-000123) yoki tug'ilgan yil. Topilsa — tanlang. Topilmasa — <strong>"Yoki yangi bemor"</strong>: familiya, ism, tug'ilgan yili (1962 yoki 14.03.1962), jinsi, telefon, manzil, kim yubordi.</div></div>
+  <div class="step"><div class="n">2</div><div><strong>Xizmatlar va to'lov.</strong> Xizmatlarni belgilang — jami summa o'zi hisoblanadi. To'lov: <strong>To'liq to'ladi</strong> / <strong>Qisman</strong> (summani yozing) / <strong>Qarzga</strong>. Usul: naqd, karta, Click, Payme…</div></div>
+  <div class="step"><div class="n">3</div><div><strong>O'lchovlar</strong> (bo'y, vazn, bosim, puls) — agar registratorga bu ruxsat berilgan bo'lsa; bo'lmasa shifokor o'zi yozadi.</div></div>
+  <div class="step"><div class="n">4</div><div><strong>Shifokor</strong> → <strong>Navbatga qo'shish</strong>. Navbat raqami chiqadi.</div></div>
+  <figure><img src="img/f-11-desk-filled.png"><figcaption>2-qadam: xizmatlar belgilandi (Kardiolog ko'ruvi + EKG = 130 000 so'm), to'lov turi tanlanmoqda</figcaption></figure>
+  <p class="small muted">Shunday bemor allaqachon bo'lsa, dastur ogohlantiradi — ikki marta yozilib qolmaydi. Ishonchingiz komil bo'lsa "Bu yangi bemor" belgisini qo'ying.</p>
+</section>
+
+<section class="page">
+  <h3>5.2. Talon va chek</h3>
+  <figure><img src="img/f-12-desk-done.png"><figcaption>Bemor navbatga qo'shildi: № 1. "Navbat talonini chop etish", "Chekni chop etish", "Keyingi bemor"</figcaption></figure>
+  <figure class="half"><img src="img/f-13-ticket.png"><figcaption>Navbat taloni (80 mm, 58 mm yoki A4) — logotip, raqam, shifokor, vaqt. Narx va tashxis yozilmaydi.</figcaption></figure>
+  <p><strong>Printer:</strong> chop etish oynasida talon va chek uchun <strong>chek printeri</strong>ni, shifokor hujjatlari uchun <strong>A4 printer</strong>ni tanlang. Chek fiskal emas (soliq kassasi emas).</p>
+  <div class="video"><b>Videoda:</b> bitta yangi bemorni boshidan oxirigacha yozing, to'liq to'lov, talonni chop eting. Keyin ikkinchi bemorni <strong>qarzga</strong> yozing. 3–4 daqiqa.</div>
+</section>
+
+<section class="page">
+  <h3>5.3. Bugungi navbat va qarzni olish</h3>
+  <figure><img src="img/f-25-debt.png"><figcaption>O'ng tomonda bugungi navbat: holat (keldi / qabulda), to'langan summa, qarz va "Qarzni olish"</figcaption></figure>
+  <ol class="tight">
+    <li>Bemor tagidagi <strong>Qarzni olish</strong> ni bosing.</li>
+    <li>Summani yozing (bo'sh qoldirilsa — butun qarz) va to'lov usulini tanlang → tasdiqlang.</li>
+  </ol>
+  <p>Ertasi kuni kelgan qarzdor bemorni qidirib tanlasangiz, qizil yozuv bilan "qarzi bor" deb ko'rsatiladi.</p>
+  <figure><img src="img/f-14-desk-queue.png"><figcaption>Uch bemor navbatda: biri to'lagan, biri qarzdor</figcaption></figure>
+</section>
+
+<section class="page">
+  <h3>5.4. Navbat sahifasi va telefon</h3>
+  <figure><img src="img/f-15-queue.png"><figcaption>Navbat: bugungi qabullar va navbatsiz kelgan bemorlar; "Bo'sh vaqtlarni ko'rsatish" — oldindan yozish uchun</figcaption></figure>
+  <div class="grid2">
+    <div>
+      <p><strong>Qabulga yozish</strong> — bemorni boshqa kunga oldindan yozish (shifokor jadvalidagi bo'sh vaqtlar ko'rsatiladi).</p>
+      <p><strong>Telefon va planshetda</strong> ham ishlaydi: menyu pastda chiqadi. Registrator telefondan ham bemor qo'sha oladi.</p>
+      <div class="video"><b>Videoda:</b> telefonda saytni ochib, pastki menyuni ko'rsating. 1 daqiqa.</div>
+    </div>
+    <figure class="phone"><img src="img/f-29-phone-desk.png"><figcaption>Telefonda Qabulxona</figcaption></figure>
+  </div>
+</section>
+
+<section class="page">
+  <h2>6. Shifokor: qabul, yozuv, tashxis, retsept</h2>
+  <p><span class="role doc">Shifokor</span> Chap ustunda <strong>stetoskop</strong> belgisi → <strong>Bugungi bemorlarim</strong>.</p>
+  <figure><img src="img/f-16-my-queue.png"><figcaption>Bugungi bemorlarim: navbat raqami, yoshi, xizmatlari, to'lov holati va qarzi — bemor kirmasdan oldin ko'rinadi</figcaption></figure>
+  <ul class="tight">
+    <li><strong>Keyingi bemor</strong> — navbatdagi bemorni chaqiradi (kutish zalidagi ekranda raqam chiqadi va ovoz bilan aytiladi, agar ekran ulangan bo'lsa). <strong>Qayta chaqirish</strong> — yana bir bor.</li>
+    <li><strong>Kabinetim</strong> — xona raqami (masalan "3-xona"), chaqiruvda aytiladi.</li>
+    <li><strong>Qabulni boshlash</strong> — ko'rik bayonnomasi ochiladi.</li>
+  </ul>
+  <div class="video"><b>Videoda:</b> registrator oynasida yozilgan bemor shifokor oynasida darhol paydo bo'lishini ko'rsating.</div>
+</section>
+
+<section class="page">
+  <h3>6.1. Ko'rik bayonnomasi</h3>
+  <figure><img src="img/f-17-visit-top.png"><figcaption>Qabul ochildi: bemor ma'lumotlari, allergiyalar, "Shablondan to'ldirish" va "Tezkor tanlash"</figcaption></figure>
+  <ol class="tight">
+    <li><strong>Shablondan to'ldirish</strong> → "Kardiolog ko'ruvi: ko'rik va tavsiyalar" → <strong>Qo'llash</strong>. Faqat bo'sh bo'limlar to'ldiriladi — siz yozgan matn o'zgarmaydi.</li>
+    <li><strong>Tezkor tanlash</strong> — shikoyat, yurak va o'pka auskultatsiyasi, shishlar: bir bosishda matnga qo'shiladi. <strong>Oldingi ko'rikdan nusxalash</strong> — qayta kelgan bemor uchun.</li>
+    <li>Shikoyatlar, anamnez, obyektiv ko'rik, xulosa, reja bo'limlarini to'ldiring.</li>
+    <li><strong>Imzolash</strong>. Imzolangan bayonnomani o'zgartirib bo'lmaydi — faqat sababini ko'rsatib qo'shimcha kiritiladi (bu qonuniy talab).</li>
+  </ol>
+  <figure><img src="img/f-18-note.png"><figcaption>Bo'limlarni yozish</figcaption></figure>
+</section>
+
+<section class="page">
+  <h3>6.2. Tashxis va retsept</h3>
+  <ul class="tight">
+    <li><strong>Tashxis:</strong> MKB-10 kodi (ixtiyoriy, masalan I11.9) va matn; turi — asosiy, hamroh yoki asorat. Kardiolog varag'ida "Tashxis / Hamroh / Asorati" qatorlariga o'zi tushadi.</li>
+    <li><strong>Retsept:</strong> dori va dozasi (masalan "Bisoprolol 5 mg"), xalqaro nomi, bir martalik doza (1/2, 1/4 tabletka rasm bilan chiqadi), qabul tartibi, soatlari (08:00, 20:00), davomiyligi.</li>
+    <li>Allergiyasi bor doriga retsept yozilsa — dastur ogohlantiradi.</li>
+    <li>Xato retsept <strong>bekor qilinadi</strong> (o'chirilmaydi).</li>
+    <li><strong>Retsept sxemasi</strong> — tez-tez yoziladigan dorilar to'plami bir bosishda qo'shiladi (Shablonlar → Retsept sxemalari).</li>
+  </ul>
+  <figure><img src="img/f-19-dx-rx.png"><figcaption>Retseptlar: qo'shilgan dori va yangi retsept formasi</figcaption></figure>
+  <div class="video"><b>Videoda:</b> shablonni qo'llang → bitta shikoyatni tezkor tanlashdan qo'shing → imzolang → tashxis va bitta retsept qo'shing. 4–5 daqiqa.</div>
+</section>
+
+<section class="page">
+  <h2>7. UTT va EXO: shifokorning o'z blankalari</h2>
+  <p>Farhod akaning 12 ta Word blankasi dasturga kiritilgan. Qabul sahifasida <strong>Diagnostika</strong> → <strong>Natija qo'shish</strong>:</p>
+  <ol class="tight">
+    <li><strong>Shablon</strong>ni tanlang (masalan "UTT: qalqonsimon bez").</li>
+    <li><strong>Me'yorni to'ldirish</strong> — "aniq, tekis", "bir xil", "kengaymagan" kabi odatiy matnlar bir bosishda qo'yiladi.</li>
+    <li>O'lchamlarni yozing (vergul yoki nuqta bilan: 1,7). <strong>Me'yordan tashqari son qizil</strong> bo'ladi va pastda ro'yxati chiqadi.</li>
+    <li><strong>Xulosa</strong>ni yozing (tavsiya qatori tayyor turadi) → <strong>Saqlash</strong>.</li>
+  </ol>
+  <figure><img src="img/f-22-utt-form.png"><figcaption>Qalqonsimon bez: o'ng bo'lak uzunligi 6,8 sm va IN% 112 — me'yordan yuqori, qizil</figcaption></figure>
+  <p class="small muted">Bo'sh qoldirilgan maydonli qator bosma varaqda chiqmaydi. EKG uchun shablonsiz oddiy maydonlar (ritm, YuQS, PQ, QRS, QT) bor. Natijaga rasm yoki PDF (apparat ekrani) biriktirish mumkin.</p>
+</section>
+
+<section class="page">
+  <h3>7.1. Bosma UTT bayonnomasi</h3>
+  <figure><img src="img/f-23-utt-print.png"><figcaption>Chop etish: blank, bemor, sana, Word blankasidagi matn; me'yordan tashqari qiymatlar qalin va ↑ / ↓ bilan</figcaption></figure>
+  <div class="video"><b>Videoda:</b> qalqonsimon bez yoki qorin bo'shlig'i UTT sini to'liq ko'rsating: shablon → me'yorni to'ldirish → bitta qiymatni me'yordan tashqari yozish → saqlash → chop etish. 3–4 daqiqa.</div>
+</section>
+
+<section class="page">
+  <h2>8. Hujjatlarni chop etish</h2>
+  <p>Qabul sahifasidagi <strong>Hujjatlar</strong> tugmalaridan biri → bemor, sana, tashxis, retseptlar va shifokor ma'lumotlari o'zi qo'yiladi → <strong>Chop etish</strong>. Hujjatlarda narx yozilmaydi.</p>
+  <div class="grid2">
+    <figure><img src="img/f-20-cardio-sheet.png"><figcaption>Kardiolog ko'ruvi varag'i — pastida "+998 91 611 18 88 (Telegram orqali savollar uchun)"</figcaption></figure>
+    <figure><img src="img/f-21-certificate.png"><figcaption>Ambulator davolanish haqida ma'lumotnoma — sanalarni qo'lda yozasiz</figcaption></figure>
+  </div>
+  <p><strong>Qabulni yakunlash:</strong> hamma ish tugagach — <strong>Qabulni yakunlash</strong>. Bemor ro'yxatda "yakunlandi" bo'ladi, keyingi bemorni chaqirasiz.</p>
+  <p class="small muted">Varaqdagi QR kod — bemor o'z natijalarini telefonda ko'rishi uchun (bemor portali). Eski "Kardiolog ko'ruvi" hujjati kerak bo'lmasa, Shablonlar sahifasida arxivlang.</p>
+  <div class="video"><b>Videoda:</b> kardiolog varag'ini chop etish oynasigacha ko'rsating, A4 printerni tanlang. 1–2 daqiqa.</div>
+</section>
+
+<section class="page">
+  <h2>9. Qarz, kassa, hisobotlar</h2>
+  <p><span class="role owner">Egasi</span><span class="role desk">Kassir</span> Chap ustunda <strong>hamyon</strong> belgisi.</p>
+  <figure><img src="img/f-26-billing.png"><figcaption>Hisob va to'lovlar: har bir bemor hisobi, holati va qarzi</figcaption></figure>
+  <div class="grid2">
+    <figure><img src="img/f-27-cash.png"><figcaption>Kassa: smenani ochish va yopish, naqd pul qoldig'i</figcaption></figure>
+    <figure><img src="img/f-28-reports.png"><figcaption>Hisobotlar: tushum, xizmatlar, shifokorlar, qarzdorlar</figcaption></figure>
+  </div>
+  <ul class="tight">
+    <li><strong>Kassa smenasi:</strong> kun boshida oching (kassadagi boshlang'ich pul), kun oxirida yoping — dastur kutilgan naqd pulni hisoblaydi, sanalgan pul bilan farqini ko'rsatadi.</li>
+    <li><strong>Qaytarish:</strong> xizmat ko'rsatilmasa — hisobni oching → to'lov → <strong>Qaytarish</strong> (sababi bilan).</li>
+    <li><strong>Hisobotlar</strong> — tanlangan davr bo'yicha tushum, xizmatlar, shifokorlar va qarzdorlar.</li>
+  </ul>
+</section>
+
+<section class="page">
+  <h2>10. Bemorning tibbiy kartasi va Excel</h2>
+  <figure><img src="img/f-24-patient-card.png"><figcaption>Bemor kartasi: barcha qabullar, tashxislar, retseptlar, UTT/EXO natijalari, bosim tarixi</figcaption></figure>
+  <ul class="tight">
+    <li><strong>Bemorlar</strong> → qidiring (familiya, telefon, karta raqami) → bemorni oching.</li>
+    <li><strong>Excel</strong> tugmasi — bitta bemorning hamma ma'lumoti bitta faylda.</li>
+    <li>Sozlamalar → <strong>"Barcha bemorlarni Excel'da yuklab olish (ZIP)"</strong> — butun baza.</li>
+  </ul>
+  <div class="video"><b>Videoda:</b> bemorni qidirib, kartasini oching, oldingi qabullarni ko'rsating. 1–2 daqiqa.</div>
+</section>
+
+<section class="page">
+  <h2>11. Ishni boshlash kuni: sinov bemorlarini tozalash</h2>
+  <p><span class="role owner">Faqat egasi</span> Sinab ko'rish va video uchun kiritilgan namuna bemorlarni haqiqiy ish boshlanishidan oldin o'chiring.</p>
+  <figure class="half"><img src="img/f-30-purge.png"><figcaption>Sozlamalar → "Sinov bemorlarini tozalash" (rasmda sinov nusxasining manzili; sizda — <code>farhod-medservis</code>)</figcaption></figure>
+  <ol class="tight">
+    <li>Sozlamalar sahifasining pastida <strong>"Sinov bemorlarini tozalash"</strong>.</li>
+    <li>Maydonga klinika manzilini aynan yozing: <code>farhod-medservis</code>.</li>
+    <li><strong>Barcha bemorlarni o'chirish</strong> → "Tozalandi: … ta bemor" xabari chiqadi.</li>
+  </ol>
+  <div class="grid2">
+    <div class="card warn"><h3>O'chadi</h3><p>Barcha bemorlar, navbat, qabullar, ko'rik yozuvlari, tashxislar, retseptlar, UTT/EXO natijalari, hisoblar, to'lovlar, kassa smenalari. Navbat raqami yana 1 dan boshlanadi.</p></div>
+    <div class="card ok"><h3>Qoladi</h3><p>Xodimlar, xizmatlar va narxlar, shablonlar, jadval, sozlamalar, blank va logotip.</p></div>
+  </div>
+  <p><strong>Qaytarib bo'lmaydi.</strong> Haqiqiy bemorlar kiritilgandan keyin bu tugmadan foydalanmang. Registrator va shifokor rolida bu tugma umuman ko'rinmaydi.</p>
+</section>
+
+<section class="page">
+  <h2>12. Har kungi qisqa tartib</h2>
+  <div class="grid2">
+    <div class="card ok">
+      <h3>Registrator</h3>
+      <ol class="tight">
+        <li>Kirish → <strong>Kassa</strong>: smenani ochish.</li>
+        <li>Har bemor: <strong>Qabulxona</strong> → qidirish / yangi → xizmatlar → to'lov → <strong>Navbatga qo'shish</strong> → talon (va chek).</li>
+        <li>Qarzdor kelsa: navbatda <strong>Qarzni olish</strong>.</li>
+        <li>Kun oxiri: <strong>Kassa</strong> → pulni sanab smenani yopish → <strong>Chiqish</strong>.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Shifokor</h3>
+      <ol class="tight">
+        <li><strong>Bugungi bemorlarim</strong> → <strong>Keyingi bemor</strong>.</li>
+        <li><strong>Qabulni boshlash</strong> → shablon → yozish → <strong>Imzolash</strong>.</li>
+        <li>Tashxis, retsept, kerak bo'lsa UTT / EXO / EKG natijasi.</li>
+        <li>Hujjat chop etish → <strong>Qabulni yakunlash</strong>.</li>
+      </ol>
+    </div>
+  </div>
+
+  <h2 style="margin-top:7mm">13. Muammolar va yechimlar</h2>
+  <table>
+    <tr><th>Muammo</th><th>Yechim</th></tr>
+    <tr><td>Kira olmayapti</td><td>Login va parolni tekshiring (katta-kichik harf). Registrator parolini Farhod aka Xodimlar sahifasida yangilaydi.</td></tr>
+    <tr><td>Bemor shifokor ro'yxatida yo'q</td><td>Qabulxonada to'g'ri shifokor tanlanganini tekshiring; sahifani yangilang (F5).</td></tr>
+    <tr><td>Xizmat qabulxonada ko'rinmaydi</td><td>Xizmatlar sahifasida narxi qo'yilganini va arxivda emasligini tekshiring.</td></tr>
+    <tr><td>Hisobni chiqarib bo'lmayapti</td><td>Kamida bitta narxli xizmat qo'shilishi kerak.</td></tr>
+    <tr><td>Imzolangan yozuvda xato</td><td>"Qo'shimcha kiritish" — sababini yozib to'g'rilang (imzolangan matn o'chirilmaydi).</td></tr>
+    <tr><td>Chop etishda varaq noto'g'ri</td><td>Chop etish oynasida printerni tanlang: talon/chek — chek printeri, hujjat — A4. "Sarlavha va pastki qism" belgisini o'chiring.</td></tr>
+    <tr><td>Internet uzildi</td><td>Sayt ishlamaydi; internet qaytgach hammasi joyida — ma'lumot serverda, har kuni zaxira nusxa olinadi.</td></tr>
+  </table>
+</section>
+
+<section class="page">
+  <h2>14. Video ssenariysi</h2>
+  <table>
+    <tr><th>#</th><th>Qism</th><th>Kim nomidan</th><th>Nima ko'rsatiladi</th><th>Vaqt</th></tr>
+    <tr><td>1</td><td>Tanishuv</td><td>—</td><td>Dastur nima, kim nima qiladi (1-bo'lim sxemasi)</td><td>1 daq</td></tr>
+    <tr><td>2</td><td>Kirish</td><td>Egasi</td><td>Login, til, qorong'i rejim, ilovani o'rnatish, qulflash, chiqish</td><td>2 daq</td></tr>
+    <tr><td>3</td><td>Bosh sahifa</td><td>Egasi</td><td>Tushum, qarz, grafik, bo'limlar menyusi</td><td>1 daq</td></tr>
+    <tr><td>4</td><td>Sozlash</td><td>Egasi</td><td>Blank, registrator qo'shish, narxlar, shablonlar, jadval</td><td>5 daq</td></tr>
+    <tr><td>5</td><td>Bemorni yozish</td><td>Registrator</td><td>Yangi bemor, xizmatlar, to'liq to'lov, talon, chek</td><td>3 daq</td></tr>
+    <tr><td>6</td><td>Qarz</td><td>Registrator</td><td>Bemorni qarzga yozish, keyin qarzni olish</td><td>2 daq</td></tr>
+    <tr><td>7</td><td>Navbat va telefon</td><td>Registrator</td><td>Navbat sahifasi, qabulga yozish, telefonda ishlash</td><td>2 daq</td></tr>
+    <tr><td>8</td><td>Qabul</td><td>Shifokor</td><td>Bugungi bemorlarim, keyingi bemor, qabulni boshlash</td><td>2 daq</td></tr>
+    <tr><td>9</td><td>Ko'rik yozuvi</td><td>Shifokor</td><td>Shablon, tezkor tanlash, imzolash, tashxis, retsept</td><td>5 daq</td></tr>
+    <tr><td>10</td><td>UTT / EXO</td><td>Shifokor</td><td>Shablon, me'yorni to'ldirish, qizil qiymat, xulosa, chop etish</td><td>4 daq</td></tr>
+    <tr><td>11</td><td>Hujjatlar</td><td>Shifokor</td><td>Kardiolog varag'i, ma'lumotnoma, qabulni yakunlash</td><td>2 daq</td></tr>
+    <tr><td>12</td><td>Pul</td><td>Egasi</td><td>Kassa smenasi, hisoblar, qaytarish, hisobotlar</td><td>3 daq</td></tr>
+    <tr><td>13</td><td>Bemor kartasi</td><td>Shifokor</td><td>Qidirish, karta, oldingi qabullar, Excel</td><td>2 daq</td></tr>
+    <tr><td>14</td><td>Ishni boshlash</td><td>Egasi</td><td>Namuna bemorlarni tozalash; haqiqiy ish boshlanadi</td><td>1 daq</td></tr>
+  </table>
+  <p><strong>Jami:</strong> taxminan 35 daqiqa. Har qismni alohida fayl qilib Telegram'ga yuborish qulay.</p>
+  <div class="foot">ITop Med · Farhod MedServis uchun qo'llanma · Savollar uchun dastur yetkazib beruvchiga murojaat qiling.</div>
+</section>
+
+</body>
+</html>

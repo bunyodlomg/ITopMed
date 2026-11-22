@@ -12,13 +12,15 @@ const OUT = process.env.ITM_PDF_OUT ?? path.join(process.cwd(), "docs", "pdf");
 const DOCS = [
   { html: "sotuv.html", pdf: "ITopMed-sotuv.pdf", title: "ITop Med — Sotuv bo'limi uchun" },
   { html: "qollanma.html", pdf: "ITopMed-qollanma.pdf", title: "ITop Med — Egasi uchun qo'llanma" },
+  { html: "farhod-qollanma.html", pdf: "ITopMed-Farhod-MedServis-qollanma.pdf", title: "ITop Med — Farhod MedServis uchun qo'llanma" },
 ];
 
 async function main() {
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch({ channel: "msedge" });
   const page = await browser.newPage();
-  for (const d of DOCS) {
+  // ITM_PDF_ONLY=farhod-qollanma.html builds one document only.
+  for (const d of DOCS.filter((x) => !process.env.ITM_PDF_ONLY || x.html === process.env.ITM_PDF_ONLY)) {
     await page.goto(pathToFileURL(path.join(SRC, d.html)).href, { waitUntil: "load" });
     await page.evaluate(() => Promise.all(Array.from(document.images).map((i) => (i.complete ? null : new Promise((r) => (i.onload = i.onerror = r))))));
     const broken = await page.evaluate(() => Array.from(document.images).filter((i) => !i.naturalWidth).map((i) => i.getAttribute("src")));
