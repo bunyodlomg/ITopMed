@@ -33,9 +33,9 @@ Bemor ma'lumotlari yo'q. **[?]** — aniq eshitilmagan so'z.
 | 4 | **Kun yakunidagi hisobot: naqd / karta / jami** | ✅ **qo'shildi**: Hisobotlarda "Bugun" tugmasi, "Kassirlar bo'yicha (kim qabul qildi)" — har bir kassir uchun usullar bo'yicha |
 | 5 | **To'lanmagan xizmat kassada qizil, to'langach yashil** | ✅ **qo'shildi**: "To'lanmagan" holati qizil; registratura navbatida to'lanmagan summa qizil |
 | 6 | **Pechat faqat registraturada, faqat to'lovdan keyin; doktor va kassa chop etmaydi** | ✅ **qo'shildi**: Sozlamalar → "Hujjatlar faqat registraturada chop etiladi" (egasi yoqadi). Registraturada har bir bemor uchun "Chop etish" ro'yxati: ko'rik varag'i, retsept, UZI/EXO xulosalari — yashil bo'lmaguncha yopiq |
-| 7 | Doktor kodi 01/02/03 → Enter → mutaxassislik | ❌ yo'q |
+| 7 | Doktor kodi 01/02/03 → Enter → mutaxassislik | ✅ **qo'shildi** (24.11): shifokor profilida "Kod"; registraturada kod + Enter |
 | 8 | Navbatda taxminiy vaqt (xizmat davomiyligidan) | 🟡 xizmatlarda davomiylik bor; navbatda taxminiy soat yo'q (shifokor: "ma'lumot yig'ilgandan keyin") |
-| 9 | Laboratoriya natijasi bemor kartasiga, registratura chop etadi | 🟡 laboratoriya moduli bor; registraturadan chop etish yo'q |
+| 9 | Laboratoriya natijasi bemor kartasiga, registratura chop etadi | ✅ **qo'shildi** (24.11): tasdiqlangan tahlil A4 blankda; registraturaning chop etish ro'yxatida, to'lovdan keyin |
 | 10 | Qabulxona: bo'y, vazn, TMI avtomatik, QB, puls, shikoyatlar | 🟡 registraturada o'lchovlar va TMI bor; shikoyatlar va alohida "qabulxona" bo'limi yo'q (kelajak) |
 | 11 | UASH/VOP ko'rik shablonlari (nafas, yurak, perkussiya, palpatsiya) | 🟡 shablon tizimi bor, mazmuni yaratiladi (kelajak) |
 | 12 | "Ko'rsatilgan yordam" maydoni | ❌ yo'q (kelajak) |
