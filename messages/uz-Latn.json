@@ -3203,7 +3203,12 @@
     "normalRange": "meʼyor {min}–{max}",
     "high": "yuqori",
     "low": "past",
-    "abnormalList": "Meʼyordan tashqari: {list}"
+    "abnormalList": "Meʼyordan tashqari: {list}",
+    "computed": "hisoblandi",
+    "computable": "oʻzi hisoblanadi",
+    "draftConclusion": "Xulosa qoralamasi",
+    "draftLine": "{label}: {value} — meʼyordan {flag} ({min}–{max})",
+    "draftAllNormal": "Oʻlchangan koʻrsatkichlar meʼyor doirasida."
   },
   "bot": {
     "welcome": "Assalomu alaykum! Bu — ITop Med, klinikalar uchun boshqaruv tizimi.\n\nTizimni ochish uchun quyidagi tugmani bosing.",

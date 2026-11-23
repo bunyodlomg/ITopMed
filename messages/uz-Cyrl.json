@@ -3203,7 +3203,12 @@
     "normalRange": "меъёр {min}–{max}",
     "high": "юқори",
     "low": "паст",
-    "abnormalList": "Меъёрдан ташқари: {list}"
+    "abnormalList": "Меъёрдан ташқари: {list}",
+    "computed": "ҳисобланди",
+    "computable": "ўзи ҳисобланади",
+    "draftConclusion": "Хулоса қораламаси",
+    "draftLine": "{label}: {value} — меъёрдан {flag} ({min}–{max})",
+    "draftAllNormal": "Ўлчанган кўрсаткичлар меъёр доирасида."
   },
   "bot": {
     "welcome": "Ассалому алайкум! Бу — ITop Med, клиникалар учун бошқарув тизими.\n\nТизимни очиш учун қуйидаги тугмани босинг.",

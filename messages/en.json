@@ -3203,7 +3203,12 @@
     "normalRange": "normal {min}–{max}",
     "high": "high",
     "low": "low",
-    "abnormalList": "Outside the normal range: {list}"
+    "abnormalList": "Outside the normal range: {list}",
+    "computed": "calculated",
+    "computable": "calculated automatically",
+    "draftConclusion": "Draft conclusion",
+    "draftLine": "{label}: {value} — {flag} ({min}–{max})",
+    "draftAllNormal": "The measured values are within the normal ranges."
   },
   "bot": {
     "welcome": "Hello! This is ITop Med, the management system for clinics.\n\nTap the button below to open it.",

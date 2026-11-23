@@ -1,8 +1,9 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { flagOf, type TemplateField } from "@/lib/diagnostic-template";
+import { applyEchoCalculations, echoCalculations } from "@/lib/echo-calc";
 import { DIAGNOSTIC_FIELDS, DIAGNOSTIC_KINDS, unitKey, type DiagnosticKindKey } from "@/lib/diagnostics";
 
 const input = "h-10 w-full rounded-[var(--radius-control)] border border-border-strong bg-surface px-3 text-[14px] focus:border-accent focus:outline-none focus:ring-4 focus:ring-[var(--focus)]";
@@ -23,29 +24,62 @@ export interface StudyTemplate {
  */
 export function DiagnosticFields({ templates }: { templates: StudyTemplate[] }) {
   const t = useTranslations("diagnostics");
+  const locale = useLocale();
+  /** Numbers of the clinic's ranges with a decimal comma, except in English. */
+  const dec = (n: number) => (locale === "en" ? String(n) : String(n).replace(".", ","));
   const [templateId, setTemplateId] = useState<string>(templates[0]?.id ?? "");
   const tpl = templates.find((x) => x.id === templateId) ?? null;
   const [kind, setKind] = useState<DiagnosticKindKey>("ECG");
   const [title, setTitle] = useState<string>(tpl?.name ?? t("kind.ECG"));
   const [values, setValues] = useState<Record<string, string>>({});
+  // Fields the program computed (echo formulas); a field the doctor types into leaves this set.
+  const [auto, setAuto] = useState<Set<string>>(new Set());
   const [conclusion, setConclusion] = useState<string>(tpl?.conclusion ?? "");
+  const computable = tpl ? new Set(echoCalculations(tpl.fields)) : new Set<string>();
+
+  /** New values with the computable fields refreshed. */
+  const recompute = (next: Record<string, string>, keepAuto: Set<string>) => {
+    if (!tpl || computable.size === 0) {
+      setValues(next);
+      return;
+    }
+    const r = applyEchoCalculations(tpl.fields, next, keepAuto);
+    setValues(r.values);
+    setAuto(r.auto);
+  };
+  const edit = (key: string, value: string) => {
+    const keepAuto = new Set(auto);
+    keepAuto.delete(key); // typed by the doctor: never overwritten again
+    recompute({ ...values, [key]: value }, keepAuto);
+  };
 
   const pickTemplate = (id: string) => {
     setTemplateId(id);
     const next = templates.find((x) => x.id === id);
     setValues({});
+    setAuto(new Set());
     setTitle(next ? next.name : t(`kind.${kind}`));
     setConclusion(next?.conclusion ?? "");
   };
   const fillNormal = () => {
     if (!tpl) return;
-    setValues((v) => {
-      const out = { ...v };
-      for (const f of tpl.fields) if (f.normal && !(out[f.key] ?? "").trim()) out[f.key] = f.normal;
-      return out;
-    });
+    const out = { ...values };
+    for (const f of tpl.fields) if (f.normal && !(out[f.key] ?? "").trim()) out[f.key] = f.normal;
+    recompute(out, auto);
   };
   const abnormal = tpl ? tpl.fields.filter((f) => flagOf(f, values[f.key])) : [];
+  /** A draft conclusion from the values outside the clinic's ranges; the doctor edits it. */
+  const draftConclusion = () => {
+    if (!tpl) return;
+    const lines = abnormal.map((f) => {
+      const flag = flagOf(f, values[f.key])!;
+      return t("draftLine", { label: f.label, value: `${values[f.key]}${f.unit ? ` ${f.unit}` : ""}`, flag: t(flag === "HIGH" ? "high" : "low"), min: dec(f.min!), max: dec(f.max!) });
+    });
+    const draft = lines.length ? lines.join("\n") : t("draftAllNormal");
+    const current = conclusion.trim();
+    // Empty or still the template's own text: the draft goes first; otherwise it is added below what the doctor wrote.
+    setConclusion(!current || current === (tpl.conclusion ?? "").trim() ? `${draft}\n${tpl.conclusion ?? ""}`.trim() : `${current}\n${draft}`);
+  };
 
   return (
     <div className="space-y-3">
@@ -120,7 +154,7 @@ export function DiagnosticFields({ templates }: { templates: StudyTemplate[] }) 
                   <input
                     name={`f_${f.key}`}
                     value={values[f.key] ?? ""}
-                    onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
+                    onChange={(e) => edit(f.key, e.target.value)}
                     inputMode={f.min !== undefined ? "decimal" : undefined}
                     maxLength={1000}
                     aria-invalid={flag ? true : undefined}
@@ -129,8 +163,13 @@ export function DiagnosticFields({ templates }: { templates: StudyTemplate[] }) 
                   {f.min !== undefined && f.max !== undefined ? (
                     <span className={`mt-0.5 block text-[11.5px] ${flag ? "font-semibold text-danger" : "text-text-3"}`}>
                       {flag ? t(flag === "HIGH" ? "high" : "low") + " · " : ""}
-                      {t("normalRange", { min: f.min, max: f.max })}
+                      {t("normalRange", { min: dec(f.min), max: dec(f.max) })}
+                      {auto.has(f.key) ? ` · ${t("computed")}` : ""}
                     </span>
+                  ) : auto.has(f.key) ? (
+                    <span className="mt-0.5 block text-[11.5px] text-text-3">{t("computed")}</span>
+                  ) : computable.has(f.key) ? (
+                    <span className="mt-0.5 block text-[11.5px] text-text-3">{t("computable")}</span>
                   ) : null}
                 </label>
               );
@@ -160,6 +199,13 @@ export function DiagnosticFields({ templates }: { templates: StudyTemplate[] }) 
         </div>
       ) : null}
 
+      {tpl ? (
+        <div className="flex justify-end">
+          <button type="button" onClick={draftConclusion} className="rounded-full border border-border bg-surface-2 px-3 py-1.5 text-[13px] font-medium hover:border-accent hover:text-accent">
+            {t("draftConclusion")}
+          </button>
+        </div>
+      ) : null}
       <label className="block">
         <span className="mb-1 block text-[13px] font-medium">{t("conclusion")}</span>
         <textarea name="conclusion" value={conclusion} onChange={(e) => setConclusion(e.target.value)} rows={3} maxLength={10000} required className={area} />

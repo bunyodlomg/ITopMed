@@ -3203,7 +3203,12 @@
     "normalRange": "норма {min}–{max}",
     "high": "выше нормы",
     "low": "ниже нормы",
-    "abnormalList": "Вне нормы: {list}"
+    "abnormalList": "Вне нормы: {list}",
+    "computed": "рассчитано",
+    "computable": "считается автоматически",
+    "draftConclusion": "Черновик заключения",
+    "draftLine": "{label}: {value} — {flag} ({min}–{max})",
+    "draftAllNormal": "Измеренные показатели в пределах нормы."
   },
   "bot": {
     "welcome": "Здравствуйте! Это ITop Med — система управления для клиник.\n\nНажмите кнопку ниже, чтобы открыть систему.",

@@ -33,8 +33,8 @@ Bemor ma'lumotlari bu hujjatga kiritilmagan.
 | 19 | Shifokor ulushi: oylik yoki foiz; shifokor o'z daromadini kun/hafta/sana oralig'i bo'yicha ko'radi | ✅ bor (`my-earnings`) |
 | 20 | To'lov: naqd, Payme/Click o'tkazma; terminal keyin | ✅ bor |
 | **21** | **14 ta UTT/EXO/kardiolog shabloni (o'z me'yorlari bilan) tizimda tayyor bo'lsin** | ❌ **yo'q** — mexanizm bor, Farhod akaning shablonlari kiritilmagan |
-| **22** | **EXO: o'lchovlar jadvali (KDR, KDO, KSR, KSO, FV Teicholz/Simpson, FU, UO, MO, E/A, TAPSE…)** | 🟡 qisman — standart EXO'da 9 maydon; uning varag'ida ~35 maydon |
-| **23** | **EXO: me'yordan tashqari qiymatlardan taxminiy xulosa (shifokor tahrirlaydi)** | ❌ yo'q (faqat bayroq qo'yiladi) |
+| **22** | **EXO: o'lchovlar jadvali (KDR, KDO, KSR, KSO, FV Teicholz/Simpson, FU, UO, MO, E/A, TAPSE…)** | ✅ Farhod akaning EXOKG shabloni (45 maydon, o'z me'yorlari); 24.11: KDO, KSO, FV (Teyxolts), FU, UO, MO, E/A, ChQ massasi va indeksi **avtomatik hisoblanadi** |
+| **23** | **EXO: me'yordan tashqari qiymatlardan taxminiy xulosa (shifokor tahrirlaydi)** | ✅ 24.11: "Xulosa qoralamasi" tugmasi — barcha diagnostika shablonlarida |
 | **24** | **EXO: chap qorincha segmentlari sxemasi — akinetik/gipokinetik zonalar rangli** | ❌ yo'q (`wallMotion` — oddiy matn) |
 | **25** | **Hisobotlar: tashxislar statistikasi (MKB-10 bo'yicha), dorilar statistikasi (beta-blokator, antikoagulyant necha % bemorga), yangi / qayta kelgan bemorlar** | 🟡 qisman — yangi bemorlar bor; tashxis va dori statistikasi yo'q |
 | **26** | **Davolanishdan 5 kun keyin bemordan fikr so'rash (Telegram)** | ❌ yo'q |
