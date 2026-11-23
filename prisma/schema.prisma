@@ -691,6 +691,8 @@ model DoctorProfile {
   acceptsOnlineBooking Boolean   @default(false)
   /// Room / cabinet named when the patient is called (e.g. "3-xona").
   cabinet              String?
+  /// Short code typed at the desk ("01", "02"…) to choose the doctor; unique in the clinic.
+  code                 String?
   /// Printed on conclusions for patients' questions (optional).
   contactPhone         String?
   contactTelegram      String?
@@ -709,6 +711,7 @@ model DoctorProfile {
   labOrders       LabOrder[]
   dispensaryPlans DispensaryPlan[]
 
+  @@unique([tenantId, code])
   @@index([tenantId])
 }
 

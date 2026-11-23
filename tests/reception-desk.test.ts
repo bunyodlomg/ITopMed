@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addStaffMember, listBranches, listStaff } from "@/server/clinic/admin";
-import { saveDoctorProfile } from "@/server/clinic/doctors";
+import { listDoctors, saveDoctorProfile } from "@/server/clinic/doctors";
 import { importPriceList, parsePriceLine } from "@/server/clinic/price-list";
 import { listServices } from "@/server/clinic/resources";
 import { getInvoice } from "@/server/billing/billing";
@@ -149,6 +149,22 @@ describe("reception desk", () => {
     await expect(deskCheckIn(desk.ctx, { ...base, split: { CASH: "20000", CARD: "20000" } }, META)).rejects.toThrow("errors.overpayment");
     await expect(deskCheckIn(desk.ctx, { ...base, split: {} }, META)).rejects.toThrow("errors.invalidAmount");
     await expect(deskCheckIn(desk.ctx, { ...base, split: { CASH: "ko'p" } }, META)).rejects.toThrow("errors.invalidAmount");
+  });
+
+  it("doctor codes for the desk: digits only, unique in the clinic, kept when a save does not send them", async () => {
+    const o = await clinicWithOwner(await platformActor());
+    const a = await staff(o, ["doctor"]);
+    const b = await staff(o, ["doctor"]);
+    const base = { specialty: "cardiology", defaultSlotMinutes: 20, acceptsOnlineBooking: false };
+    await saveDoctorProfile(o.ctx, a.membershipId, { ...base, code: "01" }, META);
+    await expect(saveDoctorProfile(o.ctx, b.membershipId, { ...base, code: "01" }, META)).rejects.toThrow("errors.doctorCodeTaken");
+    await expect(saveDoctorProfile(o.ctx, b.membershipId, { ...base, code: "A1" }, META)).rejects.toThrow();
+    await saveDoctorProfile(o.ctx, b.membershipId, { ...base, specialty: "therapy", code: "02" }, META);
+    await saveDoctorProfile(o.ctx, a.membershipId, { ...base, specialty: "neurology" }, META); // no code sent: "01" stays
+    const codes = Object.fromEntries((await listDoctors(o.ctx)).filter((d) => d.profile).map((d) => [d.membershipId, d.profile!.code]));
+    expect([codes[a.membershipId], codes[b.membershipId]]).toEqual(["01", "02"]);
+    await saveDoctorProfile(o.ctx, a.membershipId, { ...base, code: "" }, META); // emptied on purpose
+    expect((await listDoctors(o.ctx)).find((d) => d.membershipId === a.membershipId)!.profile!.code).toBeNull();
   });
 
   it("possible duplicates stop registration until confirmed", async () => {

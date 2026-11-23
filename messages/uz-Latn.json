@@ -645,7 +645,9 @@
       "commission": "Shifokor ulushi",
       "commissionHint": "Shifokor o'z bemorlari uchun kassaga tushgan puldan oladigan foiz. Shifokor uni «Daromadim» sahifasida kunma-kun ko'radi. Bo'sh — belgilanmagan.",
       "commissionPercent": "Ulush, %",
-      "commissionSaved": "Ulush saqlandi."
+      "commissionSaved": "Ulush saqlandi.",
+      "code": "Kod (registratura uchun)",
+      "codeHint": "Masalan 01. Registrator kodni yozib Enter bossa, shu shifokor tanlanadi."
     },
     "mySchedule": {
       "title": "Mening jadvalim",
@@ -1474,7 +1476,10 @@
       "splitLeft": "Qarz qoladi: {amount}",
       "splitOver": "Jamidan {amount} ko'p",
       "splitExact": "To'liq to'landi",
-      "splitInvalid": "Summani raqam bilan yozing"
+      "splitInvalid": "Summani raqam bilan yozing",
+      "doctorCode": "Shifokor kodi",
+      "doctorCodeHint": "Kodni yozib Enter bosing",
+      "doctorCodeUnknown": "«{code}» kodli shifokor yoʻq"
     },
     "data": {
       "title": "Maʼlumotlar qayerda saqlanadi",
@@ -1781,7 +1786,8 @@
     "intervalDays": "Kunlar soni 7 dan 365 gacha bo'lishi kerak.",
     "httpsUrl": "Havola https:// bilan boshlanishi kerak.",
     "percentRange": "Foiz 0 dan 100 gacha bo'lishi kerak.",
-    "bpOrder": "Pastki bosim yuqori bosimdan kichik boʻlishi kerak"
+    "bpOrder": "Pastki bosim yuqori bosimdan kichik boʻlishi kerak",
+    "doctorCode": "Kod 1–4 ta raqamdan iborat boʻlsin (masalan 01)"
   },
   "errors": {
     "generic": "Nimadir notoʻgʻri ketdi. Qayta urinib koʻring.",
@@ -1908,7 +1914,8 @@
     "dateInPast": "Sana o'tib ketgan.",
     "dispensaryExists": "Bu bemor shu guruh bo'yicha sizning kuzatuvingizda allaqachon bor.",
     "purgeConfirm": "Klinika manzili noto'g'ri yozildi — hech narsa o'chirilmadi.",
-    "templateFileInvalid": "Bu ITop Med shablonlar fayli emas yoki fayl buzilgan."
+    "templateFileInvalid": "Bu ITop Med shablonlar fayli emas yoki fayl buzilgan.",
+    "doctorCodeTaken": "Bu kod boshqa shifokorga berilgan."
   },
   "supportScope": {
     "CONFIGURATION": "Sozlamalar",

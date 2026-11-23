@@ -645,7 +645,9 @@
       "commission": "Doctor's share",
       "commissionHint": "The doctor's percentage of money received for their patients; the doctor sees it day by day on “My earnings”. Empty = not set.",
       "commissionPercent": "Share, %",
-      "commissionSaved": "Share saved."
+      "commissionSaved": "Share saved.",
+      "code": "Code (for the desk)",
+      "codeHint": "For example 01. The registrar types the code and presses Enter to choose this doctor."
     },
     "mySchedule": {
       "title": "My schedule",
@@ -1474,7 +1476,10 @@
       "splitLeft": "Debt left: {amount}",
       "splitOver": "{amount} more than the total",
       "splitExact": "Paid in full",
-      "splitInvalid": "Enter the amount in digits"
+      "splitInvalid": "Enter the amount in digits",
+      "doctorCode": "Doctor code",
+      "doctorCodeHint": "Type the code and press Enter",
+      "doctorCodeUnknown": "No doctor with code “{code}”"
     },
     "data": {
       "title": "Where the data is kept",
@@ -1781,7 +1786,8 @@
     "intervalDays": "The number of days must be 7 to 365.",
     "httpsUrl": "The link must start with https://.",
     "percentRange": "The percentage must be 0 to 100.",
-    "bpOrder": "The lower pressure must be below the upper one"
+    "bpOrder": "The lower pressure must be below the upper one",
+    "doctorCode": "The code is 1–4 digits (for example 01)"
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",
@@ -1908,7 +1914,8 @@
     "dateInPast": "The date has passed.",
     "dispensaryExists": "This patient is already under your follow-up in this group.",
     "purgeConfirm": "The clinic address does not match — nothing was removed.",
-    "templateFileInvalid": "This is not an ITop Med template file, or the file is damaged."
+    "templateFileInvalid": "This is not an ITop Med template file, or the file is damaged.",
+    "doctorCodeTaken": "This code is already given to another doctor."
   },
   "supportScope": {
     "CONFIGURATION": "Configuration",

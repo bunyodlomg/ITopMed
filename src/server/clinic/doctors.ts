@@ -92,6 +92,13 @@ export const doctorProfileSchema = z.object({
   /** Free minutes after each appointment; an empty field means none. */
   bufferMinutes: z.union([z.literal("").transform(() => 0), z.coerce.number().int().min(0, "validation.bufferRange").max(30, "validation.bufferRange")]).default(0),
   acceptsOnlineBooking: z.boolean(),
+  /** Short code typed at the desk ("01", "02"…); empty = none, not sent = unchanged. Unique in the clinic. */
+  code: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || /^[0-9]{1,4}$/.test(v), "validation.doctorCode")
+    .transform((v) => (v === "" ? null : v))
+    .optional(), // not sent = unchanged
   /** Printed on conclusions for patients' questions. */
   contactPhone: z
     .string()
@@ -122,6 +129,7 @@ export async function saveDoctorProfile(ctx: ClinicContext, membershipId: string
     if (!m) throw new DomainError("errors.notFound");
     if (!m.roles.some((r) => (DOCTOR_ROLE_KEYS as readonly string[]).includes(r.role.key))) throw new DomainError("errors.notADoctor");
     const id = m.doctorProfile?.id ?? uuidv7();
+    if (input.code && (await tx.doctorProfile.findFirst({ where: { code: input.code, id: { not: id } }, select: { id: true } }))) throw new DomainError("errors.doctorCodeTaken");
     if (m.doctorProfile) await tx.doctorProfile.update({ where: { id }, data: { ...input, departmentId: input.departmentId ?? null, licenseNumber: input.licenseNumber ?? null, contactPhone: input.contactPhone ?? null, contactTelegram: input.contactTelegram ?? null } });
     else await tx.doctorProfile.create({ data: { id, tenantId: ctx.tenant.id, membershipId: m.id, ...input } });
     await auditClinic(tx, ctx, meta, { action: m.doctorProfile ? "doctor_profile.updated" : "doctor_profile.created", entityType: "DoctorProfile", entityId: id, metadata: { specialty: input.specialty } });

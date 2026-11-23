@@ -61,6 +61,7 @@ export default async function DoctorPage({ params, searchParams }: { params: Pro
             <fieldset disabled={!canEditProfile} className="grid gap-5 sm:grid-cols-2">
               <SelectField name="specialty" label={t("clinic.doctors.specialty")} defaultValue={p?.specialty ?? "therapy"} options={SPECIALTIES.map((s) => ({ value: s, label: t(`specialties.${s}`) }))} />
               <SelectField name="departmentId" label={t("clinic.doctors.department")} defaultValue={p?.departmentId ?? ""} options={[{ value: "", label: t("clinic.services.noDepartment") }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
+              <TextField name="code" label={t("clinic.doctors.code")} hint={t("clinic.doctors.codeHint")} inputMode="numeric" placeholder="01" defaultValue={p?.code ?? ""} optionalLabel={t("common.optional")} />
               <TextField name="licenseNumber" label={t("clinic.doctors.license")} defaultValue={p?.licenseNumber} optionalLabel={t("common.optional")} />
               <TextField name="defaultSlotMinutes" label={t("clinic.doctors.slot")} hint={t("clinic.doctors.slotHint")} inputMode="numeric" defaultValue={String(p?.defaultSlotMinutes ?? 20)} />
               <TextField name="bufferMinutes" label={t("clinic.doctors.buffer")} hint={t("clinic.doctors.bufferHint")} inputMode="numeric" defaultValue={String(p?.bufferMinutes ?? 0)} />

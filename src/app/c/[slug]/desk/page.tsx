@@ -6,6 +6,7 @@ import { moneyFormatter } from "@/components/money";
 import { minorToDecimalString } from "@/lib/money";
 import { PatientPicker, formatBirthDate, patientName } from "@/components/patients";
 import { ServicePicker } from "@/components/service-picker";
+import { DoctorCodeInput } from "@/components/doctor-code";
 import { Form, SelectField, SubmitButton, TextField } from "@/components/ui/form";
 import { Alert, Badge, ButtonLink, Card, CardBody, CardHeader, EmptyState, PageHeader, STATUS_TONE, Stat, buttonClass } from "@/components/ui/primitives";
 import { listDay } from "@/server/appointments/appointments";
@@ -60,8 +61,11 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
   const workingIds = new Set(working.map((w) => w.profileId));
   const doctorOptions = [...withProfile].sort((a, b) => Number(workingIds.has(b.profile!.id)) - Number(workingIds.has(a.profile!.id))).map((d) => ({
     value: d.profile!.id,
-    label: `${d.fullName} · ${t(`specialties.${d.profile!.specialty}` as never)}${workingIds.has(d.profile!.id) ? "" : ` (${t("clinic.desk.notToday")})`}`,
+    label: `${d.profile!.code ? `${d.profile!.code} · ` : ""}${d.fullName} · ${t(`specialties.${d.profile!.specialty}` as never)}${workingIds.has(d.profile!.id) ? "" : ` (${t("clinic.desk.notToday")})`}`,
   }));
+  const doctorCodes = withProfile
+    .filter((d) => d.profile!.code)
+    .map((d) => ({ code: d.profile!.code!, profileId: d.profile!.id, label: `${d.fullName} · ${t(`specialties.${d.profile!.specialty}` as never)}${workingIds.has(d.profile!.id) ? "" : ` (${t("clinic.desk.notToday")})`}` }));
   const priced = services.filter((s) => s.priceMinor > 0n).map((s) => ({ id: s.id, name: s.name, priceMinor: s.priceMinor.toString(), currency: s.currency }));
   const unpriced = services.filter((s) => s.priceMinor === 0n).length;
 
@@ -236,6 +240,7 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
           <Card>
             <CardHeader title={t("clinic.desk.step4")} />
             <CardBody className="grid gap-4 sm:grid-cols-2">
+              {doctorOptions.length ? <DoctorCodeInput doctors={doctorCodes} /> : null}
               {doctorOptions.length ? (
                 <SelectField name="doctorProfileId" label={t("clinic.desk.doctor")} options={doctorOptions} defaultValue={sp.doctor ?? doctorOptions[0]!.value} />
               ) : (
