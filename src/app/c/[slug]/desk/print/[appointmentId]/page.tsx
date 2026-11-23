@@ -1,4 +1,4 @@
-import { CheckCircle2, FileText, Pill, ScanLine, XCircle } from "lucide-react";
+import { CheckCircle2, FileText, FlaskConical, Pill, ScanLine, XCircle } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
@@ -30,6 +30,12 @@ export default async function DeskPrintPage({ params }: { params: Promise<{ slug
   const items: { key: string; href: string; label: string; icon: ReactNode }[] = [
     ...templates.map((tpl) => ({ key: `t-${tpl.id}`, href: `${base}/encounters/${p.encounterId}/document/${tpl.id}?print=1`, label: tpl.name, icon: <FileText aria-hidden className="size-4" /> })),
     ...(p.encounterId && p.hasPrescription ? [{ key: "rx", href: `${base}/encounters/${p.encounterId}/prescription`, label: t("clinic.deskPrint.prescription"), icon: <Pill aria-hidden className="size-4" /> }] : []),
+    ...p.labOrders.map((o) => ({
+      key: `l-${o.id}`,
+      href: `${base}/lab/${o.id}/print`,
+      label: `${t("clinic.deskPrint.labReport")}: ${o.items.map((i) => i.name).join(", ")} · ${o.number}`,
+      icon: <FlaskConical aria-hidden className="size-4" />,
+    })),
     ...p.diagnostics.map((d) => ({
       key: `d-${d.id}`,
       href: `${base}/diagnostics/${d.id}/print`,

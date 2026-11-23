@@ -102,6 +102,7 @@ async function sampleIds() {
       // A visit (one with a record if any): the desk's print list (documents, prescription, reports).
       appointment: await one(`SELECT a.id FROM "Appointment" a WHERE a."tenantId" = $1 ORDER BY EXISTS (SELECT 1 FROM "Encounter" e WHERE e."appointmentId" = a.id) DESC, a."startsAt" DESC LIMIT 1`),
       lab: await one(`SELECT id FROM "LabOrder" WHERE "tenantId" = $1 LIMIT 1`),
+      labVerified: await one(`SELECT id FROM "LabOrder" WHERE "tenantId" = $1 AND status = 'VERIFIED' LIMIT 1`),
       item: await one(`SELECT id FROM "InventoryItem" WHERE "tenantId" = $1 LIMIT 1`),
       staffProfile: await one(`SELECT "membershipId" AS id FROM "StaffProfile" WHERE "tenantId" = $1 LIMIT 1`),
       doctor: await one(`SELECT "membershipId" AS id FROM "DoctorProfile" WHERE "tenantId" = $1 LIMIT 1`),
@@ -129,7 +130,7 @@ function routes(ids: Awaited<ReturnType<typeof sampleIds>>): string[] {
   const dyn: [string | undefined, string][] = [
     [ids.invoice, `${c}/billing/${ids.invoice}`], [ids.invoice, `${c}/billing/${ids.invoice}/receipt`],
     [ids.patient, `${c}/patients/${ids.patient}`], [ids.patient, `${c}/patients/${ids.patient}/edit`], [ids.patient, `${c}/patients/${ids.patient}/record`],
-    [ids.encounter, `${c}/encounters/${ids.encounter}`], [ids.appointment, `${c}/desk/print/${ids.appointment}`], [ids.lab, `${c}/lab/${ids.lab}`], [ids.item, `${c}/inventory/${ids.item}`],
+    [ids.encounter, `${c}/encounters/${ids.encounter}`], [ids.appointment, `${c}/desk/print/${ids.appointment}`], [ids.lab, `${c}/lab/${ids.lab}`], [ids.labVerified, `${c}/lab/${ids.labVerified}/print`], [ids.item, `${c}/inventory/${ids.item}`],
     [ids.staffProfile, `${c}/hr/${ids.staffProfile}`], [ids.doctor, `${c}/doctors/${ids.doctor}`], [ids.member, `${c}/staff/${ids.member}`],
     [ids.role, `${c}/roles/${ids.role}`], [ids.service, `${c}/services/${ids.service}`],
   ];

@@ -4,7 +4,8 @@ import { addStaffMember, listBranches, listStaff } from "@/server/clinic/admin";
 import { saveDoctorProfile } from "@/server/clinic/doctors";
 import { importPriceList } from "@/server/clinic/price-list";
 import { listBenefitCategories, saveBenefitCategory, saveFreeFollowUpDays, savePackage } from "@/server/clinic/pricing";
-import { listServices } from "@/server/clinic/resources";
+import { createService, listServices } from "@/server/clinic/resources";
+import { addAnalyte, collectSpecimen, createLabOrder, enterResults, getLabOrder, labOrderForPrint, verifyResults } from "@/server/lab/lab";
 import { addStandardTemplates, listTemplates } from "@/server/clinic/templates";
 import { withAppContext } from "@/server/db";
 import { randomUUID } from "node:crypto";
@@ -154,7 +155,7 @@ describe("desk prints final documents only after the cashier", () => {
     await finishEncounter(s.doctor.ctx, enc, META);
 
     // Rule off (default): the doctor prints as before.
-    expect(await printsAtDesk(s.doctor.ctx)).toBe(false);
+    expect(await printsAtDesk(s.doctor.ctx, true)).toBe(false);
     expect((await diagnosticForPrint(s.doctor.ctx, echo, META)).result.title).toBe("ExoKG");
 
     // Only the owner switches the rule on; then the doctor cannot print any paper.
@@ -179,5 +180,39 @@ describe("desk prints final documents only after the cashier", () => {
     expect((await diagnosticForPrint(s.desk.ctx, echo, META)).result.title).toBe("ExoKG");
     expect((await documentForVisit(s.desk.ctx, enc, doc!.id, META)).encounter.patient.firstName).toBe("Muhr");
     expect((await prescriptionForPrint(s.desk.ctx, enc, META)).encounter.id).toBe(enc);
+  });
+  it("lab report: printed by the lab once verified; at the desk only when paid; desk-only rule stops the lab", async () => {
+    const s = await setup();
+    const lab1 = await staff(s.o, ["lab_staff"]);
+    const lab2 = await staff(s.o, ["lab_staff"]);
+    const nurse = await staff(s.o, ["nurse"]);
+    const svc = await createService(s.o.ctx, { code: "HB1", name: "Synthetic blood count", kind: "LAB_TEST", durationMinutes: 10, price: "40000", currency: "UZS" }, META);
+    const analyte = await addAnalyte(lab1.ctx, svc, { name: "Hemoglobin", unit: "g/L", refLow: "120", refHigh: "160" }, META);
+    const r = await deskCheckIn(s.frontDesk.ctx, { lastName: "Sintetik", firstName: "Tahlil", birthDate: "1975", sex: "FEMALE", doctorProfileId: s.profileId, branchId: s.branchId, serviceIds: [s.sid("Kardiolog ko'ruvi")], payMode: "debt" }, META);
+    if (!r.ok) throw new Error("duplicate");
+    const enc = await startVisit(s.doctor.ctx, r.appointmentId, META);
+    const { id } = await createLabOrder(s.doctor.ctx, enc, { serviceIds: [svc] }, META);
+    await expect(labOrderForPrint(lab1.ctx, id, META)).rejects.toThrow("errors.deskPrint.labNotVerified");
+    await collectSpecimen(nurse.ctx, id, META);
+    const item = (await getLabOrder(lab1.ctx, id, META)).items[0]!;
+    await enterResults(lab1.ctx, id, { [`${item.id}:${analyte}`]: "99.5" }, META);
+    await verifyResults(lab2.ctx, id, META);
+
+    // The lab prints the verified report (value below the range is flagged).
+    const printed = await labOrderForPrint(lab1.ctx, id, META);
+    expect(printed.order.items[0]!.results[0]).toMatchObject({ flag: "LOW" });
+    expect(printed.verifiedBy).toBe("Synthetic lab_staff");
+
+    // The desk lists it with today's papers, but prints only once the bill is settled.
+    expect((await deskPrintables(s.desk.ctx, r.appointmentId)).labOrders.map((o) => o.id)).toEqual([id]);
+    await expect(labOrderForPrint(s.desk.ctx, id, META)).rejects.toThrow("errors.deskPrint.unpaid");
+    await approveDebt(s.cashier.ctx, (await invoiceOf(s.cashier.ctx, r.appointmentId)).id, META);
+    expect((await labOrderForPrint(s.desk.ctx, id, META)).order.number).toBe(printed.order.number);
+    await expect(labOrderForPrint(s.doctor.ctx, "00000000-0000-0000-0000-000000000000", META)).rejects.toThrow();
+
+    // Print only at the desk: the lab can no longer print.
+    await updateClinicPolicy(s.o.ctx, { maxDiscountPercent: 100, discountReasonRequired: false, printOnlyAtDesk: true }, META);
+    await expect(labOrderForPrint(lab1.ctx, id, META)).rejects.toThrow("errors.deskPrint.atDesk");
+    expect((await labOrderForPrint(s.desk.ctx, id, META)).order.id).toBe(id);
   });
 });

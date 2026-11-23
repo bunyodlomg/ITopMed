@@ -5,6 +5,7 @@ import { formatBirthDate, patientName } from "@/components/patients";
 import { Form, SubmitButton } from "@/components/ui/form";
 import { Alert, Badge, ButtonLink, Card, CardBody, CardHeader, DescriptionList, PageHeader, STATUS_TONE, buttonClass } from "@/components/ui/primitives";
 import { requireClinic } from "@/server/auth/guards";
+import { printOnlyAtDesk } from "@/server/clinic/policy";
 import { requestMeta } from "@/server/http";
 import { getLabOrder } from "@/server/lab/lab";
 import { DomainError } from "@/server/tenancy/provisioning";
@@ -22,6 +23,8 @@ export default async function LabOrderPage({ params }: { params: Promise<{ slug:
   const s = ctx.tenant.slug;
   const can = (p: string) => ctx.permissions.has(p as never);
   const editable = (order.status === "COLLECTED" || order.status === "RESULTED") && can("lab.process");
+  // A verified report can be printed here unless the clinic prints only at the desk.
+  const canPrint = order.status === "VERIFIED" && (!(await printOnlyAtDesk(ctx)) || can("documents.print"));
   const hidden = (
     <>
       <input type="hidden" name="$slug" value={s} />
@@ -39,6 +42,11 @@ export default async function LabOrderPage({ params }: { params: Promise<{ slug:
           <>
             {order.priority === "URGENT" ? <Badge tone="danger">{t("priority.URGENT")}</Badge> : null}
             <Badge tone={STATUS_TONE[order.status] ?? "neutral"}>{t(`status.${order.status}`)}</Badge>
+            {canPrint ? (
+              <ButtonLink href={`/c/${s}/lab/${order.id}/print`} target="_blank" variant="secondary" size="sm">
+                {t("clinic.lab.print")}
+              </ButtonLink>
+            ) : null}
             <ButtonLink href={`/c/${s}/lab`} variant="ghost" size="sm">
               {t("clinic.lab.back")}
             </ButtonLink>

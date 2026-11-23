@@ -1070,7 +1070,12 @@
       "pending": "Results pending",
       "patient": "Patient",
       "back": "All lab orders",
-      "noAnalytes": "This test has no analytes set up yet."
+      "noAnalytes": "This test has no analytes set up yet.",
+      "reportTitle": "Laboratory results",
+      "number": "Order number",
+      "verifiedAt": "Verified",
+      "verifiedBy": "Verified by",
+      "print": "Print"
     },
     "labTests": {
       "title": "Lab test setup",
@@ -1549,7 +1554,8 @@
       "print": "Print",
       "locked": "Locked",
       "noRecord": "The doctor did not fill in a visit record: only diagnostic reports are printed.",
-      "doctorHint": "In this clinic documents, prescriptions and ultrasound/echo reports are printed at the reception desk after payment."
+      "doctorHint": "In this clinic documents, prescriptions and ultrasound/echo reports are printed at the reception desk after payment.",
+      "labReport": "Lab test"
     },
     "call": {
       "next": "Next patient",
@@ -1898,7 +1904,8 @@
       "notFinished": "The doctor has not finished the visit yet.",
       "notToday": "The desk prints documents of today's visits only. Ask the doctor for older documents.",
       "unpaid": "The cashier has not confirmed payment yet: the bill must be paid or the cashier must “Allow debt”.",
-      "atDesk": "In this clinic documents are printed only at the reception desk, after payment."
+      "atDesk": "In this clinic documents are printed only at the reception desk, after payment.",
+      "labNotVerified": "The lab result has not been verified yet."
     },
     "freeVisitReasonRequired": "Write the reason for the free follow-up visit.",
     "drugRequired": "Enter the drug.",

@@ -1070,7 +1070,12 @@
       "pending": "Natijalar kutilmoqda",
       "patient": "Bemor",
       "back": "Barcha buyurtmalar",
-      "noAnalytes": "Bu tahlil uchun koʻrsatkichlar hali sozlanmagan."
+      "noAnalytes": "Bu tahlil uchun koʻrsatkichlar hali sozlanmagan.",
+      "reportTitle": "Laboratoriya tahlili natijalari",
+      "number": "Buyurtma raqami",
+      "verifiedAt": "Tasdiqlangan",
+      "verifiedBy": "Tasdiqlagan",
+      "print": "Chop etish"
     },
     "labTests": {
       "title": "Tahlillarni sozlash",
@@ -1549,7 +1554,8 @@
       "print": "Chop etish",
       "locked": "Yopiq",
       "noRecord": "Shifokor bu qabulda koʻrik varagʻini toʻldirmagan: faqat diagnostika xulosalari chop etiladi.",
-      "doctorHint": "Bu klinikada hujjatlar, retsept va UZI/EXO xulosalari registraturada, toʻlovdan keyin chop etiladi."
+      "doctorHint": "Bu klinikada hujjatlar, retsept va UZI/EXO xulosalari registraturada, toʻlovdan keyin chop etiladi.",
+      "labReport": "Tahlil"
     },
     "call": {
       "next": "Keyingi bemor",
@@ -1898,7 +1904,8 @@
       "notFinished": "Shifokor qabulni hali yakunlamagan.",
       "notToday": "Registratura faqat bugungi qabul hujjatini chop etadi. Eski hujjatlar uchun shifokorga murojaat qiling.",
       "unpaid": "Kassir toʻlovni hali tasdiqlamagan: hisob toʻlanishi yoki kassir «Qarzga ruxsat» berishi kerak.",
-      "atDesk": "Bu klinikada hujjatlar faqat registraturada, toʻlovdan keyin chop etiladi."
+      "atDesk": "Bu klinikada hujjatlar faqat registraturada, toʻlovdan keyin chop etiladi.",
+      "labNotVerified": "Tahlil natijasi hali tasdiqlanmagan."
     },
     "freeVisitReasonRequired": "Bepul qayta koʻrik sababini yozing.",
     "drugRequired": "Dori nomini yozing.",

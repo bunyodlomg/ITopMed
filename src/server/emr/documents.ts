@@ -6,8 +6,11 @@ import { getTemplate, parseNoteContent } from "../clinic/templates";
 import { DomainError } from "../errors";
 import { NOTE_SECTIONS, getEncounter, loadEncounter, saveDraft } from "./record";
 import { addDays, instantToLocalDate, localToInstant } from "../scheduling/time";
-import { printOnlyAtDesk } from "../clinic/policy";
 import type { Tx } from "../db";
+import { type DeskPrintGate, paidGate, printsAtDesk } from "./print-rules";
+
+export type { DeskPrintGate } from "./print-rules";
+export { printsAtDesk } from "./print-rules";
 
 /**
  * Applies a note template to the doctor's draft note: only EMPTY sections are
@@ -32,7 +35,7 @@ export async function applyNoteTemplate(ctx: ClinicContext, encounterId: string,
 export async function documentForVisit(ctx: ClinicContext, encounterId: string, templateId: string, meta: RequestMeta) {
   const template = await getTemplate(ctx, templateId);
   if (template.kind !== "DOCUMENT") throw new DomainError("errors.notFound");
-  const desk = await printsAtDesk(ctx);
+  const desk = await printsAtDesk(ctx, ctx.permissions.has("emr.read"));
   const e = desk ? await deskEncounter(ctx, encounterId) : (await getEncounter(ctx, encounterId, meta)).encounter;
   const extra = await inClinic(ctx, async (tx) => {
     const tenant = await tx.tenant.findUniqueOrThrow({ where: { id: ctx.tenant.id }, select: { name: true, legalName: true, address: true, contactPhone: true } });
@@ -54,8 +57,6 @@ export async function documentForVisit(ctx: ClinicContext, encounterId: string, 
  * the visit today and the cashier has settled the bill: every invoice of the
  * patient since the visit day is paid, void, or its debt approved by the cashier.
  */
-export type DeskPrintGate = "ok" | "notFinished" | "notToday" | "unpaid";
-
 export async function deskPrintGate(ctx: ClinicContext, encounterId: string): Promise<DeskPrintGate> {
   if (!ctx.permissions.has("documents.print")) throw new DomainError("errors.forbidden");
   return inClinic(ctx, async (tx) => {
@@ -63,28 +64,6 @@ export async function deskPrintGate(ctx: ClinicContext, encounterId: string): Pr
     if (enc.status !== "CLOSED") return "notFinished";
     return paidGate(tx, ctx, enc.patientId, enc.startedAt);
   });
-}
-
-/** Today's papers only, and only once every bill of the patient since that day is settled (paid, void or debt approved). */
-async function paidGate(tx: Tx, ctx: ClinicContext, patientId: string, at: Date): Promise<DeskPrintGate> {
-  const tz = ctx.tenant.timezone;
-  const day = instantToLocalDate(at, tz);
-  if (day !== instantToLocalDate(new Date(), tz)) return "notToday";
-  const open = await tx.invoice.count({
-    where: { patientId, issuedAt: { gte: localToInstant(day, 0, tz) }, status: { in: ["ISSUED", "PARTIALLY_PAID"] }, debtApprovedAt: null },
-  });
-  return open > 0 ? "unpaid" : "ok";
-}
-
-/**
- * Whether this person prints through the desk rules (bill settled, today only):
- * desk staff without record access always; everyone when the clinic prints
- * only at the desk - then a doctor without documents.print cannot print at all.
- */
-export async function printsAtDesk(ctx: ClinicContext): Promise<boolean> {
-  const deskOnly = await printOnlyAtDesk(ctx);
-  if (deskOnly && !ctx.permissions.has("documents.print")) throw new DomainError("errors.deskPrint.atDesk");
-  return deskOnly || !ctx.permissions.has("emr.read");
 }
 
 /** Lab tests ordered in a visit and not yet taken (printed highlighted so the patient does not skip them). */
@@ -100,7 +79,7 @@ async function labsToTakeIn(tx: Tx, encounterId: string): Promise<string[]> {
  */
 export async function prescriptionForPrint(ctx: ClinicContext, encounterId: string, meta: RequestMeta) {
   if (!ctx.permissions.has("emr.read") && !ctx.permissions.has("documents.print")) throw new DomainError("errors.forbidden");
-  if (!(await printsAtDesk(ctx))) {
+  if (!(await printsAtDesk(ctx, ctx.permissions.has("emr.read")))) {
     const data = await getEncounter(ctx, encounterId, meta);
     return { encounter: data.encounter, labsToTake: [...new Set(data.labOrders.filter((o) => o.status === "ORDERED").flatMap((o) => o.items.map((i) => i.name)))] };
   }
@@ -140,8 +119,14 @@ export async function deskPrintables(ctx: ClinicContext, appointmentId: string) 
       select: { id: true, title: true, performedAt: true },
       orderBy: { performedAt: "asc" },
     });
+    // Lab reports verified that day (results often come later than the visit: the patient collects them at the desk).
+    const labOrders = await tx.labOrder.findMany({
+      where: { patientId: appt.patientId, status: "VERIFIED", verifiedAt: { gte: localToInstant(day, 0, tz), lt: localToInstant(addDays(day, 1), 0, tz) } },
+      select: { id: true, number: true, verifiedAt: true, items: { select: { name: true }, orderBy: { name: "asc" } } },
+      orderBy: { verifiedAt: "asc" },
+    });
     const gate: DeskPrintGate = enc && enc.status !== "CLOSED" ? "notFinished" : await paidGate(tx, ctx, appt.patientId, enc?.startedAt ?? appt.startsAt);
-    return { appointment: appt, encounterId: enc?.status === "CLOSED" ? enc.id : null, hasPrescription: (enc?._count.prescriptions ?? 0) > 0, diagnostics, gate };
+    return { appointment: appt, encounterId: enc?.status === "CLOSED" ? enc.id : null, hasPrescription: (enc?._count.prescriptions ?? 0) > 0, diagnostics, labOrders, gate };
   });
 }
 

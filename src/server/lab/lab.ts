@@ -6,6 +6,7 @@ import type { RequestMeta } from "../auth/platform-auth";
 import { assertBranch, auditClinic, inClinic, requirePermission } from "../clinic/context";
 import type { Tx } from "../db";
 import { withRecordAccess } from "../emr/access";
+import { paidGate, printsAtDesk } from "../emr/print-rules";
 import { notifyResultsReady } from "../notifications/notifications";
 import { instantToLocalDate } from "../scheduling/time";
 import { uuidv7 } from "../security/crypto";
@@ -193,6 +194,28 @@ export async function getLabOrder(ctx: ClinicContext, orderId: string, meta: Req
     const o = await loadOrder(tx, ctx, orderId);
     await auditClinic(tx, ctx, meta, { action: "lab.order_viewed", entityType: "LabOrder", entityId: o.id });
     return o;
+  });
+}
+
+/**
+ * A verified lab report to print on the clinic letterhead. Lab staff and
+ * doctors print under the lab rules; the desk (documents.print), or everyone
+ * when the clinic prints only at the desk, once the report was verified today
+ * and the patient's bills are settled. Printing is audited; no prices.
+ */
+export async function labOrderForPrint(ctx: ClinicContext, orderId: string, meta: RequestMeta) {
+  if (!canWorkLab(ctx) && !ctx.permissions.has("documents.print")) throw new DomainError("errors.forbidden");
+  const desk = await printsAtDesk(ctx, canWorkLab(ctx));
+  return inClinic(ctx, async (tx) => {
+    const o = await loadOrder(tx, ctx, orderId);
+    if (o.status !== "VERIFIED" || !o.verifiedAt) throw new DomainError("errors.deskPrint.labNotVerified");
+    if (desk) {
+      const gate = await paidGate(tx, ctx, o.patientId, o.verifiedAt);
+      if (gate !== "ok") throw new DomainError(`errors.deskPrint.${gate}`);
+    }
+    const verifier = o.verifiedById ? await tx.user.findUnique({ where: { id: o.verifiedById }, select: { fullName: true } }) : null;
+    await auditClinic(tx, ctx, meta, { action: desk ? "lab.printed_at_desk" : "lab.printed", entityType: "LabOrder", entityId: o.id });
+    return { order: o, verifiedBy: verifier?.fullName ?? null };
   });
 }
 

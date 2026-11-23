@@ -11,7 +11,8 @@ import { DomainError } from "../errors";
 import { uuidv7 } from "../security/crypto";
 import { withRecordAccess } from "./access";
 import { loadEncounter } from "./record";
-import { deskDiagnosticGate, printsAtDesk } from "./documents";
+import { deskDiagnosticGate } from "./documents";
+import { printsAtDesk } from "./print-rules";
 import { printOnlyAtDesk } from "../clinic/policy";
 
 /**
@@ -104,7 +105,7 @@ async function assertDeskMayPrint(ctx: ClinicContext, r: Awaited<ReturnType<type
 export async function diagnosticForPrint(ctx: ClinicContext, resultId: string, meta: RequestMeta) {
   if (!ctx.permissions.has("emr.read") && !ctx.permissions.has("documents.print")) throw new DomainError("errors.forbidden");
   const r = await loadResult(ctx, resultId);
-  const desk = await printsAtDesk(ctx);
+  const desk = await printsAtDesk(ctx, ctx.permissions.has("emr.read"));
   if (desk) await assertDeskMayPrint(ctx, r);
   const load = async (tx: Prisma.TransactionClient) => {
     const result = await tx.diagnosticResult.findUniqueOrThrow({ where: { id: resultId }, include: { files: { select: { id: true, fileName: true, mimeType: true } } } });
