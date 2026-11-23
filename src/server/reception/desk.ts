@@ -30,9 +30,12 @@ const optionalUuid = z.union([z.literal("").transform(() => undefined), uuid]).o
 
 export const billingSchema = z.object({
   serviceIds: z.array(uuid).max(50).default([]),
-  payMode: z.enum(["full", "partial", "debt"]).default("full"),
+  /** split = one payment made of several methods (e.g. 200 000 cash + 100 000 card); any rest stays as debt. */
+  payMode: z.enum(["full", "partial", "debt", "split"]).default("full"),
   amount: z.string().trim().default(""),
   method: z.enum(PAYMENT_METHODS).default("CASH"),
+  /** payMode "split": the amount paid with each method (empty = not used). */
+  split: z.partialRecord(z.enum(PAYMENT_METHODS), z.string().trim().max(30)).default({}),
   /** Free follow-up outside the free period (exception; needs billing.free_visit and a reason). */
   freeVisit: checkbox.default(false),
   freeVisitReason: z.string().trim().max(200, "validation.tooLong").default(""),
@@ -61,14 +64,52 @@ async function loadPricedServices(ctx: ClinicContext, ids: string[]) {
   return list as NonNullable<(typeof list)[number]>[];
 }
 
+type PaymentMethodKey = (typeof PAYMENT_METHODS)[number];
+
+/** The parts of a split payment by method, in catalogue order; at least one, each above zero. */
+function splitParts(input: z.infer<typeof billingSchema>, currency: string): { method: PaymentMethodKey; minor: bigint }[] {
+  const parts: { method: PaymentMethodKey; minor: bigint }[] = [];
+  for (const method of PAYMENT_METHODS) {
+    const text = input.split[method] ?? "";
+    if (!text) continue;
+    const minor = parseMoney(text, currency);
+    if (minor === null || minor < 0n) throw new DomainError("errors.invalidAmount");
+    if (minor > 0n) parts.push({ method, minor });
+  }
+  if (!parts.length) throw new DomainError("errors.invalidAmount");
+  return parts;
+}
+
 /** How much is paid now, validated against the total before anything is written. */
 function amountToPay(input: z.infer<typeof billingSchema>, total: bigint, currency: string): bigint {
   if (input.payMode === "debt") return 0n;
   if (input.payMode === "full") return total;
-  const a = parseMoney(input.amount, currency);
+  const a = input.payMode === "split" ? splitParts(input, currency).reduce((s, p) => s + p.minor, 0n) : parseMoney(input.amount, currency);
   if (a === null || a <= 0n) throw new DomainError("errors.invalidAmount");
   if (a > total) throw new DomainError("errors.overpayment");
   return a;
+}
+
+/**
+ * The payments to record for an invoice of `total` (after clinic discounts):
+ * one per method. If a discount made the bill smaller than what was handed
+ * over, the excess comes off the cash part first (change is given in cash),
+ * then off the other parts in catalogue order.
+ */
+function paymentsFor(input: z.infer<typeof billingSchema>, total: bigint, currency: string): { method: PaymentMethodKey; minor: bigint }[] {
+  if (total <= 0n || input.payMode === "debt") return [];
+  if (input.payMode === "full") return [{ method: input.method, minor: total }];
+  if (input.payMode === "partial") return [{ method: input.method, minor: minBig(amountToPay(input, total * 1000n, currency), total) }];
+  const parts = splitParts(input, currency);
+  let excess = parts.reduce((s, p) => s + p.minor, 0n) - total;
+  const order = [...parts.filter((p) => p.method === "CASH"), ...parts.filter((p) => p.method !== "CASH")];
+  for (const p of order) {
+    if (excess <= 0n) break;
+    const cut = minBig(p.minor, excess);
+    p.minor -= cut;
+    excess -= cut;
+  }
+  return parts.filter((p) => p.minor > 0n);
 }
 
 /**
@@ -95,15 +136,15 @@ async function billServices(
   const total = (await inClinic(ctx, (tx) => tx.invoice.findUniqueOrThrow({ where: { id: invoiceId }, select: { totalMinor: true } }))).totalMinor;
   // The amount was checked against the full price before anything was written; after a
   // rule discount it can exceed the new total - then the total is what is paid.
-  const pay = total > 0n ? (a.billing.payMode === "partial" ? minBig(amountToPay(a.billing, total * 1000n, currency), total) : amountToPay(a.billing, total, currency)) : 0n;
+  const payments = paymentsFor(a.billing, total, currency);
   await issueInvoice(ctx, invoiceId, meta);
 
-  if (pay > 0n) {
-    if (a.billing.method === "CASH" && ctx.permissions.has("cash.shift")) {
+  for (const p of payments) {
+    if (p.method === "CASH" && ctx.permissions.has("cash.shift")) {
       const open = await inClinic(ctx, (tx) => tx.cashShift.findFirst({ where: { branchId: a.branchId, cashierId: ctx.principal.user.id, status: "OPEN" }, select: { id: true } }));
       if (!open) await openShift(ctx, { branchId: a.branchId, openingFloat: "0", currency }, meta);
     }
-    await recordPayment(ctx, invoiceId, { amount: minorToDecimalString(pay, currency), method: a.billing.method, idempotencyKey: uuidv7() }, meta);
+    await recordPayment(ctx, invoiceId, { amount: minorToDecimalString(p.minor, currency), method: p.method, idempotencyKey: uuidv7() }, meta);
   }
   return invoiceId;
 }

@@ -192,17 +192,26 @@ describe("permissions, reports and isolation", () => {
     const p1 = await recordPayment(s.cashier.ctx, ids[0]!, { amount: "150000", method: "CASH", idempotencyKey: randomUUID() }, META);
     await recordPayment(s.cashier.ctx, ids[1]!, { amount: "40000", method: "CARD", idempotencyKey: randomUUID() }, META);
     await refundPayment(s.cashier.ctx, p1.paymentId, { amount: "20000", reason: "BILLING_ERROR", idempotencyKey: randomUUID() }, META);
+    // A second cashier with their own login takes 10 000 in cash on their own shift.
+    const cashier2 = await staff(s.a, ["cashier"]);
+    await openShift(cashier2.ctx, { branchId: s.branch.id, openingFloat: "0" }, META);
+    await recordPayment(cashier2.ctx, ids[1]!, { amount: "10000", method: "CASH", idempotencyKey: randomUUID() }, META);
     const accountant = await staff(s.a, ["accountant"]);
     await createExpense(accountant.ctx, { category: "MEDICAL_SUPPLIES", amount: "30000", currency: "UZS", spentOn: today, description: "Synthetic gloves" }, META);
 
     const r = await financialReport(s.a.ctx, today, today);
     const uzs = r.totals.find((x) => x.currency === "UZS")!;
     expect(uzs.invoiced).toBe(30_000_000n);
-    expect(uzs.received).toBe(19_000_000n);
+    expect(uzs.received).toBe(20_000_000n);
     expect(uzs.refunded).toBe(2_000_000n);
-    expect(uzs.outstanding).toBe(30_000_000n - 17_000_000n);
+    expect(uzs.outstanding).toBe(30_000_000n - 18_000_000n);
     expect(uzs.expenses).toBe(3_000_000n);
-    expect(r.byMethod.find((m) => m.method === "CASH")?.net).toBe(13_000_000n);
+    expect(r.byMethod.find((m) => m.method === "CASH")?.net).toBe(14_000_000n);
+    // Who took the money, by method (net of refunds).
+    expect(r.byCashier.map((c) => [c.net, c.count, c.methods.map((m) => [m.method, m.net])])).toEqual([
+      [17_000_000n, 2, [["CASH", 13_000_000n], ["CARD", 4_000_000n]]],
+      [1_000_000n, 1, [["CASH", 1_000_000n]]],
+    ]);
     expect(r.byService[0]).toMatchObject({ service: "Synthetic consultation", quantity: 2, amount: 30_000_000n });
     expect(r.debtors.map((d) => d.invoiceId).sort()).toEqual(ids.slice().sort());
 

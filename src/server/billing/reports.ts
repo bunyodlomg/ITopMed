@@ -19,6 +19,8 @@ export interface FinancialReport {
   to: string;
   byDay: { day: string; currency: string; received: bigint; refunded: bigint }[];
   byMethod: { method: string; currency: string; net: bigint; count: number }[];
+  /** Who took the money: one row per staff member, net of refunds, split by payment method. */
+  byCashier: { cashier: string; currency: string; net: bigint; count: number; methods: { method: string; net: bigint }[] }[];
   byService: { service: string; currency: string; amount: bigint; quantity: number }[];
   byDoctor: { doctor: string; currency: string; amount: bigint; invoices: number }[];
   totals: { currency: string; invoiced: bigint; received: bigint; refunded: bigint; expenses: bigint; outstanding: bigint }[];
@@ -59,6 +61,25 @@ export async function financialReport(ctx: ClinicContext, from: string, to: stri
       FROM "Payment" WHERE "receivedAt" >= ${start} AND "receivedAt" < ${end}
         AND (${scoped}::uuid[] IS NULL OR "branchId" = ANY(${scoped}::uuid[]))
       GROUP BY method, currency ORDER BY net DESC`;
+
+    const cashierRows = await tx.$queryRaw<{ userId: string; cashier: string; method: string; currency: string; net: bigint; count: number }[]>`
+      SELECT p."receivedById"::text AS "userId", u."fullName" AS cashier, p.method::text AS method, p.currency,
+             (sum(p."amountMinor") - sum(p."refundedMinor"))::bigint AS net, count(*)::int AS count
+      FROM "Payment" p JOIN "User" u ON u.id = p."receivedById"
+      WHERE p."receivedAt" >= ${start} AND p."receivedAt" < ${end}
+        AND (${scoped}::uuid[] IS NULL OR p."branchId" = ANY(${scoped}::uuid[]))
+      GROUP BY p."receivedById", u."fullName", p.method, p.currency`;
+    const byCashierMap = new Map<string, FinancialReport["byCashier"][number]>();
+    for (const r of cashierRows) {
+      const key = `${r.userId}|${r.currency}`;
+      const row = byCashierMap.get(key) ?? { cashier: r.cashier, currency: r.currency, net: 0n, count: 0, methods: [] };
+      row.net += r.net;
+      row.count += r.count;
+      row.methods.push({ method: r.method, net: r.net });
+      byCashierMap.set(key, row);
+    }
+    const byCashier = [...byCashierMap.values()].sort((a, b) => (b.net > a.net ? 1 : b.net < a.net ? -1 : 0));
+    for (const c of byCashier) c.methods.sort((a, b) => (b.net > a.net ? 1 : b.net < a.net ? -1 : 0));
 
     const byService = await tx.$queryRaw<{ service: string; currency: string; amount: bigint; quantity: number }[]>`
       SELECT l.description AS service, i.currency, sum(l."totalMinor")::bigint AS amount, sum(l.quantity)::int AS quantity
@@ -117,6 +138,7 @@ export async function financialReport(ctx: ClinicContext, from: string, to: stri
       to,
       byDay,
       byMethod,
+      byCashier,
       byService,
       byDoctor,
       totals,

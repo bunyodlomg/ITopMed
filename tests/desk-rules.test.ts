@@ -7,7 +7,12 @@ import { listBenefitCategories, saveBenefitCategory, saveFreeFollowUpDays, saveP
 import { listServices } from "@/server/clinic/resources";
 import { addStandardTemplates, listTemplates } from "@/server/clinic/templates";
 import { withAppContext } from "@/server/db";
-import { deskPrintGate, documentForVisit } from "@/server/emr/documents";
+import { randomUUID } from "node:crypto";
+import { openShift } from "@/server/billing/cash";
+import { recordPayment } from "@/server/billing/billing";
+import { updateClinicPolicy } from "@/server/clinic/policy";
+import { addDiagnosticResult, diagnosticForPrint } from "@/server/emr/diagnostics";
+import { deskPrintGate, deskPrintables, documentForVisit, prescriptionForPrint, printsAtDesk } from "@/server/emr/documents";
 import { addDiagnosis, finishEncounter, saveDraft, signNote, startVisit, getEncounter } from "@/server/emr/record";
 import { getPatient } from "@/server/patients/patients";
 import { deskCheckIn } from "@/server/reception/desk";
@@ -54,6 +59,22 @@ describe("desk pricing rules", () => {
     expect(inv.totalMinor).toBe(8_000_000n); // 100 000 - 20 %
     expect(inv.lines[0]).toMatchObject({ discountKind: "BENEFIT", discountReason: "Imtiyoz: Synthetic veterans" });
     expect(inv.paidMinor).toBe(8_000_000n);
+  });
+
+  it("split payment after a discount: what was handed over beyond the new total comes off the cash part", async () => {
+    const s = await setup();
+    await saveBenefitCategory(s.o.ctx, { name: "Synthetic pensioners", discountPercent: 20 }, META);
+    const [benefit] = await listBenefitCategories(s.o.ctx);
+    // Price 100 000, desk enters 60 000 cash + 40 000 card; the benefit makes it 80 000.
+    const r = await deskCheckIn(
+      s.frontDesk.ctx,
+      { lastName: "Sintetik", firstName: "Qaytim", birthDate: "1952", sex: "FEMALE", benefitCategoryId: benefit!.id, doctorProfileId: s.profileId, branchId: s.branchId, serviceIds: [s.sid("Kardiolog ko'ruvi")], payMode: "split", split: { CASH: "60000", CARD: "40000" } },
+      META,
+    );
+    if (!r.ok) throw new Error("duplicate");
+    const inv = (await getInvoice(s.frontDesk.ctx, (await invoiceOf(s.frontDesk.ctx, r.appointmentId)).id))!;
+    expect([inv.totalMinor, inv.paidMinor, inv.status]).toEqual([8_000_000n, 8_000_000n, "PAID"]);
+    expect(inv.payments.map((p) => [p.method, p.amountMinor])).toEqual([["CASH", 4_000_000n], ["CARD", 4_000_000n]]);
   });
 
   it("a package applies when all its services are billed together; the best single rule wins", async () => {
@@ -117,5 +138,46 @@ describe("desk prints final documents only after the cashier", () => {
     expect(await deskPrintGate(s.desk.ctx, enc)).toBe("ok");
     const d = await documentForVisit(s.desk.ctx, enc, doc!.id, META);
     expect(d.encounter.patient.firstName).toBe("Hujjat");
+  });
+
+  it("clinic rule 'print only at the desk': the doctor cannot print; the desk prints visit papers and diagnostic reports once paid", async () => {
+    const s = await setup();
+    await addStandardTemplates(s.o.ctx, META);
+    const [doc] = await listTemplates(s.o.ctx, { kind: "DOCUMENT" });
+    const r = await deskCheckIn(s.frontDesk.ctx, { lastName: "Sintetik", firstName: "Muhr", birthDate: "1970", sex: "FEMALE", doctorProfileId: s.profileId, branchId: s.branchId, serviceIds: [s.sid("EXO")], payMode: "debt" }, META);
+    if (!r.ok) throw new Error("duplicate");
+    const enc = await startVisit(s.doctor.ctx, r.appointmentId, META);
+    const echo = await addDiagnosticResult(s.doctor.ctx, r.patientId, { encounterId: enc, kind: "ECHO", title: "ExoKG", conclusion: "Synthetic" }, META);
+    const note = (await getEncounter(s.doctor.ctx, enc, META)).encounter.notes[0]!;
+    await signNote(s.doctor.ctx, note.id, { complaints: "Synthetic", history: "", examination: "", assessment: "Synthetic", plan: "" }, META);
+    await addDiagnosis(s.doctor.ctx, enc, { icd10Code: "I10", description: "Synthetic", kind: "PRIMARY" }, META);
+    await finishEncounter(s.doctor.ctx, enc, META);
+
+    // Rule off (default): the doctor prints as before.
+    expect(await printsAtDesk(s.doctor.ctx)).toBe(false);
+    expect((await diagnosticForPrint(s.doctor.ctx, echo, META)).result.title).toBe("ExoKG");
+
+    // Only the owner switches the rule on; then the doctor cannot print any paper.
+    await updateClinicPolicy(s.o.ctx, { maxDiscountPercent: 100, discountReasonRequired: false, printOnlyAtDesk: true }, META);
+    await expect(documentForVisit(s.doctor.ctx, enc, doc!.id, META)).rejects.toThrow("errors.deskPrint.atDesk");
+    await expect(diagnosticForPrint(s.doctor.ctx, echo, META)).rejects.toThrow("errors.deskPrint.atDesk");
+    await expect(prescriptionForPrint(s.doctor.ctx, enc, META)).rejects.toThrow("errors.deskPrint.atDesk");
+
+    // The desk sees what can be printed, locked while the echo is unpaid (red).
+    const before = await deskPrintables(s.desk.ctx, r.appointmentId);
+    expect(before).toMatchObject({ gate: "unpaid", encounterId: enc, hasPrescription: false });
+    expect(before.diagnostics.map((x) => x.id)).toEqual([echo]);
+    await expect(diagnosticForPrint(s.desk.ctx, echo, META)).rejects.toThrow("errors.deskPrint.unpaid");
+    await expect(deskPrintables(s.doctor.ctx, r.appointmentId)).rejects.toThrow("errors.forbidden");
+
+    // The cashier takes the money (cash + card): green, and the desk prints both papers.
+    const inv = await invoiceOf(s.cashier.ctx, r.appointmentId);
+    await openShift(s.cashier.ctx, { branchId: s.branchId, openingFloat: "0" }, META);
+    await recordPayment(s.cashier.ctx, inv.id, { amount: "100000", method: "CASH", idempotencyKey: randomUUID() }, META);
+    await recordPayment(s.cashier.ctx, inv.id, { amount: "20000", method: "CARD", idempotencyKey: randomUUID() }, META);
+    expect((await deskPrintables(s.desk.ctx, r.appointmentId)).gate).toBe("ok");
+    expect((await diagnosticForPrint(s.desk.ctx, echo, META)).result.title).toBe("ExoKG");
+    expect((await documentForVisit(s.desk.ctx, enc, doc!.id, META)).encounter.patient.firstName).toBe("Muhr");
+    expect((await prescriptionForPrint(s.desk.ctx, enc, META)).encounter.id).toBe(enc);
   });
 });

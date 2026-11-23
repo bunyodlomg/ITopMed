@@ -7,12 +7,17 @@ import { DomainError } from "../errors";
 import { auditClinic, inClinic, requirePermission } from "./context";
 
 /** Defaults when the owner has not saved a policy yet (no extra restriction). */
-export const DEFAULT_POLICY = { maxDiscountPercent: 100, discountReasonRequired: false, onlineBookingDays: 30, onlineBookingLeadMinutes: 120, onlineBookingMaxActive: 3 } as const;
-export type ClinicPolicyValues = { maxDiscountPercent: number; discountReasonRequired: boolean; onlineBookingDays: number; onlineBookingLeadMinutes: number; onlineBookingMaxActive: number };
+export const DEFAULT_POLICY = { maxDiscountPercent: 100, discountReasonRequired: false, onlineBookingDays: 30, onlineBookingLeadMinutes: 120, onlineBookingMaxActive: 3, printOnlyAtDesk: false } as const;
+export type ClinicPolicyValues = { maxDiscountPercent: number; discountReasonRequired: boolean; onlineBookingDays: number; onlineBookingLeadMinutes: number; onlineBookingMaxActive: number; printOnlyAtDesk: boolean };
 
 export async function policyIn(tx: Tx, tenantId: string): Promise<ClinicPolicyValues> {
-  const p = await tx.clinicPolicy.findUnique({ where: { tenantId }, select: { maxDiscountPercent: true, discountReasonRequired: true, onlineBookingDays: true, onlineBookingLeadMinutes: true, onlineBookingMaxActive: true } });
+  const p = await tx.clinicPolicy.findUnique({ where: { tenantId }, select: { maxDiscountPercent: true, discountReasonRequired: true, onlineBookingDays: true, onlineBookingLeadMinutes: true, onlineBookingMaxActive: true, printOnlyAtDesk: true } });
   return p ?? { ...DEFAULT_POLICY };
+}
+
+/** Whether visit papers may only be printed at the reception desk (any staff member may ask). */
+export async function printOnlyAtDesk(ctx: ClinicContext): Promise<boolean> {
+  return inClinic(ctx, async (tx) => (await policyIn(tx, ctx.tenant.id)).printOnlyAtDesk);
 }
 
 export async function getClinicPolicy(ctx: ClinicContext): Promise<ClinicPolicyValues> {
@@ -27,6 +32,7 @@ export const policySchema = z.object({
   /** Entered in hours, stored in minutes. */
   onlineBookingLeadHours: z.coerce.number().min(0, "validation.leadHours").max(168, "validation.leadHours").default(2),
   onlineBookingMaxActive: z.coerce.number().int("validation.invalid").min(1, "validation.maxActive").max(20, "validation.maxActive").default(3),
+  printOnlyAtDesk: z.boolean().default(false),
 });
 
 /**
@@ -50,7 +56,7 @@ export async function updateClinicPolicy(ctx: ClinicContext, raw: unknown, meta:
       action: "clinic.policy_updated",
       entityType: "ClinicPolicy",
       entityId: ctx.tenant.id,
-      metadata: { maxDiscountPercent: input.maxDiscountPercent, discountReasonRequired: input.discountReasonRequired, previousMaxDiscountPercent: before.maxDiscountPercent, onlineBookingDays: input.onlineBookingDays, onlineBookingLeadMinutes: input.onlineBookingLeadMinutes, onlineBookingMaxActive: input.onlineBookingMaxActive },
+      metadata: { maxDiscountPercent: input.maxDiscountPercent, discountReasonRequired: input.discountReasonRequired, previousMaxDiscountPercent: before.maxDiscountPercent, onlineBookingDays: input.onlineBookingDays, onlineBookingLeadMinutes: input.onlineBookingLeadMinutes, onlineBookingMaxActive: input.onlineBookingMaxActive, printOnlyAtDesk: input.printOnlyAtDesk },
     });
   });
 }

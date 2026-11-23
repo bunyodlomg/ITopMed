@@ -43,7 +43,10 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
   const db = { tenantId: ctx.tenant.id, userId: ctx.principal.user.id };
 
   const canFreeVisit = ctx.permissions.has("billing.free_visit");
-  const canPrint = ctx.permissions.has("documents.print") || ctx.permissions.has("emr.read");
+  // The desk opens a visit's print list (documents, prescription, diagnostic reports; only once paid);
+  // a doctor working the desk without documents.print keeps the quick link to the first document.
+  const deskPrints = ctx.permissions.has("documents.print");
+  const canPrint = !deskPrints && ctx.permissions.has("emr.read");
   const [branches, doctors, working, services, day, benefits, docTemplates] = await Promise.all([
     listOperationalBranches(ctx),
     listDoctors(ctx),
@@ -288,7 +291,7 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
                       <div className="mt-1 flex flex-wrap items-center gap-1.5">
                         <Badge tone={STATUS_TONE[a.status]}>{t(`status.${a.status}`)}</Badge>
                         {a.calledAt && a.status === "CHECKED_IN" ? <Badge tone="accent">{t("clinic.call.calledBadge")}</Badge> : null}
-                        {m ? <Badge tone={m.paidMinor >= m.totalMinor ? "success" : "warning"}>{money(m.paidMinor, m.currency)} / {money(m.totalMinor, m.currency)}</Badge> : null}
+                        {m ? <Badge tone={m.paidMinor >= m.totalMinor ? "success" : m.paidMinor === 0n ? "danger" : "warning"}>{money(m.paidMinor, m.currency)} / {money(m.totalMinor, m.currency)}</Badge> : null}
                         {owes > 0n ? <Badge tone="danger">{t("clinic.desk.debtShort", { amount: money(owes, ctx.tenant.currency) })}</Badge> : null}
                       </div>
                       {owes > 0n && canPay ? (
@@ -304,7 +307,11 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
                         </details>
                       ) : null}
                     </div>
-                    {encounters.get(a.id) && docTemplates[0] ? (
+                    {deskPrints && a.status !== "CANCELLED" ? (
+                      <Link href={`${base}/desk/print/${a.id}`} className={buttonClass("ghost", "sm")} aria-label={t("clinic.deskPrint.listFor", { number: a.queueNumber ?? "—" })} title={t("clinic.deskPrint.listTitle")}>
+                        <FileText aria-hidden className="size-4" />
+                      </Link>
+                    ) : encounters.get(a.id) && docTemplates[0] ? (
                       <Link href={`${base}/encounters/${encounters.get(a.id)}/document/${docTemplates[0].id}?print=1`} target="_blank" className={buttonClass("ghost", "sm")} aria-label={t("clinic.desk.printDocument", { name: docTemplates[0].name })} title={docTemplates[0].name}>
                         <FileText aria-hidden className="size-4" />
                       </Link>

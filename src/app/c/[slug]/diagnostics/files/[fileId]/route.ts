@@ -6,7 +6,7 @@ import { requestMeta } from "@/server/http";
 /** Shows an attached image / PDF. Never cached; the type comes from the stored (sniffed) value. */
 export async function GET(_request: Request, { params }: { params: Promise<{ slug: string; fileId: string }> }) {
   const { slug, fileId } = await params;
-  const ctx = await requireClinic(slug, "emr.read");
+  const ctx = await requireClinic(slug);
   try {
     const f = await getDiagnosticFile(ctx, fileId, await requestMeta());
     return new Response(Buffer.from(f.content), {

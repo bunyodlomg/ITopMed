@@ -10,6 +10,7 @@ import { importPriceList } from "@/server/clinic/price-list";
 import { requestMeta } from "@/server/http";
 import { addExtraServices, deskCheckIn, payPatientDebt } from "@/server/reception/desk";
 import { minorToDecimalString } from "@/lib/money";
+import { PAYMENT_METHODS } from "@/server/billing/billing";
 
 async function clinicFrom(fd: FormData) {
   const slug = String(fd.get("$slug") ?? "");
@@ -17,7 +18,9 @@ async function clinicFrom(fd: FormData) {
 }
 
 function raw(fd: FormData): Record<string, unknown> {
-  return { ...Object.fromEntries(fd.entries()), serviceIds: fd.getAll("serviceIds").map(String) };
+  // Split payment: one amount field per method, "split_CASH", "split_CARD", ...
+  const split = Object.fromEntries(PAYMENT_METHODS.map((m) => [m, String(fd.get(`split_${m}`) ?? "").trim()] as const).filter(([, v]) => v !== ""));
+  return { ...Object.fromEntries(fd.entries()), serviceIds: fd.getAll("serviceIds").map(String), split };
 }
 
 /** Reception desk: patient + services + payment + measurements + queue number in one submit. */

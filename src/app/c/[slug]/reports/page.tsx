@@ -27,6 +27,7 @@ export default async function ReportsPage({ params, searchParams }: { params: Pr
   const [fin, ops, shares] = await Promise.all([canFinance ? financialReport(ctx, from, to) : null, operationalReport(ctx, from, to), canFinance ? doctorsEarnings(ctx, from, to) : []]);
   const dayLabel = (d: string) => format.dateTime(new Date(`${d}T12:00:00Z`), { day: "numeric", month: "short", timeZone: "UTC" });
   const presets = [
+    { label: "1", from: today },
     { label: "7", from: addDays(today, -6) },
     { label: "30", from: addDays(today, -29) },
     { label: "90", from: addDays(today, -89) },
@@ -54,7 +55,7 @@ export default async function ReportsPage({ params, searchParams }: { params: Pr
       <div className="flex flex-wrap gap-2">
         {presets.map((p) => (
           <Link key={p.label} href={`?from=${p.from}&to=${today}`} className={buttonClass(from === p.from && to === today ? "primary" : "secondary", "sm")}>
-            {t("clinic.reports.lastDays", { days: Number(p.label) })}
+            {p.label === "1" ? t("clinic.reports.today") : t("clinic.reports.lastDays", { days: Number(p.label) })}
           </Link>
         ))}
       </div>
@@ -121,6 +122,16 @@ export default async function ReportsPage({ params, searchParams }: { params: Pr
 
           <div className="grid gap-6 lg:grid-cols-2">
             <RankedList title={t("clinic.reports.byMethod")} rows={fin.byMethod.map((m) => ({ key: `${m.method}-${m.currency}`, label: t(`paymentMethod.${m.method}` as never), value: money(m.net, m.currency), sub: `${m.count}` }))} empty={t("clinic.reports.empty")} />
+            <RankedList
+              title={t("clinic.reports.byCashier")}
+              rows={fin.byCashier.map((c, i) => ({
+                key: `${i}-${c.currency}`,
+                label: c.cashier,
+                value: money(c.net, c.currency),
+                sub: c.methods.map((m) => `${t(`paymentMethod.${m.method}` as never)}: ${money(m.net, c.currency)}`).join(" · "),
+              }))}
+              empty={t("clinic.reports.empty")}
+            />
             <RankedList title={t("clinic.reports.byService")} rows={fin.byService.map((s) => ({ key: `${s.service}-${s.currency}`, label: s.service, value: money(s.amount, s.currency), sub: `${t("clinic.reports.qty")}: ${s.quantity}` }))} empty={t("clinic.reports.empty")} />
             <RankedList title={t("clinic.reports.byDoctor")} rows={fin.byDoctor.map((d) => ({ key: `${d.doctor}-${d.currency}`, label: d.doctor, value: money(d.amount, d.currency), sub: `${t("clinic.reports.invoices")}: ${d.invoices}` }))} empty={t("clinic.reports.empty")} />
             <RankedList

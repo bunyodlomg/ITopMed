@@ -130,7 +130,7 @@ export const STATUS_TONE: Record<string, Tone> = {
   COLLECTED: "warning",
   RESULTED: "warning",
   VERIFIED: "success",
-  ISSUED: "accent",
+  ISSUED: "danger",
   PARTIALLY_PAID: "warning",
   PAID: "success",
   VOID: "neutral",

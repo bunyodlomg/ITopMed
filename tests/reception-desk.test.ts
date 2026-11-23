@@ -119,6 +119,38 @@ describe("reception desk", () => {
     await expect(payPatientDebt(doctor.ctx, { patientId: first.patientId }, META)).rejects.toThrow("errors.forbidden");
   });
 
+  it("split payment: cash + card + transfer on one bill, one payment per method; the rest is debt", async () => {
+    const o = await clinicWithOwner(await platformActor());
+    const [branch] = await listBranches(o.ctx);
+    await importPriceList(o.ctx, { text: PRICE_LIST }, META);
+    const services = await listServices(o.ctx);
+    const sid = (n: string) => services.find((s) => s.name === n)!.id;
+    const desk = await staff(o, ["receptionist", "cashier"]);
+    const doctor = await staff(o, ["doctor"]);
+    const profileId = await saveDoctorProfile(o.ctx, doctor.membershipId, { specialty: "cardiology", defaultSlotMinutes: 20, acceptsOnlineBooking: false }, META);
+    const visit = { lastName: "Sintetik", firstName: "Aralash", birthDate: "1965", sex: "MALE", doctorProfileId: profileId, branchId: branch!.id, confirmNotDuplicate: "on" };
+
+    // 100 000 + 120 000 + 30 000 = 250 000: 200 000 cash, 50 000 card.
+    const r = await deskCheckIn(desk.ctx, { ...visit, serviceIds: [sid("Kardiolog ko'ruvi"), sid("EXO"), sid("EKG")], payMode: "split", split: { CASH: "200 000", CARD: "50000" } }, META);
+    if (!r.ok) throw new Error("duplicate");
+    const inv = (await getInvoice(desk.ctx, r.invoiceId!))!;
+    expect([inv.totalMinor, inv.paidMinor, inv.status]).toEqual([25_000_000n, 25_000_000n, "PAID"]);
+    expect(inv.payments.map((p) => [p.method, p.amountMinor])).toEqual([["CASH", 20_000_000n], ["CARD", 5_000_000n]]);
+
+    // Less than the total: paid parts are recorded, the rest is the patient's debt.
+    const short = await deskCheckIn(desk.ctx, { patientId: r.patientId, doctorProfileId: profileId, branchId: branch!.id, serviceIds: [sid("EXO")], payMode: "split", split: { CARD: "50000", BANK_TRANSFER: "20000" } }, META);
+    if (!short.ok) throw new Error("duplicate");
+    const s = (await getInvoice(desk.ctx, short.invoiceId!))!;
+    expect([s.paidMinor, s.status]).toEqual([7_000_000n, "PARTIALLY_PAID"]);
+    expect(s.payments.map((p) => p.method)).toEqual(["CARD", "BANK_TRANSFER"]);
+
+    // More than the total, nothing filled in, or not a number: refused before anything is written.
+    const base = { patientId: r.patientId, doctorProfileId: profileId, branchId: branch!.id, serviceIds: [sid("EKG")], payMode: "split" };
+    await expect(deskCheckIn(desk.ctx, { ...base, split: { CASH: "20000", CARD: "20000" } }, META)).rejects.toThrow("errors.overpayment");
+    await expect(deskCheckIn(desk.ctx, { ...base, split: {} }, META)).rejects.toThrow("errors.invalidAmount");
+    await expect(deskCheckIn(desk.ctx, { ...base, split: { CASH: "ko'p" } }, META)).rejects.toThrow("errors.invalidAmount");
+  });
+
   it("possible duplicates stop registration until confirmed", async () => {
     const o = await clinicWithOwner(await platformActor());
     const [branch] = await listBranches(o.ctx);

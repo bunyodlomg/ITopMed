@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useFormResult } from "@/components/ui/form";
-import { formatMoneyText } from "@/lib/money";
+import { formatMoneyText, parseMoney } from "@/lib/money";
 
 export interface PickerService {
   id: string;
@@ -14,6 +14,9 @@ export interface PickerService {
 }
 
 const METHODS = ["CASH", "CARD", "PAYME", "CLICK", "UZUM", "BANK_TRANSFER"] as const;
+/** Methods offered in a split payment (cash + card + transfer, as the clinics pay). */
+const SPLIT_METHODS = ["CASH", "CARD", "BANK_TRANSFER"] as const;
+type PayMode = "full" | "partial" | "split" | "debt";
 
 /**
  * Services with prices as large tap targets, a live total and how the patient
@@ -27,7 +30,8 @@ export function ServicePicker({ services, withPayment, initial = [] }: { service
   const locale = useLocale();
   const [chosen, setChosen] = useState<Set<string>>(new Set(initial));
   const [q, setQ] = useState("");
-  const [mode, setMode] = useState<"full" | "partial" | "debt">("full");
+  const [mode, setMode] = useState<PayMode>("full");
+  const [split, setSplit] = useState<Record<string, string>>({});
   // After a successful submit the same page stays open (e.g. extra services in a visit):
   // clear the choice so a second click cannot bill the same services twice.
   const result = useFormResult();
@@ -37,12 +41,17 @@ export function ServicePicker({ services, withPayment, initial = [] }: { service
     if (result.ok) {
       setChosen(new Set());
       setMode("full");
+      setSplit({});
       setQ("");
     }
   }
   const currency = services[0]?.currency ?? "UZS";
   const money = (minor: bigint) => formatMoneyText(minor, currency, locale);
   const total = services.filter((s) => chosen.has(s.id)).reduce((sum, s) => sum + BigInt(s.priceMinor), 0n);
+  // Split payment: live sum of the parts; what is left is the patient's debt.
+  const splitValues = SPLIT_METHODS.map((m) => (split[m]?.trim() ? parseMoney(split[m]!, currency) : 0n));
+  const splitInvalid = splitValues.some((v) => v === null);
+  const splitSum = splitValues.reduce<bigint>((s, v) => s + (v ?? 0n), 0n);
   const visible = q.trim() ? services.filter((s) => s.name.toLowerCase().includes(q.trim().toLowerCase())) : services;
   const toggle = (id: string) =>
     setChosen((prev) => {
@@ -101,8 +110,8 @@ export function ServicePicker({ services, withPayment, initial = [] }: { service
       {withPayment && total > 0n ? (
         <fieldset className="space-y-3">
           <legend className="mb-2 text-[14px] font-medium">{t("payment")}</legend>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {(["full", "partial", "debt"] as const).map((m) => (
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+            {(["full", "split", "partial", "debt"] as const).map((m) => (
               <label key={m} className={`flex cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border px-3 py-2.5 text-[14px] ${mode === m ? "border-accent bg-accent-soft" : "border-border bg-surface-2"}`}>
                 <input type="radio" name="payMode" value={m} checked={mode === m} onChange={() => setMode(m)} className="size-4 accent-[var(--accent)]" />
                 <span className="font-medium">{t(`payMode.${m}`)}</span>
@@ -115,7 +124,41 @@ export function ServicePicker({ services, withPayment, initial = [] }: { service
               <input name="amount" inputMode="decimal" required placeholder="50 000" className="h-11 w-full rounded-[var(--radius-control)] border border-border-strong bg-surface px-3.5 text-[15px] tabular-nums focus:border-accent focus:outline-none focus:ring-4 focus:ring-[var(--focus)]" />
             </label>
           ) : null}
-          {mode !== "debt" ? (
+          {mode === "split" ? (
+            <div className="space-y-3">
+              <p className="text-[13px] text-text-2">{t("splitHint")}</p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {SPLIT_METHODS.map((m) => (
+                  <label key={m} className="block min-w-0">
+                    <span className="mb-1.5 block text-[14px] font-medium">{tm(m)}</span>
+                    <input
+                      name={`split_${m}`}
+                      inputMode="decimal"
+                      autoComplete="off"
+                      value={split[m] ?? ""}
+                      onChange={(e) => setSplit((prev) => ({ ...prev, [m]: e.target.value }))}
+                      placeholder="0"
+                      className="h-11 w-full rounded-[var(--radius-control)] border border-border-strong bg-surface px-3.5 text-[15px] tabular-nums focus:border-accent focus:outline-none focus:ring-4 focus:ring-[var(--focus)]"
+                    />
+                  </label>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-[var(--radius-control)] border border-border px-4 py-2.5 text-[14px]" aria-live="polite">
+                <span>
+                  {t("splitSum")}: <span className="font-semibold tabular-nums">{money(splitSum)}</span>
+                </span>
+                {splitInvalid ? (
+                  <span className="font-medium text-danger">{t("splitInvalid")}</span>
+                ) : splitSum > total ? (
+                  <span className="font-medium text-danger">{t("splitOver", { amount: money(splitSum - total) })}</span>
+                ) : splitSum < total ? (
+                  <span className="font-medium text-warning">{t("splitLeft", { amount: money(total - splitSum) })}</span>
+                ) : (
+                  <span className="font-medium text-success">{t("splitExact")}</span>
+                )}
+              </div>
+            </div>
+          ) : mode !== "debt" ? (
             <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("method")}>
               {METHODS.map((m, i) => (
                 <label key={m} className="cursor-pointer">

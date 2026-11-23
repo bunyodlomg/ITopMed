@@ -3,8 +3,7 @@ import { rxDrugLabel } from "@/lib/rx";
 import { getTranslations } from "next-intl/server";
 import { DocumentText } from "@/components/document-text";
 import { Letterhead } from "@/components/letterhead";
-import { PaperStyle } from "@/components/paper";
-import { Alert } from "@/components/ui/primitives";
+import { DeskPrintRefused, PaperStyle } from "@/components/paper";
 import { formatBirthDate, patientName } from "@/components/patients";
 import { AutoPrint, PrintButton } from "@/components/print-button";
 import { requireClinic } from "@/server/auth/guards";
@@ -31,15 +30,7 @@ export default async function VisitDocumentPage({ params }: { params: Promise<{ 
   try {
     d = await documentForVisit(ctx, id, templateId, await requestMeta());
   } catch (e) {
-    if (e instanceof DomainError && e.code.startsWith("errors.deskPrint.")) {
-      return (
-        <div className="mx-auto max-w-xl">
-          <Alert tone="warning" title={t("clinic.deskPrint.title")}>
-            {t(e.code as never)}
-          </Alert>
-        </div>
-      );
-    }
+    if (e instanceof DomainError && e.code.startsWith("errors.deskPrint.")) return <DeskPrintRefused title={t("clinic.deskPrint.title")} message={t(e.code as never)} />;
     if (e instanceof DomainError) notFound();
     throw e;
   }

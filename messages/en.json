@@ -1009,7 +1009,9 @@
       "dayTableCaption": "Daily payments table",
       "lastDays": "Last {days} days",
       "doctorShare": "Doctors' share",
-      "noPercent": "no rate set"
+      "noPercent": "no rate set",
+      "today": "Today",
+      "byCashier": "By cashier (who took the money)"
     },
     "expenses": {
       "title": "Expenses",
@@ -1317,7 +1319,9 @@
       "onlineHint": "Applies to doctors who accept online booking (doctor profile).",
       "bookingDays": "Days ahead",
       "leadHours": "Earliest, hours from now",
-      "maxActive": "Max online visits per patient"
+      "maxActive": "Max online visits per patient",
+      "printOnlyAtDesk": "Documents are printed only at the reception desk",
+      "printOnlyAtDeskHint": "Doctors cannot print. The desk prints the visit sheet, prescription and ultrasound/echo reports once the cashier has confirmed payment."
     },
     "rx": {
       "title": "Prescriptions",
@@ -1428,7 +1432,8 @@
       "payMode": {
         "full": "Paid in full",
         "partial": "Partly",
-        "debt": "On debt"
+        "debt": "On debt",
+        "split": "Split (cash + card)"
       },
       "amountNow": "Amount paid now",
       "method": "Payment method",
@@ -1463,7 +1468,13 @@
       "statDebt": "Owed",
       "nextUp": "Next in the queue",
       "nextNone": "Nobody is waiting in the queue right now.",
-      "statWaiting": "Waiting in the queue"
+      "statWaiting": "Waiting in the queue",
+      "splitHint": "Enter how much was paid with each method. Whatever is missing stays as the patient's debt.",
+      "splitSum": "Paid",
+      "splitLeft": "Debt left: {amount}",
+      "splitOver": "{amount} more than the total",
+      "splitExact": "Paid in full",
+      "splitInvalid": "Enter the amount in digits"
     },
     "data": {
       "title": "Where the data is kept",
@@ -1522,7 +1533,18 @@
       "archived": "Removed."
     },
     "deskPrint": {
-      "title": "The document cannot be printed yet"
+      "title": "The document cannot be printed yet",
+      "prescription": "Prescription",
+      "listTitle": "Print",
+      "listFor": "Print the papers of patient no. {number}",
+      "back": "Back to the desk",
+      "ready": "Payment confirmed — the papers can be printed.",
+      "papers": "Papers for the patient",
+      "nothing": "Nothing to print for this visit yet",
+      "print": "Print",
+      "locked": "Locked",
+      "noRecord": "The doctor did not fill in a visit record: only diagnostic reports are printed.",
+      "doctorHint": "In this clinic documents, prescriptions and ultrasound/echo reports are printed at the reception desk after payment."
     },
     "call": {
       "next": "Next patient",
@@ -1650,7 +1672,7 @@
     "SIGNED": "Signed",
     "RESOLVED": "Resolved",
     "ENTERED_IN_ERROR": "Entered in error",
-    "ISSUED": "Issued",
+    "ISSUED": "Unpaid",
     "PARTIALLY_PAID": "Partially paid",
     "PAID": "Paid",
     "VOID": "Void",
@@ -1869,7 +1891,8 @@
     "deskPrint": {
       "notFinished": "The doctor has not finished the visit yet.",
       "notToday": "The desk prints documents of today's visits only. Ask the doctor for older documents.",
-      "unpaid": "The cashier has not confirmed payment yet: the bill must be paid or the cashier must “Allow debt”."
+      "unpaid": "The cashier has not confirmed payment yet: the bill must be paid or the cashier must “Allow debt”.",
+      "atDesk": "In this clinic documents are printed only at the reception desk, after payment."
     },
     "freeVisitReasonRequired": "Write the reason for the free follow-up visit.",
     "drugRequired": "Enter the drug.",

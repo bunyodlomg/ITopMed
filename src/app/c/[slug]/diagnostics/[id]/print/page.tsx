@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Letterhead } from "@/components/letterhead";
-import { PaperStyle } from "@/components/paper";
+import { DeskPrintRefused, PaperStyle } from "@/components/paper";
 import { formatBirthDate, patientName } from "@/components/patients";
 import { AutoPrint, PrintButton } from "@/components/print-button";
 import { DIAGNOSTIC_FIELDS, unitKey, type DiagnosticKindKey } from "@/lib/diagnostics";
@@ -15,12 +15,19 @@ import { requestMeta } from "@/server/http";
 /** One diagnostic result (ECG, echo, ultrasound…) as its own A4 document on the clinic letterhead. No prices. */
 export default async function DiagnosticPrintPage({ params }: { params: Promise<{ slug: string; id: string }> }) {
   const { slug, id } = await params;
-  const ctx = await requireClinic(slug, "emr.read");
-  const d = await diagnosticForPrint(ctx, id, await requestMeta()).catch((e) => {
+  const ctx = await requireClinic(slug);
+  // The doctor (record access) or the desk (documents.print, once the bill is settled).
+  if (!ctx.permissions.has("emr.read") && !ctx.permissions.has("documents.print")) notFound();
+  const t = await getTranslations();
+  let d: Awaited<ReturnType<typeof diagnosticForPrint>>;
+  try {
+    d = await diagnosticForPrint(ctx, id, await requestMeta());
+  } catch (e) {
+    if (e instanceof DomainError && e.code.startsWith("errors.deskPrint.")) return <DeskPrintRefused title={t("clinic.deskPrint.title")} message={t(e.code as never)} />;
     if (e instanceof DomainError) notFound();
     throw e;
-  });
-  const [t, format, head] = await Promise.all([getTranslations(), getFormatter(), getLetterhead(ctx)]);
+  }
+  const [format, head] = await Promise.all([getFormatter(), getLetterhead(ctx)]);
   const r = d.result;
   const fields = DIAGNOSTIC_FIELDS[r.kind as DiagnosticKindKey].filter((f) => r.data[f.key] !== undefined);
   const images = r.files.filter((f) => f.mimeType.startsWith("image/"));

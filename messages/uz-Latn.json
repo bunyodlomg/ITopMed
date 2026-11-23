@@ -1009,7 +1009,9 @@
       "dayTableCaption": "Kunlik toʻlovlar jadvali",
       "lastDays": "Oxirgi {days} kun",
       "doctorShare": "Shifokorlar ulushi",
-      "noPercent": "foiz belgilanmagan"
+      "noPercent": "foiz belgilanmagan",
+      "today": "Bugun",
+      "byCashier": "Kassirlar boʻyicha (kim qabul qildi)"
     },
     "expenses": {
       "title": "Xarajatlar",
@@ -1317,7 +1319,9 @@
       "onlineHint": "Onlayn yozilishni qabul qiladigan shifokorlarga tegishli (shifokor profili).",
       "bookingDays": "Necha kun oldindan",
       "leadHours": "Eng erta, hozirdan necha soat keyin",
-      "maxActive": "Bitta bemorga onlayn qabullar soni"
+      "maxActive": "Bitta bemorga onlayn qabullar soni",
+      "printOnlyAtDesk": "Hujjatlar faqat registraturada chop etiladi",
+      "printOnlyAtDeskHint": "Shifokor chop eta olmaydi. Registratura koʻrik varagʻi, retsept va UZI/EXO xulosalarini kassir toʻlovni tasdiqlagandan keyin chop etadi."
     },
     "rx": {
       "title": "Retseptlar",
@@ -1428,7 +1432,8 @@
       "payMode": {
         "full": "To'liq to'ladi",
         "partial": "Qisman",
-        "debt": "Qarzga"
+        "debt": "Qarzga",
+        "split": "Aralash (naqd + karta)"
       },
       "amountNow": "Hozir to'langan summa",
       "method": "To'lov usuli",
@@ -1463,7 +1468,13 @@
       "statDebt": "Qarzdorlik",
       "nextUp": "Navbatda keyingi",
       "nextNone": "Hozir navbatda kutayotgan bemor yoʻq.",
-      "statWaiting": "Navbatda kutmoqda"
+      "statWaiting": "Navbatda kutmoqda",
+      "splitHint": "Har bir usul bilan qancha to'langanini yozing. Yetmagan qismi bemorning qarzi bo'lib qoladi.",
+      "splitSum": "To'landi",
+      "splitLeft": "Qarz qoladi: {amount}",
+      "splitOver": "Jamidan {amount} ko'p",
+      "splitExact": "To'liq to'landi",
+      "splitInvalid": "Summani raqam bilan yozing"
     },
     "data": {
       "title": "Maʼlumotlar qayerda saqlanadi",
@@ -1522,7 +1533,18 @@
       "archived": "Olib tashlandi."
     },
     "deskPrint": {
-      "title": "Hujjatni hozircha chop etib boʻlmaydi"
+      "title": "Hujjatni hozircha chop etib boʻlmaydi",
+      "prescription": "Retsept",
+      "listTitle": "Chop etish",
+      "listFor": "{number}-raqamli bemorning hujjatlarini chop etish",
+      "back": "Registraturaga qaytish",
+      "ready": "Toʻlov tasdiqlangan — hujjatlarni chop etish mumkin.",
+      "papers": "Bemorga beriladigan hujjatlar",
+      "nothing": "Bu qabul uchun chop etiladigan hujjat hali yoʻq",
+      "print": "Chop etish",
+      "locked": "Yopiq",
+      "noRecord": "Shifokor bu qabulda koʻrik varagʻini toʻldirmagan: faqat diagnostika xulosalari chop etiladi.",
+      "doctorHint": "Bu klinikada hujjatlar, retsept va UZI/EXO xulosalari registraturada, toʻlovdan keyin chop etiladi."
     },
     "call": {
       "next": "Keyingi bemor",
@@ -1650,7 +1672,7 @@
     "SIGNED": "Imzolangan",
     "RESOLVED": "Hal qilingan",
     "ENTERED_IN_ERROR": "Xato kiritilgan",
-    "ISSUED": "Chiqarilgan",
+    "ISSUED": "Toʻlanmagan",
     "PARTIALLY_PAID": "Qisman toʻlangan",
     "PAID": "Toʻlangan",
     "VOID": "Bekor qilingan",
@@ -1869,7 +1891,8 @@
     "deskPrint": {
       "notFinished": "Shifokor qabulni hali yakunlamagan.",
       "notToday": "Registratura faqat bugungi qabul hujjatini chop etadi. Eski hujjatlar uchun shifokorga murojaat qiling.",
-      "unpaid": "Kassir toʻlovni hali tasdiqlamagan: hisob toʻlanishi yoki kassir «Qarzga ruxsat» berishi kerak."
+      "unpaid": "Kassir toʻlovni hali tasdiqlamagan: hisob toʻlanishi yoki kassir «Qarzga ruxsat» berishi kerak.",
+      "atDesk": "Bu klinikada hujjatlar faqat registraturada, toʻlovdan keyin chop etiladi."
     },
     "freeVisitReasonRequired": "Bepul qayta koʻrik sababini yozing.",
     "drugRequired": "Dori nomini yozing.",

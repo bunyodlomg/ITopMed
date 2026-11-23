@@ -6,7 +6,8 @@ import { formatBirthDate, patientName } from "@/components/patients";
 import { PrintButton } from "@/components/print-button";
 import { requireClinic } from "@/server/auth/guards";
 import { withAppContext } from "@/server/db";
-import { getEncounter } from "@/server/emr/record";
+import { prescriptionForPrint } from "@/server/emr/documents";
+import { DeskPrintRefused } from "@/components/paper";
 import { requestMeta } from "@/server/http";
 import { DomainError } from "@/server/tenancy/provisioning";
 
@@ -18,17 +19,23 @@ import { DomainError } from "@/server/tenancy/provisioning";
  */
 export default async function PrescriptionPrintPage({ params }: { params: Promise<{ slug: string; id: string }> }) {
   const { slug, id } = await params;
-  const ctx = await requireClinic(slug, "emr.read");
-  const data = await getEncounter(ctx, id, await requestMeta()).catch((e) => {
+  const ctx = await requireClinic(slug);
+  // The doctor (record access) or the desk (documents.print, once the bill is settled).
+  if (!ctx.permissions.has("emr.read") && !ctx.permissions.has("documents.print")) notFound();
+  const [t, format] = await Promise.all([getTranslations(), getFormatter()]);
+  let data: Awaited<ReturnType<typeof prescriptionForPrint>>;
+  try {
+    data = await prescriptionForPrint(ctx, id, await requestMeta());
+  } catch (e) {
+    if (e instanceof DomainError && e.code.startsWith("errors.deskPrint.")) return <DeskPrintRefused title={t("clinic.deskPrint.title")} message={t(e.code as never)} />;
     if (e instanceof DomainError) notFound();
     throw e;
-  });
+  }
   const e = data.encounter;
   const items = e.prescriptions.filter((p) => p.status === "ACTIVE");
   // Lab tests ordered in this visit and not yet taken: highlighted so the patient does not skip them.
-  const labsToTake = [...new Set(data.labOrders.filter((o) => o.status === "ORDERED").flatMap((o) => o.items.map((i) => i.name)))];
+  const labsToTake = data.labsToTake;
   if (items.length === 0) notFound();
-  const [t, format] = await Promise.all([getTranslations(), getFormatter()]);
   const info = await withAppContext({ tenantId: ctx.tenant.id, userId: ctx.principal.user.id }, async (tx) => {
     const tenant = await tx.tenant.findUniqueOrThrow({ where: { id: ctx.tenant.id }, select: { name: true, legalName: true, address: true, contactPhone: true } });
     const doctor = e.doctorProfileId

@@ -58,6 +58,7 @@ export async function policyAction(_: FormState, fd: FormData): Promise<FormStat
       {
         maxDiscountPercent: fd.get("maxDiscountPercent"),
         discountReasonRequired: fd.get("discountReasonRequired") === "on",
+        printOnlyAtDesk: fd.get("printOnlyAtDesk") === "on",
         onlineBookingDays: fd.get("onlineBookingDays") ?? undefined,
         onlineBookingLeadHours: fd.get("onlineBookingLeadHours") ?? undefined,
         onlineBookingMaxActive: fd.get("onlineBookingMaxActive") ?? undefined,

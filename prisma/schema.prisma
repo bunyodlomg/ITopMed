@@ -2147,6 +2147,9 @@ model ClinicPolicy {
   patientFilesSyncedAt     DateTime?
   /// A repeat consultation within this many days of the first (paid) one is free. 0 = off.
   freeFollowUpDays         Int       @default(10)
+  /// Visit papers, diagnostic reports and prescriptions are printed only at the reception desk
+  /// (documents.print, after the bill is settled); doctors cannot print them.
+  printOnlyAtDesk          Boolean   @default(false)
   updatedById              String?   @db.Uuid
   updatedAt                DateTime  @updatedAt
 

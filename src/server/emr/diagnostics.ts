@@ -11,6 +11,8 @@ import { DomainError } from "../errors";
 import { uuidv7 } from "../security/crypto";
 import { withRecordAccess } from "./access";
 import { loadEncounter } from "./record";
+import { deskDiagnosticGate, printsAtDesk } from "./documents";
+import { printOnlyAtDesk } from "../clinic/policy";
 
 /**
  * Diagnostic studies (ECG, echo, ultrasound, Holter, ABPM, stress test…):
@@ -79,21 +81,39 @@ export async function listDiagnosticResults(ctx: ClinicContext, patientId: strin
 
 async function loadResult(ctx: ClinicContext, resultId: string) {
   if (!uuid.safeParse(resultId).success) throw new DomainError("errors.notFound");
-  const r = await inClinic(ctx, (tx) => tx.diagnosticResult.findUnique({ where: { id: resultId }, select: { id: true, patientId: true, performedById: true, enteredInErrorAt: true } }));
+  const r = await inClinic(ctx, (tx) => tx.diagnosticResult.findUnique({ where: { id: resultId }, select: { id: true, patientId: true, performedById: true, enteredInErrorAt: true, performedAt: true } }));
   if (!r) throw new DomainError("errors.notFound");
   return r;
 }
 
-/** One result with everything needed to print it. Printing is audited. */
+/**
+ * The desk prints a diagnostic report without record access: only a valid
+ * report performed today, once the patient's bills are settled.
+ */
+async function assertDeskMayPrint(ctx: ClinicContext, r: Awaited<ReturnType<typeof loadResult>>) {
+  if (r.enteredInErrorAt) throw new DomainError("errors.notFound");
+  const gate = await deskDiagnosticGate(ctx, r.patientId, r.performedAt);
+  if (gate !== "ok") throw new DomainError(`errors.deskPrint.${gate}`);
+}
+
+/**
+ * One result with everything needed to print it. Printing is audited. The
+ * doctor prints under the record rules; the desk (or everyone, when the clinic
+ * prints only at the desk) under the desk rules.
+ */
 export async function diagnosticForPrint(ctx: ClinicContext, resultId: string, meta: RequestMeta) {
+  if (!ctx.permissions.has("emr.read") && !ctx.permissions.has("documents.print")) throw new DomainError("errors.forbidden");
   const r = await loadResult(ctx, resultId);
-  return withRecordAccess(ctx, r.patientId, meta, { auditView: false }, async (tx) => {
+  const desk = await printsAtDesk(ctx);
+  if (desk) await assertDeskMayPrint(ctx, r);
+  const load = async (tx: Prisma.TransactionClient) => {
     const result = await tx.diagnosticResult.findUniqueOrThrow({ where: { id: resultId }, include: { files: { select: { id: true, fileName: true, mimeType: true } } } });
     const patient = await tx.patient.findUniqueOrThrow({ where: { id: r.patientId }, select: { mrn: true, lastName: true, firstName: true, middleName: true, birthDate: true, birthYearOnly: true, sex: true } });
     const author = await tx.user.findUnique({ where: { id: result.performedById }, select: { fullName: true } });
-    await auditClinic(tx, ctx, meta, { action: "diagnostic.printed", entityType: "DiagnosticResult", entityId: resultId });
+    await auditClinic(tx, ctx, meta, { action: desk ? "diagnostic.printed_at_desk" : "diagnostic.printed", entityType: "DiagnosticResult", entityId: resultId });
     return { result: { ...result, data: result.data as Record<string, string | number> }, patient, authorName: author?.fullName ?? "—" };
-  });
+  };
+  return desk ? inClinic(ctx, load) : withRecordAccess(ctx, r.patientId, meta, { auditView: false }, load);
 }
 
 /** A wrong result is not deleted: it is marked "entered in error" by its author. */
@@ -138,9 +158,13 @@ export async function getDiagnosticFile(ctx: ClinicContext, fileId: string, meta
   const head = await inClinic(ctx, (tx) => tx.diagnosticFile.findUnique({ where: { id: fileId }, select: { resultId: true } }));
   if (!head) throw new DomainError("errors.notFound");
   const r = await loadResult(ctx, head.resultId);
-  return withRecordAccess(ctx, r.patientId, meta, { auditView: false }, async (tx) => {
+  // The desk sees an attached image only to print the report (same rules as the report itself).
+  const desk = !ctx.permissions.has("emr.read") || (ctx.permissions.has("documents.print") && (await printOnlyAtDesk(ctx)));
+  if (desk) await assertDeskMayPrint(ctx, r);
+  const load = async (tx: Prisma.TransactionClient) => {
     const f = await tx.diagnosticFile.findUniqueOrThrow({ where: { id: fileId }, select: { fileName: true, mimeType: true, content: true } });
     await auditClinic(tx, ctx, meta, { action: "diagnostic.file_viewed", entityType: "DiagnosticResult", entityId: head.resultId });
     return f;
-  });
+  };
+  return desk ? inClinic(ctx, load) : withRecordAccess(ctx, r.patientId, meta, { auditView: false }, load);
 }

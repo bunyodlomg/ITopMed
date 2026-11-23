@@ -15,6 +15,7 @@ import { formatBirthDate, patientName } from "@/components/patients";
 import { Form, SelectField, SubmitButton, TextAreaField, TextField } from "@/components/ui/form";
 import { Alert, Badge, ButtonLink, Card, CardBody, CardHeader, PageHeader, STATUS_TONE, buttonClass } from "@/components/ui/primitives";
 import { requireClinic } from "@/server/auth/guards";
+import { printOnlyAtDesk } from "@/server/clinic/policy";
 import { NOTE_SECTIONS, amendmentHash, getEncounter, noteHash } from "@/server/emr/record";
 import { requestMeta } from "@/server/http";
 import { DomainError } from "@/server/tenancy/provisioning";
@@ -63,6 +64,9 @@ export default async function EncounterPage({ params, searchParams }: { params: 
   const noteTemplates = templates.filter((x) => x.kind === "NOTE");
   const rxSchemes = templates.filter((x) => x.kind === "PRESCRIPTION").map((x) => ({ ...x, items: parseSchemeContent(x.content).items }));
   const docTemplates = templates.filter((x) => x.kind === "DOCUMENT");
+  // When the clinic prints only at the desk, a doctor without documents.print gets no print buttons.
+  const deskOnly = await printOnlyAtDesk(ctx);
+  const canPrintHere = !deskOnly || ctx.permissions.has("documents.print");
   const hasDraft = e.notes.some((n) => n.status === "DRAFT" && n.authorId === ctx.principal.user.id);
   const authors = new Map([[ctx.principal.user.id, ctx.principal.user.fullName]]);
   const s = ctx.tenant.slug;
@@ -312,7 +316,10 @@ export default async function EncounterPage({ params, searchParams }: { params: 
           </CardBody>
         </Card>
       ) : null}
-      {docTemplates.length > 0 ? (
+      {deskOnly && !canPrintHere ? (
+        <Alert tone="accent">{t("clinic.deskPrint.doctorHint")}</Alert>
+      ) : null}
+      {docTemplates.length > 0 && canPrintHere ? (
         <Card id="documents">
           <CardHeader title={t("templates.printTitle")} description={t("templates.printHint")} />
           <CardBody>
@@ -370,7 +377,7 @@ export default async function EncounterPage({ params, searchParams }: { params: 
                     <p className="font-medium">{r.title} {r.enteredInErrorAt ? <Badge tone="danger">{tdg("inError")}</Badge> : null}</p>
                     <p className="text-[12.5px] text-text-3">{format.dateTime(r.performedAt, { dateStyle: "short", timeStyle: "short", timeZone: tz })} · {r.performedByName}</p>
                   </div>
-                  <ButtonLink href={`/c/${s}/diagnostics/${r.id}/print`} variant="secondary" size="sm">{tdg("print")}</ButtonLink>
+                  {canPrintHere ? <ButtonLink href={`/c/${s}/diagnostics/${r.id}/print`} variant="secondary" size="sm">{tdg("print")}</ButtonLink> : null}
                 </div>
                 {DIAGNOSTIC_FIELDS[r.kind as DiagnosticKindKey].some((f) => r.data[f.key] !== undefined) ? (
                   <p className="mt-2 text-[13.5px] text-text-2">
@@ -437,7 +444,7 @@ export default async function EncounterPage({ params, searchParams }: { params: 
           title={t("clinic.rx.title")}
           description={canPrescribe ? t("clinic.rx.hint") : undefined}
           action={
-            e.prescriptions.some((p) => p.status === "ACTIVE") ? (
+            canPrintHere && e.prescriptions.some((p) => p.status === "ACTIVE") ? (
               <ButtonLink href={`/c/${s}/encounters/${e.id}/prescription`} variant="secondary" size="sm">
                 {t("clinic.rx.print")}
               </ButtonLink>
