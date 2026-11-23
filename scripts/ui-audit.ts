@@ -99,6 +99,8 @@ async function sampleIds() {
       invoice: await one(`SELECT id FROM "Invoice" WHERE "tenantId" = $1 ORDER BY "totalMinor" DESC LIMIT 1`),
       patient: await one(`SELECT p.id FROM "Patient" p WHERE p."tenantId" = $1 AND EXISTS (SELECT 1 FROM "Invoice" i WHERE i."patientId" = p.id) LIMIT 1`),
       encounter: await one(`SELECT id FROM "Encounter" WHERE "tenantId" = $1 ORDER BY "createdAt" DESC LIMIT 1`),
+      // A visit (one with a record if any): the desk's print list (documents, prescription, reports).
+      appointment: await one(`SELECT a.id FROM "Appointment" a WHERE a."tenantId" = $1 ORDER BY EXISTS (SELECT 1 FROM "Encounter" e WHERE e."appointmentId" = a.id) DESC, a."startsAt" DESC LIMIT 1`),
       lab: await one(`SELECT id FROM "LabOrder" WHERE "tenantId" = $1 LIMIT 1`),
       item: await one(`SELECT id FROM "InventoryItem" WHERE "tenantId" = $1 LIMIT 1`),
       staffProfile: await one(`SELECT "membershipId" AS id FROM "StaffProfile" WHERE "tenantId" = $1 LIMIT 1`),
@@ -127,7 +129,7 @@ function routes(ids: Awaited<ReturnType<typeof sampleIds>>): string[] {
   const dyn: [string | undefined, string][] = [
     [ids.invoice, `${c}/billing/${ids.invoice}`], [ids.invoice, `${c}/billing/${ids.invoice}/receipt`],
     [ids.patient, `${c}/patients/${ids.patient}`], [ids.patient, `${c}/patients/${ids.patient}/edit`], [ids.patient, `${c}/patients/${ids.patient}/record`],
-    [ids.encounter, `${c}/encounters/${ids.encounter}`], [ids.lab, `${c}/lab/${ids.lab}`], [ids.item, `${c}/inventory/${ids.item}`],
+    [ids.encounter, `${c}/encounters/${ids.encounter}`], [ids.appointment, `${c}/desk/print/${ids.appointment}`], [ids.lab, `${c}/lab/${ids.lab}`], [ids.item, `${c}/inventory/${ids.item}`],
     [ids.staffProfile, `${c}/hr/${ids.staffProfile}`], [ids.doctor, `${c}/doctors/${ids.doctor}`], [ids.member, `${c}/staff/${ids.member}`],
     [ids.role, `${c}/roles/${ids.role}`], [ids.service, `${c}/services/${ids.service}`],
   ];
@@ -190,7 +192,8 @@ async function main() {
 
   // 2. Staff: platform console + clinic workspace.
   const staff = await fresh();
-  await signIn(staff, "/admin/login");
+  // --only on clinic screens needs no console account (the console routes are filtered out anyway).
+  if (!ONLY || ONLY.includes("/admin")) await signIn(staff, "/admin/login");
   await signIn(staff, "/login");
   await audit(staff, routes(ids));
 

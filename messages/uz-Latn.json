@@ -1433,7 +1433,7 @@
         "full": "To'liq to'ladi",
         "partial": "Qisman",
         "debt": "Qarzga",
-        "split": "Aralash (naqd + karta)"
+        "split": "Aralash"
       },
       "amountNow": "Hozir to'langan summa",
       "method": "To'lov usuli",
@@ -1469,7 +1469,7 @@
       "nextUp": "Navbatda keyingi",
       "nextNone": "Hozir navbatda kutayotgan bemor yoʻq.",
       "statWaiting": "Navbatda kutmoqda",
-      "splitHint": "Har bir usul bilan qancha to'langanini yozing. Yetmagan qismi bemorning qarzi bo'lib qoladi.",
+      "splitHint": "Naqd, karta va oʻtkazma bilan qancha toʻlanganini yozing. Yetmagan qismi bemorning qarzi boʻlib qoladi.",
       "splitSum": "To'landi",
       "splitLeft": "Qarz qoladi: {amount}",
       "splitOver": "Jamidan {amount} ko'p",

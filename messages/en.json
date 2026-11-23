@@ -1433,7 +1433,7 @@
         "full": "Paid in full",
         "partial": "Partly",
         "debt": "On debt",
-        "split": "Split (cash + card)"
+        "split": "Split"
       },
       "amountNow": "Amount paid now",
       "method": "Payment method",
@@ -1469,7 +1469,7 @@
       "nextUp": "Next in the queue",
       "nextNone": "Nobody is waiting in the queue right now.",
       "statWaiting": "Waiting in the queue",
-      "splitHint": "Enter how much was paid with each method. Whatever is missing stays as the patient's debt.",
+      "splitHint": "Enter how much was paid in cash, by card and by transfer. Whatever is missing stays as the patient's debt.",
       "splitSum": "Paid",
       "splitLeft": "Debt left: {amount}",
       "splitOver": "{amount} more than the total",
