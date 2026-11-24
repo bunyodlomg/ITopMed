@@ -19,6 +19,8 @@ export interface FinancialReport {
   to: string;
   byDay: { day: string; currency: string; received: bigint; refunded: bigint }[];
   byMethod: { method: string; currency: string; net: bigint; count: number }[];
+  /** Net payments per local day and method (refunds counted on the payment's day and method). */
+  byDayMethod: { day: string; method: string; currency: string; net: bigint }[];
   /** Who took the money: one row per staff member, net of refunds, split by payment method. */
   byCashier: { cashier: string; currency: string; net: bigint; count: number; methods: { method: string; net: bigint }[] }[];
   byService: { service: string; currency: string; amount: bigint; quantity: number }[];
@@ -61,6 +63,13 @@ export async function financialReport(ctx: ClinicContext, from: string, to: stri
       FROM "Payment" WHERE "receivedAt" >= ${start} AND "receivedAt" < ${end}
         AND (${scoped}::uuid[] IS NULL OR "branchId" = ANY(${scoped}::uuid[]))
       GROUP BY method, currency ORDER BY net DESC`;
+
+    const byDayMethod = await tx.$queryRaw<{ day: string; method: string; currency: string; net: bigint }[]>`
+      SELECT to_char(("receivedAt" AT TIME ZONE 'UTC') AT TIME ZONE ${tz}, 'YYYY-MM-DD') AS day, method::text AS method, currency,
+             (sum("amountMinor") - sum("refundedMinor"))::bigint AS net
+      FROM "Payment" WHERE "receivedAt" >= ${start} AND "receivedAt" < ${end}
+        AND (${scoped}::uuid[] IS NULL OR "branchId" = ANY(${scoped}::uuid[]))
+      GROUP BY 1, method, currency ORDER BY 1`;
 
     const cashierRows = await tx.$queryRaw<{ userId: string; cashier: string; method: string; currency: string; net: bigint; count: number }[]>`
       SELECT p."receivedById"::text AS "userId", u."fullName" AS cashier, p.method::text AS method, p.currency,
@@ -138,6 +147,7 @@ export async function financialReport(ctx: ClinicContext, from: string, to: stri
       to,
       byDay,
       byMethod,
+      byDayMethod,
       byCashier,
       byService,
       byDoctor,
@@ -154,6 +164,18 @@ export async function financialReport(ctx: ClinicContext, from: string, to: stri
       })),
     };
   });
+}
+
+/** Net payments by method in a period: the comparison figures of the dashboard (one light query). */
+export async function methodTotals(ctx: ClinicContext, from: string, to: string): Promise<{ method: string; currency: string; net: bigint; count: number }[]> {
+  if (!ctx.permissions.has("finance.reports")) throw new DomainError("errors.forbidden");
+  const { start, end } = range(ctx, from, to);
+  const scoped = ctx.branchIds ?? null;
+  return inClinic(ctx, (tx) => tx.$queryRaw<{ method: string; currency: string; net: bigint; count: number }[]>`
+    SELECT method::text AS method, currency, (sum("amountMinor") - sum("refundedMinor"))::bigint AS net, count(*)::int AS count
+    FROM "Payment" WHERE "receivedAt" >= ${start} AND "receivedAt" < ${end}
+      AND (${scoped}::uuid[] IS NULL OR "branchId" = ANY(${scoped}::uuid[]))
+    GROUP BY method, currency`);
 }
 
 export interface OperationalReport {

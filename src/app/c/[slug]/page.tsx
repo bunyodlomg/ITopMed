@@ -15,6 +15,8 @@ import { formatHm, isoWeekday, todayIn } from "@/server/scheduling/time";
 import { BarChart } from "@/components/bar-chart";
 import { moneyFormatter } from "@/components/money";
 import { incomeSummary } from "@/server/reception/desk";
+import { FinanceOverview } from "@/components/finance-overview";
+import { resolvePeriod } from "@/lib/finance-period";
 
 /**
  * One dashboard, composed from role-specific sections:
@@ -22,7 +24,7 @@ import { incomeSummary } from "@/server/reception/desk";
  *  - Front desk: who works today (receptionists, managers — schedules.read)
  *  - My day (anyone with a practitioner profile)
  */
-export default async function ClinicDashboard({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ setup?: string }> }) {
+export default async function ClinicDashboard({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ setup?: string; fp?: string; from?: string; to?: string }> }) {
   const { slug } = await params;
   const ctx = await requireClinic(slug);
   // A clinic created by the platform with a preset is finished for its field on the owner's first visit.
@@ -63,7 +65,10 @@ export default async function ClinicDashboard({ params, searchParams }: { params
       ]
     : [];
 
-  const [income, money] = await Promise.all([incomeSummary(ctx), moneyFormatter()]);
+  const sp = await searchParams;
+  // Clinic owners and accountants get the full money overview; others with billing access the simple 14-day card.
+  const finance = has("finance.reports") ? resolvePeriod(today, sp.fp, sp.from, sp.to) : null;
+  const [income, money] = await Promise.all([finance ? Promise.resolve(null) : incomeSummary(ctx), moneyFormatter()]);
   // Changes against the previous period, from the same 14-day series (no extra query).
   const change = (now: number, before: number) => {
     if (before <= 0) return null;
@@ -76,7 +81,7 @@ export default async function ClinicDashboard({ params, searchParams }: { params
   const weekDelta = series.length >= 14 ? change(sum(series.slice(-7)), sum(series.slice(-14, -7))) : null;
 
   const isOwner = ctx.roleKeys.includes("clinic_owner") && ctx.permissions.has("clinic.settings.manage");
-  const setupParam = (await searchParams).setup;
+  const setupParam = sp.setup;
   const setupDone = setupParam === "done" || setupParam === "ready";
   const showSetup = isOwner && !setupDone && !(await practiceProfile(ctx))?.setupCompletedAt;
 
@@ -119,6 +124,7 @@ export default async function ClinicDashboard({ params, searchParams }: { params
       ) : null}
 
       <div className="space-y-6">
+        {finance ? <FinanceOverview ctx={ctx} period={finance} base={base} /> : null}
         {income ? (
           <div className="grid gap-4 lg:grid-cols-12 lg:gap-6">
             {/* The figures: today is the hero (the one blue panel), the rest are quiet tiles. */}

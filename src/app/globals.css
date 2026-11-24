@@ -36,6 +36,10 @@
   --on-hero: #ffffff;
   --chart-a: #2f63ee;
   --chart-b: #111214;
+  /* Money by payment method (validated categorical set). */
+  --chart-cash: #eb6834;
+  --chart-card: #2f63ee;
+  --chart-other: #1baf7a;
   --danger-solid: #c4243a;
   --success: #12683a;
   --success-soft: rgb(22 150 80 / 0.12);
@@ -89,6 +93,9 @@
     --on-hero: #ffffff;
     --chart-a: #5a86ff;
     --chart-b: #e9e9eb;
+    --chart-cash: #d95926;
+    --chart-card: #5a86ff;
+    --chart-other: #199e70;
     --danger-solid: #d92d45;
     --success: #34c472;
     --success-soft: rgb(52 196 114 / 0.14);
@@ -133,6 +140,9 @@
   --on-hero: #ffffff;
   --chart-a: #5a86ff;
   --chart-b: #e9e9eb;
+  --chart-cash: #d95926;
+  --chart-card: #5a86ff;
+  --chart-other: #199e70;
   --danger-solid: #d92d45;
   --success: #34c472;
   --success-soft: rgb(52 196 114 / 0.14);
@@ -340,6 +350,9 @@ label > input + span {
   to { transform: none; }
 }
 .bar-grow { transform-origin: bottom; animation: itm-grow 700ms var(--ease-spring) backwards; }
+/* The visit stepper: the opened step slides in a little (reduced motion: no movement, see above). */
+.step-panel:not([hidden]) { animation: itm-step-in 260ms var(--ease-out, ease-out) both; }
+@keyframes itm-step-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 @supports (transition-timing-function: linear(0, 1)) {
   :root {
