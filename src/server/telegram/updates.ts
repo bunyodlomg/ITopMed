@@ -9,15 +9,20 @@ import { saveTelegramReading } from "../emr/readings";
 import { telegramTransport } from "../env";
 import { logger } from "../logger";
 import { CHECKIN_CALLBACK, MED_RESUME_CALLBACK, MED_STOP_CALLBACK } from "../notifications/notifications";
-import { api, botCall, clinicBotState, handleTelegramStart, miniAppUrl, type TgMarkup } from "../notifications/telegram";
-import { saveTelegramContact } from "../portal/auth";
+import { api, botCall, clinicBotState, handleTelegramStart, linkChatByPhone, miniAppUrl, type TgMarkup, type TgReplyKeyboard } from "../notifications/telegram";
+import { normalizePhone } from "../patients/patients";
+import { openPortalWithTelegram, saveTelegramContact } from "../portal/auth";
 import { rateLimit } from "../security/rate-limit";
 import { ownContact } from "./central-bot";
 
 /**
  * Everything a clinic's bot receives from patients:
+ *  - "/start": a greeting; an unknown chat is asked to share its phone, a
+ *    linked one gets the menu (portal, medicines, home readings);
  *  - "/start <code>" links the chat to the patient (portal deep link);
- *  - a shared own contact (for the Mini App sign-in);
+ *  - a shared OWN contact: the phone Telegram verified. Every active patient
+ *    card of this clinic with that phone gets the chat linked and its portal
+ *    opened (no activation code: the clinic's decision);
  *  - from a linked chat: home blood pressure and pulse as text ("135/85 72");
  *  - button presses: the answer to "how are you feeling?" after a visit, and
  *    stopping / resuming medicine reminders.
@@ -50,13 +55,19 @@ async function botT(locale: string | null | undefined, fallback: string) {
   return createTranslator({ locale: l, messages, namespace: "telegramBot" });
 }
 
-/** The patient behind an active link of this chat (null = not linked). */
+/**
+ * The patient behind an active link of this chat (null = not linked).
+ * `shared` = the chat serves several patients (a family on one phone): then a
+ * typed reading cannot be attributed and is refused.
+ */
 async function linkedPatient(tenantId: string, chatId: bigint) {
   return withAppContext({ tenantId }, async (tx) => {
-    const link = await tx.telegramLink.findFirst({ where: { tenantId, chatId, revokedAt: null }, orderBy: { linkedAt: "desc" }, select: { id: true, patientId: true, medRemindersOff: true } });
+    const links = await tx.telegramLink.findMany({ where: { tenantId, chatId, revokedAt: null }, orderBy: { linkedAt: "desc" }, select: { id: true, patientId: true, medRemindersOff: true }, take: 20 });
+    const patients = links.length ? await tx.patient.findMany({ where: { id: { in: links.map((l) => l.patientId) }, status: "ACTIVE" }, select: { id: true, preferredLocale: true } }) : [];
+    const link = links.find((l) => patients.some((p) => p.id === l.patientId));
     if (!link) return null;
-    const p = await tx.patient.findUnique({ where: { id: link.patientId }, select: { status: true, preferredLocale: true } });
-    return p?.status === "ACTIVE" ? { linkId: link.id, patientId: link.patientId, locale: p.preferredLocale, medRemindersOff: link.medRemindersOff } : null;
+    const p = patients.find((x) => x.id === link.patientId)!;
+    return { linkId: link.id, patientId: link.patientId, locale: p.preferredLocale, medRemindersOff: link.medRemindersOff, shared: patients.length > 1 };
   });
 }
 
@@ -80,13 +91,16 @@ export async function answerCheckIn(tenantId: string, checkInId: string, chatId:
 /** The patient stops (or resumes) medicine reminders in this chat; pending ones are dropped. */
 export async function setMedicationReminders(tenantId: string, chatId: bigint, on: boolean): Promise<boolean> {
   return withAppContext({ tenantId }, async (tx) => {
-    const link = await tx.telegramLink.findFirst({ where: { tenantId, chatId, revokedAt: null }, orderBy: { linkedAt: "desc" }, select: { id: true, patientId: true } });
-    if (!link) return false;
-    await tx.telegramLink.updateMany({ where: { id: link.id }, data: { medRemindersOff: !on } });
+    // Every patient this chat serves (a family on one phone shares the chat).
+    const links = await tx.telegramLink.findMany({ where: { tenantId, chatId, revokedAt: null }, select: { id: true, patientId: true }, take: 20 });
+    if (!links.length) return false;
+    await tx.telegramLink.updateMany({ where: { id: { in: links.map((l) => l.id) } }, data: { medRemindersOff: !on } });
     if (!on) {
-      await tx.notification.updateMany({ where: { tenantId, patientId: link.patientId, kind: "MEDICATION_REMINDER", status: "PENDING" }, data: { status: "SKIPPED", lastError: "opted_out" } });
+      await tx.notification.updateMany({ where: { tenantId, patientId: { in: links.map((l) => l.patientId) }, kind: "MEDICATION_REMINDER", status: "PENDING" }, data: { status: "SKIPPED", lastError: "opted_out" } });
     }
-    await recordAudit(tx, { tenantId, actorType: "SYSTEM", action: on ? "telegram.med_reminders_resumed" : "telegram.med_reminders_stopped", entityType: "TelegramLink", entityId: link.id });
+    for (const link of links) {
+      await recordAudit(tx, { tenantId, actorType: "SYSTEM", action: on ? "telegram.med_reminders_resumed" : "telegram.med_reminders_stopped", entityType: "TelegramLink", entityId: link.id });
+    }
     return true;
   });
 }
@@ -96,8 +110,20 @@ export async function setMedicationReminders(tenantId: string, chatId: bigint, o
  * Replies go through botCall (the dev-outbox transport writes them to files).
  */
 export async function handleBotUpdate(tenantId: string, u: TgUpdate, state: BotState): Promise<boolean> {
-  const send = (chatId: number, text: string, markup?: TgMarkup) => botCall(state.token, "sendMessage", { chat_id: chatId, text, ...(markup ? { reply_markup: markup } : {}) });
-  const openButton: TgMarkup = { inline_keyboard: [[{ text: "ITop Med", web_app: { url: miniAppUrl(state.slug) } }]] };
+  const send = (chatId: number, text: string, markup?: TgMarkup | TgReplyKeyboard | { remove_keyboard: true }) =>
+    botCall(state.token, "sendMessage", { chat_id: chatId, text, ...(markup ? { reply_markup: markup } : {}) });
+  type T = Awaited<ReturnType<typeof botT>>;
+  /** The menu of a linked chat: the portal and the two pages a patient uses most. */
+  const menu = (t: T): TgMarkup => ({
+    inline_keyboard: [
+      [{ text: t("menuPortal"), web_app: { url: miniAppUrl(state.slug) } }],
+      [
+        { text: t("menuMedicines"), web_app: { url: `${miniAppUrl(state.slug)}?next=medicines` } },
+        { text: t("menuReadings"), web_app: { url: `${miniAppUrl(state.slug)}?next=readings` } },
+      ],
+    ],
+  });
+  const askPhone = (t: T): TgReplyKeyboard => ({ keyboard: [[{ text: t("sharePhone"), request_contact: true }]], resize_keyboard: true, one_time_keyboard: true });
 
   const cb = u.callback_query;
   if (cb) {
@@ -137,20 +163,50 @@ export async function handleBotUpdate(tenantId: string, u: TgUpdate, state: BotS
     return ok;
   }
   if (msg.contact) {
-    // The Mini App asked for the number: only the sender's OWN contact is accepted.
+    // Shared from the chat keyboard or asked for by the Mini App: only the sender's OWN contact counts.
     const own = ownContact(u);
-    const saved = own ? await saveTelegramContact(own.tgId, own.phone) : false;
-    await send(msg.chat.id, saved ? "✅ ITop Med" : "ITop Med: ❌", saved ? openButton : undefined);
-    return false;
+    const phone = own ? normalizePhone(own.phone) : null;
+    const saved = own && phone ? await saveTelegramContact(own.tgId, own.phone) : false;
+    if (!own || !phone || !saved) {
+      const t = await botT(null, state.locale);
+      await send(msg.chat.id, t("phoneNotOwn"), askPhone(t));
+      return false;
+    }
+    const linkedCount = await linkChatByPhone(tenantId, phone, BigInt(msg.chat.id));
+    await openPortalWithTelegram(own.tgId, tenantId);
+    const who = linkedCount ? await linkedPatient(tenantId, BigInt(msg.chat.id)) : null;
+    const t = await botT(who?.locale, state.locale);
+    if (!linkedCount) {
+      await send(msg.chat.id, t("phoneUnknown", { clinic: state.name }), { remove_keyboard: true });
+      return false;
+    }
+    await send(msg.chat.id, `✅ ${t("phoneLinked", { clinic: state.name, count: linkedCount })}`, menu(t));
+    return true;
   }
-  if (/^\/start(@\w+)?$/.test(text)) {
-    await send(msg.chat.id, "ITop Med", openButton);
+  if (/^\/(start|menu)(@\w+)?$/.test(text)) {
+    const who = await linkedPatient(tenantId, BigInt(msg.chat.id));
+    const t = await botT(who?.locale, state.locale);
+    if (who) await send(msg.chat.id, `${t("welcomeBack", { clinic: state.name })}\n\n${t(who.shared ? "readingFamily" : "readingHelp")}`, menu(t));
+    else await send(msg.chat.id, t("welcome", { clinic: state.name }), askPhone(t));
     return false;
   }
   // Free text from a linked chat: a home blood pressure reading, or the format hint.
   const who = await linkedPatient(tenantId, BigInt(msg.chat.id));
-  if (!who || !text) return false;
+  if (!text) return false;
+  if (!who) {
+    // An unknown chat writing anything: how to start (at most twice in a few minutes).
+    if (await rateLimit(`tgstart:${tenantId}:${msg.chat.id}`, 2, 10 * 60_000)) {
+      const t = await botT(null, state.locale);
+      await send(msg.chat.id, t("welcome", { clinic: state.name }), askPhone(t));
+    }
+    return false;
+  }
   const t = await botT(who.locale, state.locale);
+  if (who.shared) {
+    // Several patients share this chat: a typed reading could land on the wrong card.
+    if (await rateLimit(`tghint:${who.linkId}`, 3, 10 * 60_000)) await send(msg.chat.id, t("readingFamily"), menu(t));
+    return false;
+  }
   const reading = parseReadingText(text);
   if (!reading) {
     // A hint at most every few minutes, so a chatty patient is not flooded.

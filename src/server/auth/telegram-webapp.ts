@@ -1,6 +1,6 @@
 import "server-only";
 import { createHmac } from "node:crypto";
-import { loginPatientWithTelegram, telegramPatientAccounts } from "../portal/auth";
+import { loginPatientWithTelegram, openPortalWithTelegram, telegramPatientAccounts } from "../portal/auth";
 import { hashIp, safeEqual } from "../security/crypto";
 import { rateLimit } from "../security/rate-limit";
 import { clinicBot } from "../telegram/clinic-bot";
@@ -14,7 +14,8 @@ import type { RequestMeta } from "./platform-auth";
  * (https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app)
  * before the Telegram user id in it is trusted. Then the clinic's patient whose
  * Telegram-verified phone is a portal login → the portal; several → the person
- * chooses; nobody → the patient page (share phone / not registered).
+ * chooses; nobody → the patient page (share phone / not registered). A patient
+ * card whose phone is the Telegram-verified one opens its portal on the way.
  */
 
 /** A Telegram user id: positive integer, at most 2^52 (Telegram's documented range). */
@@ -53,6 +54,7 @@ export interface Choice {
   key: string;
   kind: "patient";
   clinic: string | null;
+  patient: string;
 }
 
 export type WebAppResult =
@@ -72,8 +74,10 @@ export async function resolveWebApp(initData: string, choice: string | null, met
   const tgId = verifyInitData(initData, bot.token);
   if (!tgId) return { status: "error", reason: "invalid" };
 
+  // A patient card of this clinic with the Telegram-verified phone opens the portal (no code needed).
+  await openPortalWithTelegram(tgId, bot.tenantId);
   const patients = await telegramPatientAccounts(tgId);
-  const choices: Choice[] = patients.accounts.filter((x) => x.tenantId === bot.tenantId).map((a) => ({ key: `patient:${a.id}`, kind: "patient", clinic: a.name }));
+  const choices: Choice[] = patients.accounts.filter((x) => x.tenantId === bot.tenantId).map((a) => ({ key: `patient:${a.id}`, kind: "patient", clinic: a.name, patient: a.patientName }));
   if (choices.length === 0) return { status: "patient", phoneKnown: patients.phoneKnown };
   const pick = choice ? choices.find((x) => x.key === choice) : choices.length === 1 ? choices[0] : undefined;
   if (!pick) return { status: "choose", choices };

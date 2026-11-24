@@ -220,15 +220,34 @@ export interface TelegramPatientAccount {
   tenantId: string;
   slug: string;
   name: string;
+  /** First name + last-name initial, so a family sharing one phone can pick the right card. */
+  patientName: string;
 }
 
-/** Whether the person shared their phone, and the active portal accounts that use it as login. */
+/** Whether the person shared their phone, and the active portal accounts they may enter with it. */
 export async function telegramPatientAccounts(tgId: bigint): Promise<{ phoneKnown: boolean; accounts: TelegramPatientAccount[] }> {
   return withPortal({}, async (tx) => {
     const known = await tx.$queryRaw<{ known: boolean }[]>`SELECT tg_contact_known(${tgId}::bigint) AS known`;
-    const rows = await tx.$queryRaw<{ id: string; tenantId: string; slug: string; name: string }[]>`
-      SELECT id, "tenantId", slug, name FROM portal_telegram_accounts(${tgId}::bigint)`;
+    const rows = await tx.$queryRaw<TelegramPatientAccount[]>`
+      SELECT id, "tenantId", slug, name, "patientName" FROM portal_telegram_accounts(${tgId}::bigint)`;
     return { phoneKnown: Boolean(known[0]?.known), accounts: rows };
+  });
+}
+
+/**
+ * Opens the portal for every ACTIVE patient of this clinic whose card phone is
+ * the phone Telegram verified for this person (no activation code: the clinic's
+ * decision). Invited accounts are activated; disabled ones stay disabled.
+ * Returns how many accounts were opened now.
+ */
+export async function openPortalWithTelegram(tgId: bigint, tenantId: string): Promise<number> {
+  return withPortal({}, async (tx) => {
+    const rows = await tx.$queryRaw<{ accountId: string; created: boolean }[]>`
+      SELECT "accountId", created FROM portal_telegram_open(${tgId}::bigint, ${tenantId}::uuid)`;
+    for (const r of rows) {
+      await recordAudit(tx, { tenantId, actorType: "PATIENT", actorId: r.accountId, action: "portal.opened_telegram", entityType: "PatientAccount", entityId: r.accountId, metadata: { created: r.created } });
+    }
+    return rows.length;
   });
 }
 

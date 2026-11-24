@@ -148,6 +148,28 @@ export async function handleTelegramStart(tenantId: string, code: string, chatId
   });
 }
 
+/**
+ * A person shared THEIR OWN phone (verified by Telegram) in the clinic bot's
+ * chat: the chat is linked to every ACTIVE patient of this clinic whose card
+ * has that phone (a family can share one number), so the clinic's messages
+ * reach it. Earlier chats of those patients are unlinked, as with "/start <code>".
+ * Returns how many patients the chat now serves.
+ */
+export async function linkChatByPhone(tenantId: string, phone: string, chatId: bigint): Promise<number> {
+  return withAppContext({ tenantId }, async (tx) => {
+    const patients = await tx.patient.findMany({ where: { tenantId, phone, status: "ACTIVE" }, select: { id: true }, take: 20 });
+    for (const p of patients) {
+      const here = await tx.telegramLink.findFirst({ where: { tenantId, patientId: p.id, chatId, revokedAt: null }, select: { id: true } });
+      if (here) continue;
+      await tx.telegramLink.updateMany({ where: { tenantId, patientId: p.id, revokedAt: null }, data: { revokedAt: new Date() } });
+      const id = uuidv7();
+      await tx.telegramLink.create({ data: { id, tenantId, patientId: p.id, chatId } });
+      await recordAudit(tx, { tenantId, actorType: "SYSTEM", action: "telegram.patient_linked_phone", entityType: "TelegramLink", entityId: id });
+    }
+    return patients.length;
+  });
+}
+
 async function botToken(tx: Tx, tenantId: string): Promise<string | null> {
   const bot = await tx.telegramBot.findUnique({ where: { tenantId }, select: { tokenEnc: true, enabled: true } });
   return bot?.enabled ? decryptField(bot.tokenEnc, ctxKey(tenantId)) : null;
@@ -159,9 +181,19 @@ export interface TgMarkup {
   inline_keyboard: TgButton[][];
 }
 
-function outboxText(text: string, markup?: TgMarkup) {
-  if (!markup) return text;
-  const buttons = markup.inline_keyboard.flat().map((b) => `[${b.text}] ${"url" in b ? b.url : "web_app" in b ? b.web_app.url : `callback:${b.callback_data}`}`);
+/** The keyboard under the message field: here only "share my phone" (Telegram then sends the person's own contact). */
+export interface TgReplyKeyboard {
+  keyboard: { text: string; request_contact?: boolean }[][];
+  resize_keyboard?: boolean;
+  one_time_keyboard?: boolean;
+}
+
+function outboxText(text: string, markup?: TgMarkup | TgReplyKeyboard | { remove_keyboard: true }) {
+  if (!markup || "remove_keyboard" in markup) return text;
+  const buttons =
+    "keyboard" in markup
+      ? markup.keyboard.flat().map((b) => `[${b.text}]${b.request_contact ? " request_contact" : ""}`)
+      : markup.inline_keyboard.flat().map((b) => `[${b.text}] ${"url" in b ? b.url : "web_app" in b ? b.web_app.url : `callback:${b.callback_data}`}`);
   return `${text}\n\n${buttons.join("\n")}`;
 }
 
@@ -175,7 +207,7 @@ export async function botCall(token: string, method: string, body: Record<string
   if (mode === "none") return false;
   try {
     if (mode === "dev-outbox") {
-      if (method === "sendMessage") await writeOutbox(`chat-${String(body.chat_id)}`, outboxText(String(body.text ?? ""), body.reply_markup as TgMarkup | undefined));
+      if (method === "sendMessage") await writeOutbox(`chat-${String(body.chat_id)}`, outboxText(String(body.text ?? ""), body.reply_markup as Parameters<typeof outboxText>[1]));
       return true;
     }
     await api(token, method, body);
@@ -186,12 +218,12 @@ export async function botCall(token: string, method: string, body: Record<string
 }
 
 /** The clinic's bot for handling updates: token, workspace address and polling offset (null when off or local-only). */
-export async function clinicBotState(tenantId: string): Promise<{ token: string; slug: string; offset: bigint; locale: string } | null> {
+export async function clinicBotState(tenantId: string): Promise<{ token: string; slug: string; name: string; offset: bigint; locale: string } | null> {
   return withAppContext({ tenantId }, async (tx) => {
     if (await isLocalOnly(tx, tenantId)) return null; // local-only clinic: no internet calls
     const b = await tx.telegramBot.findUnique({ where: { tenantId }, select: { tokenEnc: true, enabled: true, updateOffset: true } });
-    const t = await tx.tenant.findUnique({ where: { id: tenantId }, select: { slug: true, defaultLocale: true } });
-    return b?.enabled && t ? { token: decryptField(b.tokenEnc, ctxKey(tenantId)), offset: b.updateOffset, slug: t.slug, locale: t.defaultLocale } : null;
+    const t = await tx.tenant.findUnique({ where: { id: tenantId }, select: { slug: true, name: true, defaultLocale: true } });
+    return b?.enabled && t ? { token: decryptField(b.tokenEnc, ctxKey(tenantId)), offset: b.updateOffset, slug: t.slug, name: t.name, locale: t.defaultLocale } : null;
   });
 }
 

@@ -13,12 +13,12 @@ import { Alert, buttonClass } from "./ui/primitives";
  * loaded: the two events needed are posted the way Telegram documents them.
  */
 
-type Choice = { key: string; kind: "patient"; clinic: string | null };
+type Choice = { key: string; kind: "patient"; clinic: string | null; patient: string };
 type State =
   | { s: "loading" }
   | { s: "outside" }
   | { s: "choose"; choices: Choice[] }
-  | { s: "patient"; phoneKnown: boolean; waiting: boolean }
+  | { s: "patient"; phoneKnown: boolean; waiting: boolean; again?: boolean }
   | { s: "error"; reason: string };
 
 const STORE = "itm_tg_init";
@@ -91,7 +91,8 @@ export function TelegramMiniApp({ slug, next }: { slug?: string; next?: string }
       polls.current += 1;
       const next = await resolve();
       if (!next) return;
-      if (next.s !== "patient" || next.phoneKnown || polls.current >= 20) {
+      // Sharing another number: the old one is already known, so wait a little for the new one instead.
+      if (next.s !== "patient" || (next.phoneKnown && !state.again) || polls.current >= (state.again ? 8 : 20)) {
         window.clearInterval(id);
         setState(next.s === "patient" ? { ...next, waiting: false } : next);
       }
@@ -101,8 +102,9 @@ export function TelegramMiniApp({ slug, next }: { slug?: string; next?: string }
 
   const sharePhone = () => {
     polls.current = 0;
+    const again = state.s === "patient" && state.phoneKnown;
     postEvent("web_app_request_phone");
-    setState({ s: "patient", phoneKnown: false, waiting: true });
+    setState({ s: "patient", phoneKnown: false, waiting: true, again });
   };
 
   if (state.s === "loading") return <p className="text-center text-[15px] text-text-2" role="status">{t("loading")}</p>;
@@ -131,7 +133,7 @@ export function TelegramMiniApp({ slug, next }: { slug?: string; next?: string }
               void resolve(c.key).then((next) => next && setState(next));
             }}
           >
-            {t("asPatient", { clinic: c.clinic ?? "" })}
+            {t("asPerson", { patient: c.patient })}
           </button>
         ))}
       </div>
@@ -142,6 +144,21 @@ export function TelegramMiniApp({ slug, next }: { slug?: string; next?: string }
       <div className="space-y-4">
         <Alert tone="neutral">{t("notFound")}</Alert>
         <p className="text-[14px] leading-relaxed text-text-2">{t("notFoundHint")}</p>
+        <button
+          type="button"
+          className={buttonClass("primary", "lg", "w-full")}
+          onClick={() => {
+            setState({ s: "loading" });
+            void resolve().then((next) => next && setState(next));
+          }}
+        >
+          <RefreshCw aria-hidden className="size-4" />
+          {t("recheck")}
+        </button>
+        <button type="button" onClick={sharePhone} className={buttonClass("secondary", "md", "w-full")}>
+          <Phone aria-hidden className="size-4" />
+          {t("shareAgain")}
+        </button>
       </div>
     ) : (
       <div className="space-y-4">

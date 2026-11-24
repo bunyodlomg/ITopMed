@@ -1724,7 +1724,10 @@ model PatientAccount {
   lockedUntil         DateTime?
   lastLoginAt         DateTime?
   locale              String?
-  createdById         String              @db.Uuid
+  /// Opened by the patient through the clinic's bot (Telegram-verified phone = card phone): no login/password.
+  telegramOpened      Boolean             @default(false)
+  /// Staff member who issued the activation code; null when the patient opened it via Telegram.
+  createdById         String?             @db.Uuid
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
 

@@ -9,6 +9,9 @@ import { registerPatient } from "@/server/patients/patients";
 import { activatePortalAccount, portalTenant, saveTelegramContact, validatePatientSession } from "@/server/portal/auth";
 import { issuePortalCode } from "@/server/portal/staff";
 import { ownContact } from "@/server/telegram/central-bot";
+import { clinicBotState } from "@/server/notifications/telegram";
+import { withAppContext } from "@/server/db";
+import { handleBotUpdate } from "@/server/telegram/updates";
 import { META, PASSWORD, clinicContext, clinicWithOwner, platformActor, uniq } from "./helpers/fixtures";
 
 // Synthetic bot token (format only; not a real bot). All people and phones are synthetic.
@@ -72,8 +75,14 @@ describe("who opened a clinic bot's Mini App", () => {
       const { code } = await issuePortalCode(reception, p.id, { consentMethod: "PAPER_SIGNED" }, META);
       await activatePortalAccount(tenant, { code, birthDate, phone, password: "Bemor-Parol-2026x", confirmPassword: "Bemor-Parol-2026x" }, META);
     };
+    /** Only a patient card with this phone: no portal code was ever issued. */
+    const card = async (phone: string, firstName = uniq("Bemor")) => {
+      const p = await registerPatient(reception, { lastName: "Sintetik", firstName, birthDate: "1988-02-03", sex: "MALE", phone }, { confirmNotDuplicate: true }, META);
+      if (!p.ok) throw new Error("patient");
+      return p.id;
+    };
     const launch = (id: number) => initData({ id }, { token: botToken });
-    return { o, reception, patient, launch, slug: o.slug };
+    return { o, reception, patient, card, launch, slug: o.slug };
   }
 
   it("a stranger gets the patient page; after sharing an unknown number: not found", async () => {
@@ -98,6 +107,51 @@ describe("who opened a clinic bot's Mini App", () => {
     if (r.status === "signed_in") expect((await validatePatientSession(r.token))?.tenant.slug).toBe(c.slug);
     const other = await clinic();
     expect(await resolveWebApp(other.launch(tg), null, META, other.slug)).toEqual({ status: "patient", phoneKnown: true });
+  });
+
+  it("a patient card with the Telegram-verified phone opens the portal without a code; a family picks the card", async () => {
+    const c = await clinic();
+    const phone = newPhone();
+    await c.card(phone, "Ali");
+    const tg = newTgId();
+    await saveTelegramContact(BigInt(tg), phone.slice(1));
+    const r = await resolveWebApp(c.launch(tg), null, META, c.slug);
+    expect(r).toMatchObject({ status: "signed_in", target: "patient", go: `/p/${c.slug}` });
+    if (r.status === "signed_in") expect((await validatePatientSession(r.token))?.patient.firstName).toBe("Ali");
+    // A second card with the same phone (a child): now the person chooses, by first name.
+    await c.card(phone, "Vali");
+    const r2 = await resolveWebApp(c.launch(tg), null, META, c.slug);
+    expect(r2.status).toBe("choose");
+    if (r2.status !== "choose") return;
+    expect(r2.choices.map((x) => x.patient)).toEqual(["Ali S.", "Vali S."]);
+    const vali = await resolveWebApp(c.launch(tg), r2.choices[1]!.key, META, c.slug);
+    if (vali.status !== "signed_in") throw new Error(vali.status);
+    expect((await validatePatientSession(vali.token))?.patient.firstName).toBe("Vali");
+    // A forged choice is refused; another clinic's bot does not see these cards.
+    expect(await resolveWebApp(c.launch(tg), "patient:00000000-0000-0000-0000-000000000000", META, c.slug)).toMatchObject({ status: "choose" });
+    const other = await clinic();
+    expect(await resolveWebApp(other.launch(tg), null, META, other.slug)).toEqual({ status: "patient", phoneKnown: true });
+  });
+
+  it("sharing the phone in the bot chat links the chat to every card with that number", async () => {
+    const c = await clinic();
+    const phone = newPhone();
+    const a = await c.card(phone);
+    const b = await c.card(phone);
+    const state = (await clinicBotState(c.o.tenantId))!;
+    const tg = newTgId();
+    const contact = (user: number, from = tg) => ({ update_id: 3, message: { chat: { id: from, type: "private" }, from: { id: from, is_bot: false }, contact: { phone_number: phone.slice(1), user_id: user } } });
+    // Someone else's contact is not accepted.
+    expect(await handleBotUpdate(c.o.tenantId, contact(tg + 1), state)).toBe(false);
+    expect(await handleBotUpdate(c.o.tenantId, contact(tg), state)).toBe(true);
+    const links = await withAppContext({ tenantId: c.o.tenantId }, (tx) => tx.telegramLink.findMany({ where: { tenantId: c.o.tenantId, chatId: BigInt(tg), revokedAt: null }, select: { patientId: true } }));
+    expect(links.map((l) => l.patientId).sort()).toEqual([a, b].sort());
+    // The portal is open too: the Mini App offers both cards.
+    expect(await resolveWebApp(c.launch(tg), null, META, c.slug)).toMatchObject({ status: "choose" });
+    // An unknown number links nothing.
+    const stranger = newTgId();
+    const unknown = { update_id: 4, message: { chat: { id: stranger, type: "private" }, from: { id: stranger, is_bot: false }, contact: { phone_number: newPhone().slice(1), user_id: stranger } } };
+    expect(await handleBotUpdate(c.o.tenantId, unknown, state)).toBe(false);
   });
 
   it("staff never sign in through the Mini App (login + password only); the landing page per role is unchanged", async () => {
