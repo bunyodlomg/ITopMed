@@ -1,9 +1,10 @@
 /**
  * Screenshots for the clinic manual (docs/pdf-src/farhod-qollanma.html). Synthetic data only,
  * LOCAL database only: opens a copy of the Farhod MedServis spec (scripts/deploy/clinics) under
- * --slug (default farhod-medservis), with an owner-doctor and a registrar account, then walks one
- * working day: settings → registrar desk → doctor's visit with the clinic's own templates →
- * prints → debt → cash → reports → test-patient removal.
+ * --slug (default farhod-medservis) set up as the clinic works: the owner is doctor + admin, a
+ * reception account (Qabulxona) and a cashier account (Kassa). Walks one working day: settings →
+ * staff and the Registrator role → reception desk → cashier's checkout → doctor's visit with the
+ * clinic's own templates → prints → shift closing → reports → test-patient removal.
  *
  *   npm run app   (in another window)
  *   npx tsx --conditions=react-server scripts/docs/farhod-screenshots.ts [--slug farhod-medservis]
@@ -43,6 +44,11 @@ async function step(page: Page, name: string, fn: () => Promise<void>) {
     await page.screenshot({ path: path.join(os.tmpdir(), `farhod-shot-fail-${failures.length}.png`) }).catch(() => undefined);
   }
 }
+/** Opens one step of the visit page (the page shows one step at a time). */
+async function visitStep(page: Page, label: RegExp) {
+  await page.locator("main button, main a").filter({ hasText: label }).first().click();
+  await page.waitForTimeout(400);
+}
 async function signIn(browser: Browser, login: string, password: string, viewport = { width: 1366, height: 860 }) {
   const page = await (await browser.newContext({ viewport, deviceScaleFactor: 1.5, locale: "uz-UZ" })).newPage();
   await page.goto(`${BASE}/login`);
@@ -54,16 +60,20 @@ async function signIn(browser: Browser, login: string, password: string, viewpor
 
 async function main() {
   const { createClinicFromSpec } = await import("../lib/create-clinic");
+  const { runClinicAdmin } = await import("../lib/clinic-admin");
   const { platformDb } = await import("../../src/server/db");
   if (await platformDb().tenant.findUnique({ where: { slug: SLUG } })) throw new Error(`Local clinic ${SLUG} exists already: pass another --slug (the clinic NAME on the screens stays "Farhod MedServis")`);
   const ownerLogin = `farhod.${randomBytes(2).toString("hex")}`;
-  const deskLogin = `registrator.${randomBytes(2).toString("hex")}`;
+  const deskLogin = `qabul.${randomBytes(2).toString("hex")}`;
+  const cashLogin = `kassa.${randomBytes(2).toString("hex")}`;
   const password = `Demo-${randomBytes(6).toString("hex")}-26`;
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "itm-doc-"));
   const spec = JSON.parse(fs.readFileSync("scripts/deploy/clinics/farhod-medservis.json", "utf8"));
   fs.writeFileSync(path.join(dir, "spec.json"), JSON.stringify({ ...spec, slug: SLUG }));
   fs.copyFileSync(path.join("scripts/deploy/clinics", spec.logoFile), path.join(dir, spec.logoFile));
   await createClinicFromSpec(path.join(dir, "spec.json"), ownerLogin, "Farhod Qoraboyev", password);
+  // As on the live clinic: the owner is doctor + admin; the money is taken at the cashier.
+  await runClinicAdmin(SLUG, [{ op: "owner-roles", add: [], remove: ["cashier"] }]);
   console.log(`local clinic /c/${SLUG}, owner ${ownerLogin}`);
 
   fs.mkdirSync(OUT, { recursive: true });
@@ -87,19 +97,37 @@ async function main() {
     await owner.goto(`${C}/settings`);
     await shot(owner, "03-settings");
   });
-  await step(owner, "staff + add registrar", async () => {
+  const addStaff = async (fullName: string, role: string, login: string, name?: string) => {
     await owner.goto(`${C}/staff?panel=new`);
     await settle(owner);
-    await owner.fill('input[name="fullName"]', "Dilnoza Registratorova");
-    for (const r of ["receptionist", "cashier"]) await owner.locator(`input[name="roleKeys"][value="${r}"]`).check();
-    await owner.fill('input[name="username"]', deskLogin);
+    await owner.fill('input[name="fullName"]', fullName);
+    await owner.locator(`input[name="roleKeys"][value="${role}"]`).check();
+    await owner.fill('input[name="username"]', login);
     await owner.fill('input[name="password"]', password);
-    await shot(owner, "04-staff-add");
+    if (name) await shot(owner, name);
     await owner.locator('form:has(input[name="username"]) button[type="submit"]').last().click();
     await settle(owner);
+  };
+  await step(owner, "staff: Qabulxona + Kassa", async () => {
+    await addStaff("Dilnoza Aliyeva", "receptionist", deskLogin, "04-staff-add");
+    await addStaff("Nodira Karimova", "cashier", cashLogin);
     await owner.goto(`${C}/staff`);
-    await owner.getByText("Dilnoza Registratorova").first().waitFor({ timeout: 20_000 });
+    await owner.getByText("Nodira Karimova").first().waitFor({ timeout: 20_000 });
     await shot(owner, "05-staff");
+  });
+  await step(owner, "Registrator role: services on the bill + measurements", async () => {
+    await owner.goto(`${C}/roles`);
+    await settle(owner);
+    await owner.locator("main tr").filter({ hasText: "Registrator" }).first().locator("a").first().click();
+    await owner.waitForURL(/\/roles\/[0-9a-f-]{36}/);
+    for (const p of ["billing.charge", "vitals.write"]) {
+      const box = owner.locator(`input[type="checkbox"][value="${p}"]`);
+      if (!(await box.isChecked())) await box.check();
+    }
+    await owner.locator('input[value="billing.charge"]').scrollIntoViewIfNeeded();
+    await shot(owner, "05b-role");
+    await owner.locator('main button[type="submit"]').last().click();
+    await settle(owner);
   });
   await step(owner, "services (price list)", async () => {
     await owner.goto(`${C}/services`);
@@ -117,7 +145,19 @@ async function main() {
     await shot(owner, "09-doctors");
   });
 
-  // ---------- Registrar ----------
+  // ---------- Cashier: shift ----------
+  const cash = await signIn(browser, cashLogin, password);
+  await step(cash, "cashier: open the shift", async () => {
+    await cash.goto(`${C}/cash`);
+    await settle(cash);
+    const f = cash.locator('input[name="openingFloat"]');
+    if (await f.count()) await f.fill("100000");
+    await shot(cash, "31-cash-open");
+    await cash.locator('form:has(input[name="openingFloat"]) button[type="submit"]').first().click();
+    await settle(cash);
+  });
+
+  // ---------- Reception ----------
   const desk = await signIn(browser, deskLogin, password);
   await step(desk, "desk: empty", async () => {
     await desk.goto(`${C}/desk`);
@@ -132,7 +172,8 @@ async function main() {
     await desk.selectOption('select[name="sex"]', p.sex);
     await desk.fill('input[name="address"]', p.address).catch(() => undefined);
     for (const s of p.services) await desk.locator("label").filter({ hasText: s }).locator('input[name="serviceIds"]').first().check();
-    const mode = desk.locator(`input[name="payMode"][value="${p.pay}"]`);
+    // Only where this account may take money (a radio); a reception account just sends the services.
+    const mode = desk.locator(`input[type="radio"][name="payMode"][value="${p.pay}"]`);
     if (await mode.count()) await mode.check();
     // Measurements only where this account may record them.
     for (const [n, v] of [["HEIGHT", p.h], ["WEIGHT", p.w], ["SYSTOLIC_BP", p.bp[0]], ["DIASTOLIC_BP", p.bp[1]], ["HEART_RATE", p.pulse]] as const) {
@@ -143,7 +184,7 @@ async function main() {
     await desk.locator('form:has(input[name="lastName"]) button[type="submit"]').last().click();
     await desk.waitForURL(/done=/, { timeout: 30_000 });
   };
-  await step(desk, "desk: first patient, paid", async () => {
+  await step(desk, "desk: first patient", async () => {
     await register({ last: "Aliyev", first: "Botir", year: "1962", sex: "MALE", address: "Qo'rg'ontepa tumani (namuna)", services: [/Kardiolog ko'ruvi/, /^EKG/], pay: "full", bp: ["150", "95"], pulse: "84", w: "86", h: "172" }, "11-desk-filled");
     await shot(desk, "12-desk-done", { full: true });
   });
@@ -153,7 +194,7 @@ async function main() {
     await desk.goto(`${BASE}${href}`);
     await shot(desk, "13-ticket");
   });
-  await step(desk, "desk: second patient, debt", async () => {
+  await step(desk, "desk: second and third patient", async () => {
     await register({ last: "Karimova", first: "Nodira", year: "1990", sex: "FEMALE", address: "Andijon (namuna)", services: [/Bachadon va ortiqlari/], pay: "debt", bp: ["110", "70"], pulse: "76", w: "62", h: "163" });
     await register({ last: "Rahimov", first: "Sardor", year: "1975", sex: "MALE", address: "Qo'rg'ontepa (namuna)", services: [/Qalqonsimon bez/], pay: "full", bp: ["130", "85"], pulse: "70", w: "80", h: "178" });
     await desk.goto(`${C}/desk`);
@@ -162,6 +203,43 @@ async function main() {
   await step(desk, "queue page", async () => {
     await desk.goto(`${C}/queue`);
     await shot(desk, "15-queue", { full: true });
+  });
+
+  // ---------- Cashier: checkout ----------
+  const payAt = async (name: string, mode: RegExp, fill?: () => Promise<void>, shotName?: string) => {
+    await cash.goto(`${C}/checkout`);
+    await settle(cash);
+    await cash.locator("main a, main button").filter({ hasText: name }).first().click();
+    await cash.waitForURL(/patient=/);
+    await settle(cash);
+    await cash.locator("main label, main button").filter({ hasText: mode }).first().click();
+    if (fill) await fill();
+    if (shotName) await shot(cash, shotName, { full: true });
+    await cash.locator('main form:has(input[name="payMode"]) button[type="submit"]').last().click();
+    await settle(cash);
+  };
+  await step(cash, "checkout list", async () => {
+    await cash.goto(`${C}/checkout`);
+    await shot(cash, "32-checkout");
+  });
+  await step(cash, "checkout: Aliyev pays all in cash, receipt", async () => {
+    await payAt("Aliyev", /^\s*Hammasi\s*$/, undefined, "33-checkout-pay");
+    await shot(cash, "34-checkout-paid", { full: true });
+    const r = cash.locator('a[href*="/receipt"]').first();
+    if (await r.count()) {
+      await cash.goto(new URL((await r.getAttribute("href"))!, cash.url()).toString().replace(/[?&]print=1/, ""));
+      await shot(cash, "35-receipt");
+    }
+  });
+  await step(cash, "checkout: Rahimov mixed cash + card; Karimova part", async () => {
+    await payAt("Rahimov", /^\s*Aralash\s*$/, async () => {
+      const inputs = cash.locator('main form:has(input[name="payMode"]) input[inputmode="decimal"]');
+      await inputs.nth(0).fill("40000");
+      await inputs.nth(1).fill("30000");
+    }, "36-checkout-mixed");
+    await payAt("Karimova", /^\s*Bir qismi\s*$/, async () => {
+      await cash.locator('main form:has(input[name="payMode"]) input[name="amount"]').first().fill("20000");
+    });
   });
 
   // ---------- Doctor (the owner is the doctor) ----------
@@ -193,11 +271,15 @@ async function main() {
   await step(owner, "diagnosis and prescription", async () => {
     await owner.goto(encounterUrl);
     await settle(owner);
+    await visitStep(owner, /Tashxis/);
     const dx = owner.locator('form:has(input[name="icd10Code"])').first();
     await dx.locator('[name="icd10Code"]').fill("I11.9");
     await dx.locator('[name="description"]').fill("Gipertoniya kasalligi (namuna)");
     await dx.locator('button[type="submit"]').last().click();
     await settle(owner);
+    await owner.goto(encounterUrl);
+    await settle(owner);
+    await visitStep(owner, /Davolash/);
     const rx = owner.locator('form:has(input[name="drug"])').first();
     await rx.locator('input[name="drug"]').fill("Bisoprolol 5 mg");
     await rx.locator('input[name="dose"]').fill("1 tabletka").catch(() => undefined);
@@ -206,15 +288,16 @@ async function main() {
     await settle(owner);
     await owner.goto(encounterUrl);
     await settle(owner);
+    await visitStep(owner, /Davolash/);
     await owner.locator("#prescriptions").first().scrollIntoViewIfNeeded();
     await shot(owner, "19-dx-rx");
   });
   await step(owner, "ECG result", async () => {
     await owner.goto(encounterUrl);
     await settle(owner);
+    await visitStep(owner, /Tekshiruvlar/);
     await owner.locator("summary").filter({ hasText: /Natija qo/ }).first().click();
-    const sel = owner.locator('select:has(option:text-is("Transtorakal exokardiografiya"))').first();
-    await sel.selectOption({ index: (await sel.locator("option").count()) - 1 }); // "no template" -> built-in fields
+    // The form starts with the built-in fields of a study (no clinic template pre-selected).
     await owner.locator('select[name="kind"]').selectOption("ECG").catch(() => undefined);
     await owner.fill('[name="rhythm"]', "sinus ritm").catch(() => undefined);
     await owner.fill('[name="heartRate"]', "84").catch(() => undefined);
@@ -222,21 +305,42 @@ async function main() {
     await owner.locator('form:has(textarea[name="conclusion"]) button[type="submit"]').last().click();
     await settle(owner);
   });
+  await step(owner, "extra service during the visit: EhoKG, paid at the cashier", async () => {
+    await owner.goto(encounterUrl);
+    await settle(owner);
+    const form = owner.locator("form:has(input[name='serviceIds'])").filter({ has: owner.locator("input[name='patientId']") }).first();
+    for (const tab of [/Tekshiruvlar/, /Davolash/, /Yakunlash/]) {
+      if (await form.isVisible()) break;
+      await visitStep(owner, tab);
+    }
+    await form.locator("label").filter({ hasText: /EhoKG/ }).locator('input[name="serviceIds"]').first().check();
+    await form.scrollIntoViewIfNeeded();
+    await shot(owner, "19b-extra");
+    await form.locator('button[type="submit"]').last().click();
+    await settle(owner);
+  });
+  await step(owner, "visit steps", async () => {
+    await owner.goto(encounterUrl);
+    await settle(owner);
+    await visitStep(owner, /Yakunlash/);
+    await shot(owner, "19c-finish-step", { full: true });
+  });
   await step(owner, "cardiologist sheet", async () => {
     await owner.goto(encounterUrl);
-    await owner.getByRole("link", { name: "Kardiolog ko'ruvi varag'i" }).first().click();
+    await owner.goto(`${BASE}${await owner.locator("a").filter({ hasText: "Kardiolog ko'ruvi varag'i" }).first().getAttribute("href")}`);
     await owner.waitForURL(/\/document\//);
     await shot(owner, "20-cardio-sheet", { full: true });
   });
   await step(owner, "certificate", async () => {
     await owner.goto(encounterUrl);
-    await owner.getByRole("link", { name: "Ambulator davolanish haqida ma'lumotnoma" }).first().click();
+    await owner.goto(`${BASE}${await owner.locator("a").filter({ hasText: "Ambulator davolanish haqida ma'lumotnoma" }).first().getAttribute("href")}`);
     await owner.waitForURL(/\/document\//);
     await shot(owner, "21-certificate", { full: true });
   });
   await step(owner, "finish the visit", async () => {
     await owner.goto(encounterUrl);
     await settle(owner);
+    await visitStep(owner, /Yakunlash/);
     await owner.getByRole("button", { name: /yakunlash|Yakunlash/ }).first().click();
     await settle(owner);
   });
@@ -246,6 +350,7 @@ async function main() {
     await owner.locator("main").locator("li, article, section > div, div.flex").filter({ hasText: "Rahimov" }).locator('form:has(input[name="appointmentId"]) button').last().click();
     await owner.waitForURL(/\/encounters\/[0-9a-f-]{36}/);
     await settle(owner);
+    await visitStep(owner, /Tekshiruvlar/);
     await owner.locator("summary").filter({ hasText: /Natija qo/ }).first().click();
     await owner.locator('select:has(option:text-is("UTT: qalqonsimon bez"))').first().selectOption({ label: "UTT: qalqonsimon bez" });
     await owner.getByRole("button", { name: /Me.yorni/ }).first().click();
@@ -268,12 +373,21 @@ async function main() {
   });
 
   // ---------- Money ----------
-  await step(desk, "debt collection", async () => {
+  await step(desk, "desk: today's queue at the end", async () => {
     await desk.goto(`${C}/desk`);
-    await settle(desk);
-    const more = desk.locator("summary").filter({ hasText: /Qarz/ }).first();
-    if (await more.count()) await more.click();
-    await shot(desk, "25-debt", { full: true });
+    await shot(desk, "25-desk-end", { full: true });
+  });
+  await step(cash, "checkout: still unpaid (the doctor's extra EhoKG, the part left)", async () => {
+    await cash.goto(`${C}/checkout`);
+    await shot(cash, "37-checkout-end");
+  });
+  await step(cash, "close the shift", async () => {
+    await cash.goto(`${C}/cash`);
+    await settle(cash);
+    await cash.locator('main form input:not([type="hidden"])').last().fill("140000");
+    await shot(cash, "38-cash-close");
+    await cash.locator('main form button[type="submit"]').last().click();
+    await settle(cash);
   });
   await step(owner, "billing list", async () => {
     await owner.goto(`${C}/billing`);
@@ -286,6 +400,10 @@ async function main() {
   await step(owner, "reports", async () => {
     await owner.goto(`${C}/reports`);
     await shot(owner, "28-reports");
+  });
+  await step(owner, "control centre", async () => {
+    await owner.goto(`${C}/control`);
+    await shot(owner, "39-control");
   });
 
   // ---------- Phone ----------

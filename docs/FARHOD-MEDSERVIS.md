@@ -48,11 +48,19 @@ Faqat klinika egasi bajara oladi (dastur va ma'lumotlar bazasi ikkalasi tekshira
 6. **Shablonlar** → **"Kardiolog ko'ruvi"** → kerak bo'lsa pastiga qo'shimcha qator yozing. Masalan: `Tel: +998 .. ... .. .. (Telegram savollar uchun)`.
 7. Brauzer menyusidan **"Ilovani o'rnatish"** ni tanlang — ish stolida ITop Med belgisi paydo bo'ladi.
 
-## 2. Registratorni qo'shish (2 daqiqa)
-1. **Xodimlar** bo'limida registratorning ismi, logini va parolini yozing.
-2. Rollaridan **Registrator** va **Kassir** ni belgilang.
-3. Kirish usulida **"Parolni hozir beraman"** ni tanlang → parolni qog'ozga yozing → **Xodimni qo'shish**.
-4. Registrator o'z kompyuterida **itopmed.itoppos.uz/login** ni ochadi → shu login va parol bilan kiradi → **Qabulxona** bo'limi ochiladi. Unga Google Authenticator kerak emas.
+## 2. Uch ish o'rni: Farhod aka, Qabulxona, Kassa (27.11.2026)
+- **Farhod aka** — klinika egasi va shifokor (rollar: egasi, shifokor, bosh shifokor, registrator). **Pul qabul qilmaydi**: qabul paytida qo'shgan xizmati (EhoKG, EKG…) to'lanmagan holda Kassaga tushadi.
+- **Qabulxona** (rol: Registrator) — bemorni yozadi, xizmatlarni belgilaydi, bosim/vazn/bo'y/pulsni yozadi, talon beradi. Registrator roliga qo'shilgan: «Xizmatlarni hisobga qo'shish» (`billing.charge`) va «Hayotiy ko'rsatkichlarni kiritish» (`vitals.write`). Pul olmaydi, tibbiy yozuvlarni ko'rmaydi.
+- **Kassa** (rol: Kassir) — **Kassa: to'lov** sahifasida bemorning hamma to'lanmagan xizmatlari: to'liq / aralash / bir qismi, chek; kun boshida smenani ochadi, oxirida yopadi.
+- Yangi xodim: **Xodimlar → Xodim qo'shish** → ism, rol, login, parol. Parolni unutsa: xodimni oching → **Yangi parol berish**.
+
+Serverda (egasining paroli kerak emas, har bir amal ilovadagi tekshiruvlar va audit bilan):
+```bash
+sudo /opt/itopmed/bin/itopmed-clinic farhod-medservis --admin /root/ops.json   # scripts/lib/clinic-admin.ts
+```
+`ops.json` — amallar ro'yxati: `role-permissions`, `owner-roles`, `remove-member`, `add-staff` (birinchi parol bir marta ekranga chiqadi), `purge-patients`.
+
+To'liq qo'llanma rasmlar bilan: `docs/pdf/ITopMed-Farhod-MedServis-qollanma.pdf` (rasmlar: `scripts/docs/farhod-screenshots.ts`).
 
 ## 3. Printerlar
 - **A4 printer** (ko'rik varag'i va retsept uchun) va **chek printeri** (80 yoki 58 mm) Windows'ga odatdagidek ulanadi.
@@ -74,7 +82,7 @@ Faqat klinika egasi bajara oladi (dastur va ma'lumotlar bazasi ikkalasi tekshira
    - tashxis va retseptni qo'shing;
    - kerak bo'lsa **EXO / EKG**'ni qo'shing (to'lab yoki qarzga);
    - **"Kardiolog ko'ruvi"** varag'ini chop etib, bemorga bering. Unda narx yo'q.
-3. **Qarz:** registratorning navbat ro'yxatida bemor tagidagi **"Qarzni olish"** → to'lovni qabul qilish.
+3. **Qarz:** Kassa → **Kassa: to'lov** → bemorni topib → to'lov (qolgan qarz shu ro'yxatda turadi).
 4. **Excel:**
    - bemor kartasida → **Excel** tugmasi;
    - **Sozlamalar** → «Barcha bemorlarni Excel'da yuklab olish (ZIP)».

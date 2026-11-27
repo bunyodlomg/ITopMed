@@ -261,7 +261,7 @@ export default async function ClinicDashboard({ params, searchParams }: { params
               {MODULES.filter((m) => !m.core && ctx.modules.has(m.key)).map((m) => (
                 <div key={m.key} className="rounded-xl border border-border bg-surface-2 px-4 py-3">
                   <p className="text-[14px] font-medium">{t(`modules.${m.key}`)}</p>
-                  <p className="mt-1 text-[12px] text-text-3">{t("common.planned")}</p>
+                  <p className="mt-1 text-[12px] text-text-3">{m.status === "planned" ? t("common.planned") : t("common.moduleOn")}</p>
                 </div>
               ))}
             </CardBody>

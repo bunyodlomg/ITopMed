@@ -6,6 +6,9 @@ import { listServices } from "@/server/clinic/resources";
 import { getInvoice } from "@/server/billing/billing";
 import { getPatient } from "@/server/patients/patients";
 import { addExtraServices, deskCheckIn, payPatientDebt, todayMoney, todayVitals } from "@/server/reception/desk";
+import { cancelAppointment } from "@/server/appointments/appointments";
+import { listRoles, updateRole } from "@/server/clinic/roles";
+import { recordVitals } from "@/server/emr/record";
 import { parseBirthInput } from "@/server/patients/patients";
 import { META, PASSWORD, clinicContext, clinicWithOwner, platformActor, uniq } from "./helpers/fixtures";
 
@@ -167,6 +170,53 @@ describe("reception desk", () => {
     expect([codes[a.membershipId], codes[b.membershipId]]).toEqual(["01", "02"]);
     await saveDoctorProfile(o.ctx, a.membershipId, { ...base, code: "" }, META); // emptied on purpose
     expect((await listDoctors(o.ctx)).find((d) => d.membershipId === a.membershipId)!.profile!.code).toBeNull();
+  });
+
+  it("three people: reception (no record access, no till) chooses services and measures, the cashier takes the money, the doctor sees both", async () => {
+    const o = await clinicWithOwner(await platformActor());
+    const [branch] = await listBranches(o.ctx);
+    await importPriceList(o.ctx, { text: PRICE_LIST }, META);
+    const services = await listServices(o.ctx);
+    const sid = (n: string) => services.find((s) => s.name === n)!.id;
+    // As the owner sets it up in "Roles": the receptionist puts services on the bill and measures.
+    const role = (await listRoles(o.ctx)).find((r) => r.key === "receptionist")!;
+    await updateRole(o.ctx, role.id, { permissions: [...role.permissions.map((p) => p.permission), "billing.charge", "vitals.write"] }, META);
+    const desk = await staff(o, ["receptionist"]);
+    expect([desk.ctx.permissions.has("emr.read"), desk.ctx.permissions.has("billing.invoice"), desk.ctx.permissions.has("billing.charge")]).toEqual([false, false, true]);
+    const cashier = await staff(o, ["cashier"]);
+    const doctor = await staff(o, ["doctor"]);
+    const profileId = await saveDoctorProfile(o.ctx, doctor.membershipId, { specialty: "cardiology", defaultSlotMinutes: 20, acceptsOnlineBooking: false }, META);
+
+    // A payment mode sent by the form is ignored: the desk cannot take money.
+    const r = await deskCheckIn(
+      desk.ctx,
+      { lastName: "Sintetik", firstName: "Uchlik", birthDate: "1960", sex: "FEMALE", doctorProfileId: profileId, branchId: branch!.id, serviceIds: [sid("Kardiolog ko'ruvi"), sid("EKG")], payMode: "full", method: "CASH", SYSTOLIC_BP: "150", DIASTOLIC_BP: "95", HEART_RATE: "88" },
+      META,
+    );
+    if (!r.ok) throw new Error("duplicate");
+    expect([r.vitalsSaved, r.vitalsLost]).toEqual([true, false]);
+    const inv = (await getInvoice(cashier.ctx, r.invoiceId!))!;
+    expect([inv.totalMinor, inv.paidMinor, inv.status]).toEqual([13_000_000n, 0n, "ISSUED"]);
+    expect((await todayVitals(doctor.ctx, [r.patientId])).get(r.patientId)).toMatchObject({ systolic: "150", diastolic: "95", pulse: "88" });
+
+    // The receptionist takes no money and measures only patients with a visit today.
+    await expect(payPatientDebt(desk.ctx, { patientId: r.patientId }, META)).rejects.toThrow("errors.forbidden");
+    const other = await deskCheckIn(desk.ctx, { lastName: "Sintetik", firstName: "Boshqa", birthDate: "1975", sex: "MALE", doctorProfileId: profileId, branchId: branch!.id }, META);
+    if (!other.ok) throw new Error("duplicate");
+    await recordVitals(desk.ctx, other.patientId, { SYSTOLIC_BP: "120" }, META);
+    await cancelAppointment(desk.ctx, other.appointmentId, "PATIENT_REQUEST", META);
+    await expect(recordVitals(desk.ctx, other.patientId, { SYSTOLIC_BP: "125" }, META)).rejects.toThrow("errors.noCareRelationship");
+    await expect(recordVitals(desk.ctx, r.patientId, { SYSTOLIC_BP: "120" }, META, { encounterId: r.appointmentId })).rejects.toThrow("errors.forbidden");
+
+    // Without vitals.write, typed measurements are reported as not saved (never dropped silently).
+    const plain = await staff(o, ["receptionist"]);
+    await updateRole(o.ctx, role.id, { permissions: role.permissions.map((p) => p.permission) }, META);
+    const lost = await deskCheckIn((await clinicContext(plain.login, o.slug)), { lastName: "Sintetik", firstName: "Uchinchi", birthDate: "1980", sex: "MALE", doctorProfileId: profileId, branchId: branch!.id, WEIGHT: "80" }, META);
+    if (!lost.ok) throw new Error("duplicate");
+    expect([lost.vitalsSaved, lost.vitalsLost]).toEqual([false, true]);
+
+    const paid = await payPatientDebt(cashier.ctx, { patientId: r.patientId, method: "CASH" }, META);
+    expect(paid.leftMinor).toBe(0n);
   });
 
   it("possible duplicates stop registration until confirmed", async () => {

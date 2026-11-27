@@ -11,6 +11,8 @@
   .role.owner { background: #e8f1fd; color: #0a66d8; }
   .role.desk { background: #e7f4ec; color: #146a39; }
   .role.doc { background: #fdf3e2; color: #8a5300; }
+  .role.cash { background: #f3e8fd; color: #6b2fa8; }
+  h2, h3 { break-after: avoid; }
   .flow { display: flex; gap: 2mm; align-items: stretch; margin: 3mm 0 5mm; }
   .flow div { flex: 1; border: 1px solid var(--border); border-radius: 2.5mm; padding: 2.5mm; font-size: 9pt; text-align: center; background: #fafbfc; }
   .flow div b { display: block; font-size: 10pt; margin-bottom: 1mm; }
@@ -30,7 +32,7 @@
   <div>
     <div class="eyebrow">Farhod MedServis · "DOCTORLAR NFF" XK</div>
     <h1>Dasturdan foydalanish:<br>boshidan oxirigacha</h1>
-    <p class="lead">Klinika egasi, shifokor va registrator uchun. Har bir bo'lim video-darsning bir qismi: nima bosiladi, nima chiqadi va videoda nimani ko'rsatish kerak.</p>
+    <p class="lead">Uch ish o'rni uchun: <strong>Farhod aka</strong> (shifokor va klinika egasi), <strong>Qabulxona</strong> (registrator) va <strong>Kassa</strong> (kassir). Bosqichma-bosqich, rasmlar bilan: nima bosiladi va nima chiqadi. Har bo'lim video-darsning bir qismi bo'lishi ham mumkin.</p>
   </div>
   <div class="band"><p><strong>Manzil:</strong> itopmed.itoppos.uz/login &nbsp;·&nbsp; Kirish faqat <strong>login va parol</strong> bilan. Ma'lumotlar serverda saqlanadi, har kuni zaxira nusxa olinadi.</p></div>
   <p class="small muted">Versiya: 2026-yil noyabr · Rasmlardagi bemorlar to'qima (namuna), haqiqiy odamlar emas.</p>
@@ -44,16 +46,17 @@
     <li><span>2. Kirish, til, ekran, chiqish</span><span>4</span></li>
     <li><span>3. Bosh sahifa</span><span>5</span></li>
     <li><span>4. Birinchi sozlash (klinika egasi)</span><span>6</span></li>
-    <li><span>5. Registrator: Qabulxona</span><span>10</span></li>
-    <li><span>6. Shifokor: qabul, yozuv, tashxis, retsept</span><span>15</span></li>
-    <li><span>7. UTT va EXO: shifokorning o'z blankalari</span><span>18</span></li>
-    <li><span>8. Hujjatlarni chop etish</span><span>20</span></li>
-    <li><span>9. Qarz, kassa, hisobotlar</span><span>21</span></li>
-    <li><span>10. Bemorning tibbiy kartasi va Excel</span><span>22</span></li>
-    <li><span>11. Ishni boshlash kuni: sinov bemorlarini tozalash</span><span>23</span></li>
-    <li><span>12. Har kungi qisqa tartib</span><span>24</span></li>
-    <li><span>13. Muammolar va yechimlar</span><span>24</span></li>
-    <li><span>14. Video ssenariysi (jadval)</span><span>25</span></li>
+    <li><span>5. Qabulxona: bemorni yozish</span><span>11</span></li>
+    <li><span>6. Kassa: to'lov, chek, qarz, smena</span><span>16</span></li>
+    <li><span>7. Shifokor: qabul, yozuv, tashxis, retsept</span><span>20</span></li>
+    <li><span>8. UTT va EXO: shifokorning o'z blankalari</span><span>25</span></li>
+    <li><span>9. Hujjatlarni chop etish</span><span>27</span></li>
+    <li><span>10. Hisobotlar va nazorat (egasi)</span><span>28</span></li>
+    <li><span>11. Bemorning tibbiy kartasi va Excel</span><span>29</span></li>
+    <li><span>12. Sinov bemorlarini tozalash</span><span>30</span></li>
+    <li><span>13. Har kungi qisqa tartib</span><span>31</span></li>
+    <li><span>14. Muammolar va yechimlar</span><span>31</span></li>
+    <li><span>15. Video ssenariysi (jadval)</span><span>33</span></li>
   </ol>
 </section>
 
@@ -62,27 +65,28 @@
   <ul>
     <li>Videoni <strong>14 ta qisqa qism</strong>ga bo'ling (oxirgi sahifadagi jadval). Har biri 1–4 daqiqa — shifokor keyin kerakli joyini qayta ko'ra oladi.</li>
     <li>Yozib olishdan oldin dasturda 2–3 ta <strong>namuna bemor</strong> kiriting (masalan "Aliyev Botir, 1962"). Haqiqiy bemorni ko'rsatmang. Video tugagach ularni 11-bo'limdagi tugma bilan o'chirasiz.</li>
-    <li>Ikki oyna oching: birida <strong>registrator</strong> hisobi, ikkinchisida <strong>shifokor</strong> hisobi (masalan Chrome'ning oddiy va "Inkognito" oynasi). Shunda bemor registratordan shifokorga qanday "o'tishi" ko'rinadi.</li>
+    <li>Uch oyna oching: <strong>Qabulxona</strong>, <strong>Kassa</strong> va <strong>shifokor</strong> hisoblari (masalan Chrome, Edge va "Inkognito" oynasi). Shunda bemor qabulxonadan kassaga va shifokorga qanday "o'tishi" ko'rinadi.</li>
     <li>Brauzer masshtabini 110–125% qiling (<code>Ctrl</code> + <code>+</code>) — videoda yozuvlar yaxshi o'qiladi.</li>
   </ul>
   <div class="video"><b>Videoda:</b> har qism boshida "endi … ni ko'ramiz" deb ayting, oxirida qisqa xulosa qiling: "Demak, registrator 4 ta qadamni to'ldiradi va talonni beradi".</div>
 
   <h2 style="margin-top:7mm">1. Dastur qanday ishlaydi: kim nima qiladi</h2>
   <div class="flow">
-    <div><b>Registrator</b>Bemorni yozadi, xizmatni belgilaydi, pul oladi yoki qarzga yozadi</div>
+    <div><b>Qabulxona</b>Bemorni yozadi, xizmatlarni belgilaydi, bosim va vaznni o'lchaydi</div>
     <div class="arrow">→</div>
-    <div><b>Navbat</b>Talon raqami, bemor shifokor ro'yxatiga tushadi</div>
+    <div><b>Talon</b>Navbat raqami; bemor shifokor ro'yxatiga tushadi</div>
     <div class="arrow">→</div>
-    <div><b>Shifokor</b>Qabul, ko'rik yozuvi, tashxis, retsept, UTT / EXO</div>
+    <div><b>Kassa</b>Bemor pulni to'laydi (to'liq, aralash yoki bir qismi), chek oladi</div>
     <div class="arrow">→</div>
-    <div><b>Hujjatlar</b>Kardiolog varag'i, UTT xulosasi, ma'lumotnoma chop etiladi</div>
+    <div><b>Shifokor</b>Ko'rik, tashxis, retsept, EKG / EXO / UTT; qo'shimcha xizmat → yana Kassaga</div>
     <div class="arrow">→</div>
-    <div><b>Hisobot</b>Kassa, qarzlar, kunlik va oylik tushum</div>
+    <div><b>Hujjatlar</b>Kardiolog varag'i, UTT xulosasi, ma'lumotnoma</div>
   </div>
   <table>
     <tr><th>Kim</th><th>Hisobi</th><th>Nimani ko'radi va qiladi</th></tr>
-    <tr><td><span class="role owner">Egasi</span><span class="role doc">Shifokor</span></td><td>Farhod aka</td><td>Hamma bo'lim: sozlamalar, xodimlar, narxlar, shablonlar, qabul, tibbiy yozuvlar, kassa va hisobotlar.</td></tr>
-    <tr><td><span class="role desk">Registrator</span><span class="role desk">Kassir</span></td><td>Registrator</td><td>Qabulxona, bemorlar ro'yxati, navbat, to'lov, qarz, talon va chek. <strong>Tibbiy yozuvlarni ko'rmaydi.</strong></td></tr>
+    <tr><td><span class="role owner">Egasi</span><span class="role doc">Shifokor</span></td><td>Farhod aka</td><td>Hamma bo'lim: sozlamalar, xodimlar, narxlar, shablonlar, qabul va tibbiy yozuvlar, hisobotlar, nazorat markazi. <strong>Pul qabul qilmaydi</strong> — u Kassaning ishi.</td></tr>
+    <tr><td><span class="role desk">Registrator</span></td><td>Qabulxona</td><td>Qabulxona, bemorlar ro'yxati, navbat, qabulga yozish. Xizmatlarni belgilaydi (hisob Kassaga tushadi), bosim, vazn, bo'y va pulsni yozadi, talon chop etadi. <strong>Pul olmaydi, tibbiy yozuvlarni ko'rmaydi.</strong></td></tr>
+    <tr><td><span class="role cash">Kassir</span></td><td>Kassa</td><td>"Kassa: to'lov" — bemorning hamma to'lanmagan xizmatlari bir ro'yxatda; to'lov (naqd, karta, Payme, Click, Uzum, o'tkazma), chek, qarz, kassa smenasi. <strong>Tibbiy yozuvlarni ko'rmaydi.</strong></td></tr>
   </table>
   <p class="small muted">Har bir xodim o'z logini bilan kiradi. Kim nima qilgani avtomatik yozib boriladi (audit jurnali).</p>
 </section>
@@ -119,18 +123,22 @@
 </section>
 
 <section class="page">
-  <h3>4.2. Registratorni qo'shish</h3>
+  <h3>4.2. Qabulxona va Kassa xodimlari</h3>
   <div class="grid2">
-    <figure><img src="img/f-04-staff-add.png"><figcaption>Xodimlar → "Xodim qo'shish": ism, rollar, login, parol</figcaption></figure>
-    <figure><img src="img/f-05-staff.png"><figcaption>Xodimlar ro'yxati</figcaption></figure>
+    <figure><img src="img/f-04-staff-add.png"><figcaption>Xodimlar → "Xodim qo'shish": ism, rol, login, parol</figcaption></figure>
+    <figure><img src="img/f-05-staff.png"><figcaption>Xodimlar: Farhod aka, Qabulxona (Registrator), Kassa (Kassir)</figcaption></figure>
   </div>
   <ol class="tight">
     <li>Chap ustunda <strong>Klinika</strong> (bino belgisi) → yuqorida <strong>Xodimlar</strong> → <strong>Xodim qo'shish</strong>.</li>
-    <li>Ism-familiya; rollardan <strong>Registrator</strong> va <strong>Kassir</strong>ni belgilang.</li>
-    <li>Login (masalan <code>dilnoza</code>) va parol (dastur o'zi taklif qiladi, xohlasangiz o'zgartiring) → <strong>Qo'shish</strong>.</li>
-    <li>Login va parolni qog'ozga yozib registratorga bering.</li>
+    <li>Qabulxona uchun: ism-familiya, rol — <strong>Registrator</strong>, login (masalan <code>qabul</code>) va parol → <strong>Qo'shish</strong>.</li>
+    <li>Kassa uchun: rol — <strong>Kassir</strong>, login (masalan <code>kassa</code>) va parol.</li>
+    <li>Login va parolni qog'ozga yozib xodimga bering. Har kim faqat o'z logini bilan kiradi.</li>
   </ol>
-  <p><strong>Registrator parolini unutsa:</strong> Xodimlar → xodimni oching → <strong>Yangi parol berish</strong>. Ishdan ketgan xodim uchun <strong>Kirishni to'xtatish</strong> — u endi kira olmaydi, tarix saqlanadi.</p>
+  <p><strong>Parolni unutsa:</strong> Xodimlar → xodimni oching → <strong>Yangi parol berish</strong>. Ishdan ketgan xodim uchun <strong>Kirishni to'xtatish</strong> — u endi kira olmaydi, tarix saqlanadi.</p>
+
+  <h3>Registrator roli: xizmatlar va o'lchovlar</h3>
+  <figure class="small"><img src="img/f-05b-role.png"><figcaption>Rollar va huquqlar → Registrator: "Xizmatlarni hisobga qo'shish" va "Hayotiy ko'rsatkichlarni kiritish" belgilangan</figcaption></figure>
+  <p>Farhod MedServis'da registratorga ikkita qo'shimcha huquq berilgan: <strong>xizmatlarni hisobga qo'shish</strong> (belgilagan xizmatlari to'lanmagan holda Kassaga tushadi) va <strong>o'lchovlar</strong> (bosim, vazn, bo'y, puls — shifokor bemor kirmasdan oldin ko'radi). Pul olish va tibbiy yozuvlarni o'qish registratorga berilmaydi.</p>
 
   <h3>4.3. Xizmatlar va narxlar</h3>
   <figure><img src="img/f-06-services.png"><figcaption>Xizmatlar va narxlar — Farhod akaning narxnomasi (13 ta xizmat)</figcaption></figure>
@@ -162,38 +170,35 @@
 </section>
 
 <section class="page">
-  <h2>5. Registrator: Qabulxona</h2>
-  <p><span class="role desk">Registrator</span> Butun ish bitta sahifada: <strong>Qabulxona</strong>. Tepada bugungi bemorlar, navbatdagilar, bugun to'langan pul va qarz.</p>
+  <h2>5. Qabulxona: bemorni yozish</h2>
+  <p><span class="role desk">Registrator</span> Butun ish bitta sahifada: <strong>Qabulxona</strong>. Tepada bugungi bemorlar, navbatdagilar, bugun to'langan pul va to'lanmagan summa.</p>
   <figure><img src="img/f-10-desk.png"><figcaption>Qabulxona: 1. Bemor — qidirish yoki yangi bemor</figcaption></figure>
 </section>
 
 <section class="page">
   <h3>5.1. Bemorni navbatga qo'shish — 4 qadam</h3>
   <div class="step"><div class="n">1</div><div><strong>Bemor.</strong> Avval qidiring: familiya, telefon, karta raqami (P-000123) yoki tug'ilgan yil. Topilsa — tanlang. Topilmasa — <strong>"Yoki yangi bemor"</strong>: familiya, ism, tug'ilgan yili (1962 yoki 14.03.1962), jinsi, telefon, manzil, kim yubordi.</div></div>
-  <div class="step"><div class="n">2</div><div><strong>Xizmatlar va to'lov.</strong> Xizmatlarni belgilang — jami summa o'zi hisoblanadi. To'lov: <strong>To'liq to'ladi</strong> / <strong>Qisman</strong> (summani yozing) / <strong>Qarzga</strong>. Usul: naqd, karta, Click, Payme…</div></div>
-  <div class="step"><div class="n">3</div><div><strong>O'lchovlar</strong> (bo'y, vazn, bosim, puls) — agar registratorga bu ruxsat berilgan bo'lsa; bo'lmasa shifokor o'zi yozadi.</div></div>
+  <div class="step"><div class="n">2</div><div><strong>Xizmatlar.</strong> Bemor nima uchun kelgan bo'lsa — belgilang (Kardiolog ko'ruvi, EKG, EhoKG, UTT…). Jami summa o'zi hisoblanadi. Registrator pul olmaydi: xizmatlar hisobi <strong>Kassaga</strong> tushadi.</div></div>
+  <div class="step"><div class="n">3</div><div><strong>O'lchovlar</strong>: bo'y, vazn, bosim, puls. Shifokor ularni o'z ro'yxatida bemor kirmasdan oldin ko'radi.</div></div>
   <div class="step"><div class="n">4</div><div><strong>Shifokor</strong> → <strong>Navbatga qo'shish</strong>. Navbat raqami chiqadi.</div></div>
-  <figure><img src="img/f-11-desk-filled.png"><figcaption>2-qadam: xizmatlar belgilandi (Kardiolog ko'ruvi + EKG = 130 000 so'm), to'lov turi tanlanmoqda</figcaption></figure>
+  <figure><img src="img/f-11-desk-filled.png"><figcaption>Xizmatlar belgilandi (Kardiolog ko'ruvi + EKG = 130 000 so'm), o'lchovlar yozildi</figcaption></figure>
   <p class="small muted">Shunday bemor allaqachon bo'lsa, dastur ogohlantiradi — ikki marta yozilib qolmaydi. Ishonchingiz komil bo'lsa "Bu yangi bemor" belgisini qo'ying.</p>
 </section>
 
 <section class="page">
-  <h3>5.2. Talon va chek</h3>
-  <figure><img src="img/f-12-desk-done.png"><figcaption>Bemor navbatga qo'shildi: № 1. "Navbat talonini chop etish", "Chekni chop etish", "Keyingi bemor"</figcaption></figure>
+  <h3>5.2. Navbat raqami va talon</h3>
+  <figure><img src="img/f-12-desk-done.png"><figcaption>Bemor navbatga qo'shildi: № 1 va "Kassada to'lanadi: 130 000 so'm". "Navbat talonini chop etish" → "Keyingi bemor"</figcaption></figure>
+  <p>Bemorga talonni bering va <strong>Kassaga</strong> yuboring: "Kassada 130 000 so'm to'lab, keyin kabinetga kiring".</p>
   <figure class="half"><img src="img/f-13-ticket.png"><figcaption>Navbat taloni (80 mm, 58 mm yoki A4) — logotip, raqam, shifokor, vaqt. Narx va tashxis yozilmaydi.</figcaption></figure>
-  <p><strong>Printer:</strong> chop etish oynasida talon va chek uchun <strong>chek printeri</strong>ni, shifokor hujjatlari uchun <strong>A4 printer</strong>ni tanlang. Chek fiskal emas (soliq kassasi emas).</p>
-  <div class="video"><b>Videoda:</b> bitta yangi bemorni boshidan oxirigacha yozing, to'liq to'lov, talonni chop eting. Keyin ikkinchi bemorni <strong>qarzga</strong> yozing. 3–4 daqiqa.</div>
+  <p><strong>Printer:</strong> chop etish oynasida talon va chek uchun <strong>chek printeri</strong>ni, shifokor hujjatlari uchun <strong>A4 printer</strong>ni tanlang.</p>
+  <div class="video"><b>Videoda:</b> bitta yangi bemorni boshidan oxirigacha yozing, talonni chop eting, Kassa oynasida u darhol paydo bo'lganini ko'rsating. 3 daqiqa.</div>
 </section>
 
 <section class="page">
-  <h3>5.3. Bugungi navbat va qarzni olish</h3>
-  <figure><img src="img/f-25-debt.png"><figcaption>O'ng tomonda bugungi navbat: holat (keldi / qabulda), to'langan summa, qarz va "Qarzni olish"</figcaption></figure>
-  <ol class="tight">
-    <li>Bemor tagidagi <strong>Qarzni olish</strong> ni bosing.</li>
-    <li>Summani yozing (bo'sh qoldirilsa — butun qarz) va to'lov usulini tanlang → tasdiqlang.</li>
-  </ol>
-  <p>Ertasi kuni kelgan qarzdor bemorni qidirib tanlasangiz, qizil yozuv bilan "qarzi bor" deb ko'rsatiladi.</p>
-  <figure><img src="img/f-14-desk-queue.png"><figcaption>Uch bemor navbatda: biri to'lagan, biri qarzdor</figcaption></figure>
+  <h3>5.3. Bugungi navbat</h3>
+  <figure><img src="img/f-14-desk-queue.png"><figcaption>Uch bemor navbatda: holati (keldi / qabulda / yakunlandi)</figcaption></figure>
+  <p>O'ng tomonda bugungi navbat: kim keldi, kim qabulda, kim yakunladi; talonni qayta chop etish. Qabul yakunlangach va to'lov qilingach, bemorning hujjatlarini shu yerdan chop etib berasiz.</p>
+  <p class="small muted">Shunday bemor allaqachon bo'lsa, dastur ogohlantiradi — avval qidiring, bir bemorni ikki marta yozmang.</p>
 </section>
 
 <section class="page">
@@ -210,20 +215,58 @@
 </section>
 
 <section class="page">
-  <h2>6. Shifokor: qabul, yozuv, tashxis, retsept</h2>
+  <h2>6. Kassa: to'lov, chek, qarz, smena</h2>
+  <p><span class="role cash">Kassir</span> Kassa ikki sahifada ishlaydi: <strong>Kassa: to'lov</strong> (bemorlar pul to'laydi) va <strong>Kassa</strong> (smena: kun boshida ochiladi, kun oxirida yopiladi).</p>
+  <h3>6.1. Kun boshida — smenani ochish</h3>
+  <figure class="small"><img src="img/f-31-cash-open.png"><figcaption>Kassa → boshlang'ich naqd pul → Smenani ochish</figcaption></figure>
+  <p>Kassadagi naqd pulni yozing (masalan 100 000) → <strong>Smenani ochish</strong>. Naqd to'lovlar shu smenaga yoziladi.</p>
+  <h3>6.2. "Kassa: to'lov" — to'lashi kerak bo'lganlar</h3>
+  <figure><img src="img/f-32-checkout.png"><figcaption>Chapda: to'lanmagan xizmati bor bemorlar va summasi. Qidiruv: F.I.Sh., karta raqami yoki telefon</figcaption></figure>
+  <p>Qabulxona yozgan, shifokor yoki laboratoriya qo'shgan <strong>hamma xizmat</strong> shu ro'yxatga tushadi. Bemor bir marta to'laydi.</p>
+</section>
+
+<section class="page">
+  <h3>6.3. To'lovni qabul qilish</h3>
+  <figure><img src="img/f-33-checkout-pay.png"><figcaption>Bemor tanlandi: xizmatlar, kim qo'shgani, "To'lash kerak"; pastda to'lov</figcaption></figure>
+  <ol class="tight">
+    <li>Chapdagi ro'yxatdan bemorni bosing — uning xizmatlari, kim qo'shgani va jami summa chiqadi.</li>
+    <li>To'lov turi: <strong>Hammasi</strong> (butun summa), <strong>Aralash</strong> (masalan bir qismi naqd, qolgani karta) yoki <strong>Bir qismi</strong> (qolgani qarz bo'lib turadi).</li>
+    <li>Usul: <strong>Naqd</strong>, <strong>Karta (terminal)</strong>, Payme, Click, Uzum, bank o'tkazmasi. Naqdda "bemor bergan pul" yozilsa, qaytim hisoblanadi.</li>
+    <li><strong>To'lash</strong> → to'lov yoziladi, chekni chop etish mumkin.</li>
+  </ol>
+</section>
+
+<section class="page">
+  <div class="grid2">
+    <figure><img src="img/f-36-checkout-mixed.png"><figcaption>Aralash to'lov: 40 000 naqd + 30 000 karta = 70 000</figcaption></figure>
+    <figure><img src="img/f-35-receipt.png"><figcaption>Chek (80 mm, 58 mm yoki A4)</figcaption></figure>
+  </div>
+  <p><strong>Chek fiskal emas</strong> (soliq kassasi cheki emas). Payme, Click, Uzum hozircha qo'lda qayd etiladi — tranzaksiya raqamini yozib qo'yish mumkin.</p>
+  <h3>6.4. Qarz va keyin to'lash</h3>
+  <p>Bemor puli yetmasa — <strong>Bir qismi</strong> bilan bor summani oling. Qolgani shu ro'yxatda qizil summa bilan turadi va shifokor ro'yxatida "Qarz" bo'lib ko'rinadi. Bemor keyin kelganda: ro'yxatdan (yoki qidiruvdan) toping → to'lang.</p>
+  <figure class="small"><img src="img/f-37-checkout-end.png"><figcaption>Kun oxiri: shifokor qo'shgan EhoKG (120 000) va qisman to'langan bemorning qolgani (40 000)</figcaption></figure>
+  <h3>6.5. Kun oxirida — smenani yopish</h3>
+  <figure class="small"><img src="img/f-38-cash-close.png"><figcaption>Kassa: "Kassada bo'lishi kerak" summasi va sanalgan naqd pul</figcaption></figure>
+  <p>Kassadagi naqd pulni sanang → <strong>Sanalgan naqd pul</strong>ga yozing → <strong>Smenani yopish</strong>. Kamomad yoki ortiqcha bo'lsa, dastur qayd etadi va Farhod aka "Nazorat markazi"da ko'radi. Karta, Payme, Click naqd pulga qo'shilmaydi.</p>
+  <div class="video"><b>Videoda:</b> smenani ochish → bitta bemordan to'liq naqd → bittasidan aralash → chek → kun oxirida smenani yopish. 3–4 daqiqa.</div>
+</section>
+
+<section class="page">
+  <h2>7. Shifokor: qabul, yozuv, tashxis, retsept</h2>
   <p><span class="role doc">Shifokor</span> Chap ustunda <strong>stetoskop</strong> belgisi → <strong>Bugungi bemorlarim</strong>.</p>
-  <figure><img src="img/f-16-my-queue.png"><figcaption>Bugungi bemorlarim: navbat raqami, yoshi, xizmatlari, to'lov holati va qarzi — bemor kirmasdan oldin ko'rinadi</figcaption></figure>
+  <figure><img src="img/f-16-my-queue.png"><figcaption>Bugungi bemorlarim: navbat raqami, yoshi, xizmatlari, qabulxonada o'lchangan bosim, puls, vazn, bo'y va to'lov holati — bemor kirmasdan oldin</figcaption></figure>
   <ul class="tight">
     <li><strong>Keyingi bemor</strong> — navbatdagi bemorni chaqiradi (kutish zalidagi ekranda raqam chiqadi va ovoz bilan aytiladi, agar ekran ulangan bo'lsa). <strong>Qayta chaqirish</strong> — yana bir bor.</li>
     <li><strong>Kabinetim</strong> — xona raqami (masalan "3-xona"), chaqiruvda aytiladi.</li>
     <li><strong>Qabulni boshlash</strong> — ko'rik bayonnomasi ochiladi.</li>
   </ul>
-  <div class="video"><b>Videoda:</b> registrator oynasida yozilgan bemor shifokor oynasida darhol paydo bo'lishini ko'rsating.</div>
+  <div class="video"><b>Videoda:</b> qabulxona oynasida yozilgan bemor shifokor oynasida darhol paydo bo'lishini ko'rsating.</div>
 </section>
 
 <section class="page">
-  <h3>6.1. Ko'rik bayonnomasi</h3>
-  <figure><img src="img/f-17-visit-top.png"><figcaption>Qabul ochildi: bemor ma'lumotlari, allergiyalar, "Shablondan to'ldirish" va "Tezkor tanlash"</figcaption></figure>
+  <h3>7.1. Qabul — 6 qadam</h3>
+  <figure><img src="img/f-17-visit-top.png"><figcaption>Qabul ochildi: tepada 6 qadam — Shikoyat va anamnez, Ko'rsatkichlar, Tashxis, Tekshiruvlar, Davolash, Yakunlash</figcaption></figure>
+  <p>Qadamlar orasida tepadagi raqamlarni bosib o'tasiz; tartib majburiy emas. Bajarilgan qadamda belgi chiqadi.</p>
   <ol class="tight">
     <li><strong>Shablondan to'ldirish</strong> → "Kardiolog ko'ruvi: ko'rik va tavsiyalar" → <strong>Qo'llash</strong>. Faqat bo'sh bo'limlar to'ldiriladi — siz yozgan matn o'zgarmaydi.</li>
     <li><strong>Tezkor tanlash</strong> — shikoyat, yurak va o'pka auskultatsiyasi, shishlar: bir bosishda matnga qo'shiladi. <strong>Oldingi ko'rikdan nusxalash</strong> — qayta kelgan bemor uchun.</li>
@@ -234,7 +277,7 @@
 </section>
 
 <section class="page">
-  <h3>6.2. Tashxis va retsept</h3>
+  <h3>7.2. Tashxis va retsept</h3>
   <ul class="tight">
     <li><strong>Tashxis:</strong> MKB-10 kodi (ixtiyoriy, masalan I11.9) va matn; turi — asosiy, hamroh yoki asorat. Kardiolog varag'ida "Tashxis / Hamroh / Asorati" qatorlariga o'zi tushadi.</li>
     <li><strong>Retsept:</strong> dori va dozasi (masalan "Bisoprolol 5 mg"), xalqaro nomi, bir martalik doza (1/2, 1/4 tabletka rasm bilan chiqadi), qabul tartibi, soatlari (08:00, 20:00), davomiyligi.</li>
@@ -243,14 +286,17 @@
     <li><strong>Retsept sxemasi</strong> — tez-tez yoziladigan dorilar to'plami bir bosishda qo'shiladi (Shablonlar → Retsept sxemalari).</li>
   </ul>
   <figure><img src="img/f-19-dx-rx.png"><figcaption>Retseptlar: qo'shilgan dori va yangi retsept formasi</figcaption></figure>
-  <div class="video"><b>Videoda:</b> shablonni qo'llang → bitta shikoyatni tezkor tanlashdan qo'shing → imzolang → tashxis va bitta retsept qo'shing. 4–5 daqiqa.</div>
+  <h3>7.3. Qabul vaqtida qo'shimcha xizmat (EhoKG, EKG, UTT)</h3>
+  <figure class="small"><img src="img/f-19b-extra.png"><figcaption>"Xizmatlar va to'lov": EhoKG belgilandi → Qo'shish. Hisob Kassaga tushadi.</figcaption></figure>
+  <p>Ko'rik paytida qo'shimcha tekshiruv kerak bo'lsa — belgilang va qo'shing. Shifokor pul olmaydi: xizmat bemorning hisobiga tushadi, bemor ketishdan oldin <strong>Kassada</strong> to'laydi (6-bo'lim).</p>
+  <div class="video"><b>Videoda:</b> shablonni qo'llang → bitta shikoyatni tezkor tanlashdan qo'shing → imzolang → tashxis, retsept va EhoKG qo'shing. 4–5 daqiqa.</div>
 </section>
 
 <section class="page">
-  <h2>7. UTT va EXO: shifokorning o'z blankalari</h2>
-  <p>Farhod akaning 12 ta Word blankasi dasturga kiritilgan. Qabul sahifasida <strong>Diagnostika</strong> → <strong>Natija qo'shish</strong>:</p>
+  <h2>8. UTT va EXO: shifokorning o'z blankalari</h2>
+  <p>Farhod akaning Word blankalari dasturga kiritilgan. Qabulda <strong>Tekshiruvlar</strong> qadami → <strong>Natija qo'shish</strong>:</p>
   <ol class="tight">
-    <li><strong>Shablon</strong>ni tanlang (masalan "UTT: qalqonsimon bez").</li>
+    <li><strong>Shablon</strong>ni tanlang (masalan "UTT: qalqonsimon bez"). Ro'yxatning boshida "Shablonsiz" — EKG kabi oddiy maydonlar uchun.</li>
     <li><strong>Me'yorni to'ldirish</strong> — "aniq, tekis", "bir xil", "kengaymagan" kabi odatiy matnlar bir bosishda qo'yiladi.</li>
     <li>O'lchamlarni yozing (vergul yoki nuqta bilan: 1,7). <strong>Me'yordan tashqari son qizil</strong> bo'ladi va pastda ro'yxati chiqadi.</li>
     <li><strong>Xulosa</strong>ni yozing (tavsiya qatori tayyor turadi) → <strong>Saqlash</strong>.</li>
@@ -260,40 +306,41 @@
 </section>
 
 <section class="page">
-  <h3>7.1. Bosma UTT bayonnomasi</h3>
+  <h3>8.1. Bosma UTT bayonnomasi</h3>
   <figure><img src="img/f-23-utt-print.png"><figcaption>Chop etish: blank, bemor, sana, Word blankasidagi matn; me'yordan tashqari qiymatlar qalin va ↑ / ↓ bilan</figcaption></figure>
   <div class="video"><b>Videoda:</b> qalqonsimon bez yoki qorin bo'shlig'i UTT sini to'liq ko'rsating: shablon → me'yorni to'ldirish → bitta qiymatni me'yordan tashqari yozish → saqlash → chop etish. 3–4 daqiqa.</div>
 </section>
 
 <section class="page">
-  <h2>8. Hujjatlarni chop etish</h2>
-  <p>Qabul sahifasidagi <strong>Hujjatlar</strong> tugmalaridan biri → bemor, sana, tashxis, retseptlar va shifokor ma'lumotlari o'zi qo'yiladi → <strong>Chop etish</strong>. Hujjatlarda narx yozilmaydi.</p>
+  <h2>9. Hujjatlarni chop etish</h2>
+  <p>Qabulning <strong>Yakunlash</strong> qadamidagi <strong>Hujjatlar</strong> tugmalaridan biri → bemor, sana, tashxis, retseptlar va shifokor ma'lumotlari o'zi qo'yiladi → <strong>Chop etish</strong>. Hujjatlarda narx yozilmaydi.</p>
   <div class="grid2">
     <figure><img src="img/f-20-cardio-sheet.png"><figcaption>Kardiolog ko'ruvi varag'i — pastida "+998 91 611 18 88 (Telegram orqali savollar uchun)"</figcaption></figure>
     <figure><img src="img/f-21-certificate.png"><figcaption>Ambulator davolanish haqida ma'lumotnoma — sanalarni qo'lda yozasiz</figcaption></figure>
   </div>
-  <p><strong>Qabulni yakunlash:</strong> hamma ish tugagach — <strong>Qabulni yakunlash</strong>. Bemor ro'yxatda "yakunlandi" bo'ladi, keyingi bemorni chaqirasiz.</p>
+  <figure class="small"><img src="img/f-19c-finish-step.png"><figcaption>Yakunlash qadami: hujjatlar, keyingi tashrif, "Qabulni yakunlash"</figcaption></figure>
+  <p><strong>Qabulni yakunlash:</strong> hamma ish tugagach — <strong>Qabulni yakunlash</strong>. Bemor ro'yxatda "yakunlandi" bo'ladi, keyingi bemorni chaqirasiz. Qabulxona yakuniy hujjatni to'lov qilingandan keyin chop etib beradi.</p>
   <p class="small muted">Varaqdagi QR kod — bemor o'z natijalarini telefonda ko'rishi uchun (bemor portali). Eski "Kardiolog ko'ruvi" hujjati kerak bo'lmasa, Shablonlar sahifasida arxivlang.</p>
   <div class="video"><b>Videoda:</b> kardiolog varag'ini chop etish oynasigacha ko'rsating, A4 printerni tanlang. 1–2 daqiqa.</div>
 </section>
 
 <section class="page">
-  <h2>9. Qarz, kassa, hisobotlar</h2>
-  <p><span class="role owner">Egasi</span><span class="role desk">Kassir</span> Chap ustunda <strong>hamyon</strong> belgisi.</p>
-  <figure><img src="img/f-26-billing.png"><figcaption>Hisob va to'lovlar: har bir bemor hisobi, holati va qarzi</figcaption></figure>
+  <h2>10. Hisobotlar va nazorat (egasi)</h2>
+  <p><span class="role owner">Farhod aka</span> Chap ustunda <strong>hamyon</strong> belgisi — pul bo'yicha hamma narsani ko'rasiz (to'lov qabul qilmasdan).</p>
+  <figure><img src="img/f-39-control.png"><figcaption>Nazorat markazi: bugungi qabullar, tushum, qarzlar, ochiq kassalar, smenadagi kamomad, chegirmalar, imzolanmagan yozuvlar</figcaption></figure>
   <div class="grid2">
-    <figure><img src="img/f-27-cash.png"><figcaption>Kassa: smenani ochish va yopish, naqd pul qoldig'i</figcaption></figure>
-    <figure><img src="img/f-28-reports.png"><figcaption>Hisobotlar: tushum, xizmatlar, shifokorlar, qarzdorlar</figcaption></figure>
+    <figure><img src="img/f-26-billing.png"><figcaption>Hisob va to'lovlar: har bir hisob, holati va qarzi</figcaption></figure>
+    <figure><img src="img/f-28-reports.png"><figcaption>Hisobotlar: tushum, to'lov usullari, xizmatlar, shifokorlar, qarzdorlar</figcaption></figure>
   </div>
   <ul class="tight">
-    <li><strong>Kassa smenasi:</strong> kun boshida oching (kassadagi boshlang'ich pul), kun oxirida yoping — dastur kutilgan naqd pulni hisoblaydi, sanalgan pul bilan farqini ko'rsatadi.</li>
-    <li><strong>Qaytarish:</strong> xizmat ko'rsatilmasa — hisobni oching → to'lov → <strong>Qaytarish</strong> (sababi bilan).</li>
-    <li><strong>Hisobotlar</strong> — tanlangan davr bo'yicha tushum, xizmatlar, shifokorlar va qarzdorlar.</li>
+    <li><strong>Nazorat markazi</strong> — har kuni ertalab qarang: kechagi kassa farqi, qarzlar, imzolanmagan yozuvlar.</li>
+    <li><strong>Qaytarish:</strong> xizmat ko'rsatilmasa — Kassa hisobni ochib, to'lovni sababi bilan qaytaradi.</li>
+    <li><strong>Hisobotlar</strong> — tanlangan davr (7, 30, 90 kun yoki o'z sanalaringiz) bo'yicha.</li>
   </ul>
 </section>
 
 <section class="page">
-  <h2>10. Bemorning tibbiy kartasi va Excel</h2>
+  <h2>11. Bemorning tibbiy kartasi va Excel</h2>
   <figure><img src="img/f-24-patient-card.png"><figcaption>Bemor kartasi: barcha qabullar, tashxislar, retseptlar, UTT/EXO natijalari, bosim tarixi</figcaption></figure>
   <ul class="tight">
     <li><strong>Bemorlar</strong> → qidiring (familiya, telefon, karta raqami) → bemorni oching.</li>
@@ -304,8 +351,8 @@
 </section>
 
 <section class="page">
-  <h2>11. Ishni boshlash kuni: sinov bemorlarini tozalash</h2>
-  <p><span class="role owner">Faqat egasi</span> Sinab ko'rish va video uchun kiritilgan namuna bemorlarni haqiqiy ish boshlanishidan oldin o'chiring.</p>
+  <h2>12. Sinov bemorlarini tozalash</h2>
+  <p><span class="role owner">Faqat egasi</span> Sinab ko'rish yoki video uchun kiritilgan namuna bemorlarni haqiqiy ish boshlanishidan oldin o'chiring. (Farhod MedServis'da ishga tushirishdan oldin bir marta tozalangan.)</p>
   <figure class="half"><img src="img/f-30-purge.png"><figcaption>Sozlamalar → "Sinov bemorlarini tozalash" (rasmda sinov nusxasining manzili; sizda — <code>farhod-medservis</code>)</figcaption></figure>
   <ol class="tight">
     <li>Sozlamalar sahifasining pastida <strong>"Sinov bemorlarini tozalash"</strong>.</li>
@@ -316,36 +363,49 @@
     <div class="card warn"><h3>O'chadi</h3><p>Barcha bemorlar, navbat, qabullar, ko'rik yozuvlari, tashxislar, retseptlar, UTT/EXO natijalari, hisoblar, to'lovlar, kassa smenalari. Navbat raqami yana 1 dan boshlanadi.</p></div>
     <div class="card ok"><h3>Qoladi</h3><p>Xodimlar, xizmatlar va narxlar, shablonlar, jadval, sozlamalar, blank va logotip.</p></div>
   </div>
-  <p><strong>Qaytarib bo'lmaydi.</strong> Haqiqiy bemorlar kiritilgandan keyin bu tugmadan foydalanmang. Registrator va shifokor rolida bu tugma umuman ko'rinmaydi.</p>
+  <p><strong>Qaytarib bo'lmaydi.</strong> Haqiqiy bemorlar kiritilgandan keyin bu tugmadan foydalanmang. Qabulxona va Kassa hisobida bu tugma umuman ko'rinmaydi.</p>
 </section>
 
 <section class="page">
-  <h2>12. Har kungi qisqa tartib</h2>
-  <div class="grid2">
+  <h2>13. Har kungi qisqa tartib</h2>
+  <div class="grid3">
     <div class="card ok">
-      <h3>Registrator</h3>
+      <h3>Qabulxona</h3>
       <ol class="tight">
-        <li>Kirish → <strong>Kassa</strong>: smenani ochish.</li>
-        <li>Har bemor: <strong>Qabulxona</strong> → qidirish / yangi → xizmatlar → to'lov → <strong>Navbatga qo'shish</strong> → talon (va chek).</li>
-        <li>Qarzdor kelsa: navbatda <strong>Qarzni olish</strong>.</li>
-        <li>Kun oxiri: <strong>Kassa</strong> → pulni sanab smenani yopish → <strong>Chiqish</strong>.</li>
+        <li>Kirish (o'z logini).</li>
+        <li>Har bemor: qidirish / yangi → xizmatlar → bosim, vazn → shifokor → <strong>Navbatga qo'shish</strong> → talon.</li>
+        <li>"Kassaga to'lab kiring" deb yo'naltirish.</li>
+        <li>Yakunlangan qabul hujjatini chop etib berish.</li>
+        <li>Kun oxiri: <strong>Chiqish</strong>.</li>
       </ol>
     </div>
     <div class="card">
-      <h3>Shifokor</h3>
+      <h3>Kassa</h3>
+      <ol class="tight">
+        <li>Kirish → <strong>Kassa</strong>: smenani ochish.</li>
+        <li><strong>Kassa: to'lov</strong> → bemor → Hammasi / Aralash / Bir qismi → <strong>To'lash</strong> → chek.</li>
+        <li>Qarzi bor bemor kelsa — qidirib to'lash.</li>
+        <li>Kun oxiri: pulni sanab <strong>smenani yopish</strong> → Chiqish.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Shifokor (Farhod aka)</h3>
       <ol class="tight">
         <li><strong>Bugungi bemorlarim</strong> → <strong>Keyingi bemor</strong>.</li>
         <li><strong>Qabulni boshlash</strong> → shablon → yozish → <strong>Imzolash</strong>.</li>
-        <li>Tashxis, retsept, kerak bo'lsa UTT / EXO / EKG natijasi.</li>
-        <li>Hujjat chop etish → <strong>Qabulni yakunlash</strong>.</li>
+        <li>Tashxis, retsept, kerak bo'lsa EKG / EXO / UTT; qo'shimcha xizmat → Kassaga.</li>
+        <li>Hujjat → <strong>Qabulni yakunlash</strong>. Kechqurun — Nazorat markazi.</li>
       </ol>
     </div>
   </div>
 
-  <h2 style="margin-top:7mm">13. Muammolar va yechimlar</h2>
+  <h2 style="margin-top:7mm">14. Muammolar va yechimlar</h2>
   <table>
     <tr><th>Muammo</th><th>Yechim</th></tr>
-    <tr><td>Kira olmayapti</td><td>Login va parolni tekshiring (katta-kichik harf). Registrator parolini Farhod aka Xodimlar sahifasida yangilaydi.</td></tr>
+    <tr><td>Kira olmayapti</td><td>Login va parolni tekshiring (katta-kichik harf). Qabulxona yoki Kassa parolini Farhod aka Xodimlar sahifasida yangilaydi. Ko'p marta xato yozilsa, 15 daqiqa kuting.</td></tr>
+    <tr><td>Qabulxonada "Xizmatlar" yoki "O'lchovlar" yo'q</td><td>Rollar va huquqlar → Registrator: "Xizmatlarni hisobga qo'shish" va "Hayotiy ko'rsatkichlarni kiritish" belgilangan bo'lsin (4.2-bo'lim).</td></tr>
+    <tr><td>Bemor Kassa ro'yxatida yo'q</td><td>Unda to'lanmagan xizmat yo'q (hammasi to'langan) yoki xizmat belgilanmagan. Qidiruvdan F.I.Sh. bilan toping.</td></tr>
+    <tr><td>Kassada naqd pul qabul qilinmayapti</td><td>Smena ochilmagan: Kassa → Smenani ochish.</td></tr>
     <tr><td>Bemor shifokor ro'yxatida yo'q</td><td>Qabulxonada to'g'ri shifokor tanlanganini tekshiring; sahifani yangilang (F5).</td></tr>
     <tr><td>Xizmat qabulxonada ko'rinmaydi</td><td>Xizmatlar sahifasida narxi qo'yilganini va arxivda emasligini tekshiring.</td></tr>
     <tr><td>Hisobni chiqarib bo'lmayapti</td><td>Kamida bitta narxli xizmat qo'shilishi kerak.</td></tr>
@@ -356,25 +416,25 @@
 </section>
 
 <section class="page">
-  <h2>14. Video ssenariysi</h2>
+  <h2>15. Video ssenariysi</h2>
   <table>
     <tr><th>#</th><th>Qism</th><th>Kim nomidan</th><th>Nima ko'rsatiladi</th><th>Vaqt</th></tr>
     <tr><td>1</td><td>Tanishuv</td><td>—</td><td>Dastur nima, kim nima qiladi (1-bo'lim sxemasi)</td><td>1 daq</td></tr>
     <tr><td>2</td><td>Kirish</td><td>Egasi</td><td>Login, til, qorong'i rejim, ilovani o'rnatish, qulflash, chiqish</td><td>2 daq</td></tr>
     <tr><td>3</td><td>Bosh sahifa</td><td>Egasi</td><td>Tushum, qarz, grafik, bo'limlar menyusi</td><td>1 daq</td></tr>
-    <tr><td>4</td><td>Sozlash</td><td>Egasi</td><td>Blank, registrator qo'shish, narxlar, shablonlar, jadval</td><td>5 daq</td></tr>
-    <tr><td>5</td><td>Bemorni yozish</td><td>Registrator</td><td>Yangi bemor, xizmatlar, to'liq to'lov, talon, chek</td><td>3 daq</td></tr>
-    <tr><td>6</td><td>Qarz</td><td>Registrator</td><td>Bemorni qarzga yozish, keyin qarzni olish</td><td>2 daq</td></tr>
-    <tr><td>7</td><td>Navbat va telefon</td><td>Registrator</td><td>Navbat sahifasi, qabulga yozish, telefonda ishlash</td><td>2 daq</td></tr>
-    <tr><td>8</td><td>Qabul</td><td>Shifokor</td><td>Bugungi bemorlarim, keyingi bemor, qabulni boshlash</td><td>2 daq</td></tr>
-    <tr><td>9</td><td>Ko'rik yozuvi</td><td>Shifokor</td><td>Shablon, tezkor tanlash, imzolash, tashxis, retsept</td><td>5 daq</td></tr>
+    <tr><td>4</td><td>Sozlash</td><td>Egasi</td><td>Blank, Qabulxona va Kassa xodimlari, Registrator roli, narxlar, shablonlar, jadval</td><td>5 daq</td></tr>
+    <tr><td>5</td><td>Bemorni yozish</td><td>Qabulxona</td><td>Yangi bemor, xizmatlar, o'lchovlar, talon; Kassaga yo'naltirish</td><td>3 daq</td></tr>
+    <tr><td>6</td><td>To'lov</td><td>Kassa</td><td>Smena, Kassa: to'lov, to'liq / aralash / bir qismi, chek, smenani yopish</td><td>4 daq</td></tr>
+    <tr><td>7</td><td>Navbat va telefon</td><td>Qabulxona</td><td>Navbat sahifasi, qabulga yozish, telefonda ishlash</td><td>2 daq</td></tr>
+    <tr><td>8</td><td>Qabul</td><td>Shifokor</td><td>Bugungi bemorlarim, keyingi bemor, qabulni boshlash, 6 qadam</td><td>2 daq</td></tr>
+    <tr><td>9</td><td>Ko'rik yozuvi</td><td>Shifokor</td><td>Shablon, tezkor tanlash, imzolash, tashxis, retsept, qo'shimcha xizmat</td><td>5 daq</td></tr>
     <tr><td>10</td><td>UTT / EXO</td><td>Shifokor</td><td>Shablon, me'yorni to'ldirish, qizil qiymat, xulosa, chop etish</td><td>4 daq</td></tr>
     <tr><td>11</td><td>Hujjatlar</td><td>Shifokor</td><td>Kardiolog varag'i, ma'lumotnoma, qabulni yakunlash</td><td>2 daq</td></tr>
-    <tr><td>12</td><td>Pul</td><td>Egasi</td><td>Kassa smenasi, hisoblar, qaytarish, hisobotlar</td><td>3 daq</td></tr>
+    <tr><td>12</td><td>Nazorat</td><td>Egasi</td><td>Nazorat markazi, hisoblar, hisobotlar</td><td>3 daq</td></tr>
     <tr><td>13</td><td>Bemor kartasi</td><td>Shifokor</td><td>Qidirish, karta, oldingi qabullar, Excel</td><td>2 daq</td></tr>
-    <tr><td>14</td><td>Ishni boshlash</td><td>Egasi</td><td>Namuna bemorlarni tozalash; haqiqiy ish boshlanadi</td><td>1 daq</td></tr>
+    <tr><td>14</td><td>Tozalash</td><td>Egasi</td><td>Namuna bemorlarni tozalash</td><td>1 daq</td></tr>
   </table>
-  <p><strong>Jami:</strong> taxminan 35 daqiqa. Har qismni alohida fayl qilib Telegram'ga yuborish qulay.</p>
+  <p><strong>Jami:</strong> taxminan 38 daqiqa. Har qismni alohida fayl qilib Telegram'ga yuborish qulay.</p>
   <div class="foot">ITop Med · Farhod MedServis uchun qo'llanma · Savollar uchun dastur yetkazib beruvchiga murojaat qiling.</div>
 </section>
 

@@ -31,7 +31,7 @@ import { queueEta, roundUp5 } from "@/lib/queue-eta";
  * height/weight/blood pressure, choose the doctor -> queue number and print.
  * Today's queue with who paid what is on the right.
  */
-export default async function DeskPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ q?: string; patient?: string; done?: string; doctor?: string; paid?: string }> }) {
+export default async function DeskPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ q?: string; patient?: string; done?: string; doctor?: string; paid?: string; vitals?: string }> }) {
   const { slug } = await params;
   const ctx = await requireClinic(slug, "queue.manage");
   const sp = await searchParams;
@@ -39,12 +39,15 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
   const tz = ctx.tenant.timezone;
   const today = todayIn(tz);
   const base = `/c/${ctx.tenant.slug}`;
-  const canBill = ctx.permissions.has("billing.invoice");
+  // billing.invoice: the desk also takes the money (or decides on debt); billing.charge alone
+  // (a receptionist next to a separate cashier): the chosen services go on the bill unpaid.
+  const canInvoice = ctx.permissions.has("billing.invoice");
+  const canBill = canInvoice || ctx.permissions.has("billing.charge");
   const canPay = ctx.permissions.has("billing.payment");
   const canMeasure = ctx.permissions.has("vitals.write");
   const db = { tenantId: ctx.tenant.id, userId: ctx.principal.user.id };
 
-  const canFreeVisit = ctx.permissions.has("billing.free_visit");
+  const canFreeVisit = canInvoice && ctx.permissions.has("billing.free_visit");
   // The desk opens a visit's print list (documents, prescription, diagnostic reports; only once paid);
   // a doctor working the desk without documents.print keeps the quick link to the first document.
   const deskPrints = ctx.permissions.has("documents.print");
@@ -88,8 +91,8 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
   for (const m of paidToday.values()) if (m.currency === ctx.tenant.currency) paidSum += m.paidMinor;
   let debtSum = 0n;
   for (const a of new Set(queue.map((q) => q.patientId))) debtSum += debt.get(a) ?? 0n;
-  const followUp = chosen && canBill ? await followUpStatus(ctx, chosen.id) : null;
-  const doneInvoice = done ? await withAppContext(db, (tx) => tx.invoice.findUnique({ where: { appointmentId: done.id }, select: { id: true } })).catch(() => null) : null;
+  const followUp = chosen && canInvoice ? await followUpStatus(ctx, chosen.id) : null;
+  const doneInvoice = done ? await withAppContext(db, (tx) => tx.invoice.findUnique({ where: { appointmentId: done.id }, select: { id: true, totalMinor: true, paidMinor: true, currency: true } })).catch(() => null) : null;
 
   return (
     <div className="space-y-6">
@@ -103,6 +106,7 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
         <Stat label={t("clinic.desk.statDebt")} value={money(debtSum, ctx.tenant.currency)} />
       </section>
 
+      {done && sp.vitals === "lost" ? <Alert tone="warning">{t("clinic.desk.vitalsLost")}</Alert> : null}
       {sp.paid && /^[\d ]{1,20}$/.test(sp.paid) ? <Alert tone="success">{t("clinic.desk.debtPaid", { paid: sp.paid })}</Alert> : null}
 
       {done ? (
@@ -119,13 +123,16 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
                   {t("clinic.desk.toDoctor", { name: done.doctor.membership.user.fullName })}
                   {done.room ? ` · ${done.room.name}` : ""}
                 </p>
+                {doneInvoice && doneInvoice.totalMinor > doneInvoice.paidMinor && !canPay ? (
+                  <p className="mt-1 text-[15px] font-semibold text-warning">{t("clinic.desk.payAtCashier", { amount: money(doneInvoice.totalMinor - doneInvoice.paidMinor, doneInvoice.currency) })}</p>
+                ) : null}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <Link href={`${base}/desk/ticket/${done.id}?print=1`} target="_blank" className={buttonClass("secondary", "md")}>
                 <Printer aria-hidden className="size-4" /> {t("clinic.desk.printTicket")}
               </Link>
-              {doneInvoice ? (
+              {doneInvoice && ctx.permissions.has("billing.read") ? (
                 <Link href={`${base}/billing/${doneInvoice.id}/receipt?w=80&print=1`} target="_blank" className={buttonClass("secondary", "md")}>
                   <Receipt aria-hidden className="size-4" /> {t("clinic.desk.printReceipt")}
                 </Link>
@@ -207,7 +214,7 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
                 action={ctx.permissions.has("services.manage") ? <ButtonLink href={`${base}/services`} variant="ghost" size="sm">{t("clinic.desk.editPrices")}</ButtonLink> : undefined}
               />
               <CardBody className="space-y-3">
-                {priced.length ? <ServicePicker services={priced} withPayment={canPay} /> : <Alert tone="warning">{t("clinic.desk.noPrices")}</Alert>}
+                {priced.length ? <ServicePicker services={priced} withPayment={canPay && canInvoice} /> : <Alert tone="warning">{t("clinic.desk.noPrices")}</Alert>}
                 {unpriced > 0 ? <p className="text-[12.5px] text-text-3">{t("clinic.desk.unpriced", { count: unpriced })}</p> : null}
                 {followUp?.freeUntil ? <Alert tone="success">{t("clinic.desk.followUpFree", { date: format.dateTime(followUp.freeUntil, { dateStyle: "medium", timeZone: tz }) })}</Alert> : null}
                 {canFreeVisit ? (

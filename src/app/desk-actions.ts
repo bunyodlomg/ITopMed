@@ -28,15 +28,17 @@ function raw(fd: FormData): Record<string, unknown> {
 export async function deskCheckInAction(_: FormState, fd: FormData): Promise<FormState> {
   const { slug, ctx } = await clinicFrom(fd);
   let appointmentId: string;
+  let vitalsLost = false;
   try {
     const r = await deskCheckIn(ctx, raw(fd), await requestMeta());
     if (!r.ok) return { message: r.blocking ? "clinic.desk.duplicateBlocking" : "clinic.desk.duplicateFound", values: formValues(fd), nonce: Date.now() };
     appointmentId = r.appointmentId;
+    vitalsLost = r.vitalsLost;
   } catch (e) {
     return toFormState(e, fd);
   }
   revalidatePath(`/c/${slug}/desk`);
-  redirect(`/c/${slug}/desk?done=${appointmentId}`);
+  redirect(`/c/${slug}/desk?done=${appointmentId}${vitalsLost ? "&vitals=lost" : ""}`);
 }
 
 /** Extra services (e.g. echo, ECG) decided during the visit: paid now or left as debt. */

@@ -50,7 +50,7 @@ export const deskSchema = billingSchema.extend({
 });
 
 export type DeskResult =
-  | { ok: true; appointmentId: string; patientId: string; queueNumber: number | null; invoiceId: string | null; vitalsSaved: boolean }
+  | { ok: true; appointmentId: string; patientId: string; queueNumber: number | null; invoiceId: string | null; vitalsSaved: boolean; vitalsLost: boolean }
   | { ok: false; duplicates: DuplicateCandidate[]; blocking: boolean };
 
 /** Priced, active services by id, in the order chosen. */
@@ -151,9 +151,13 @@ async function billServices(
 
 export async function deskCheckIn(ctx: ClinicContext, raw: Record<string, unknown>, meta: RequestMeta): Promise<DeskResult> {
   requirePermission(ctx, "queue.manage", "appointments.manage");
-  const input = deskSchema.parse(raw);
+  const parsed = deskSchema.parse(raw);
+  // Without billing.invoice, billing.charge (a receptionist next to a separate cashier) puts the
+  // chosen services on the bill unpaid at the catalogue price; the cashier takes the money.
+  const chargeOnly = parsed.serviceIds.length > 0 && !ctx.permissions.has("billing.invoice");
+  const input = chargeOnly ? { ...parsed, payMode: "debt" as const, freeVisit: false } : parsed;
   if (input.serviceIds.length) {
-    requirePermission(ctx, "billing.invoice");
+    requirePermission(ctx, "billing.invoice", "billing.charge");
     if (input.payMode !== "debt") requirePermission(ctx, "billing.payment");
   }
   // Everything that can be refused is checked before the first write.
@@ -171,10 +175,13 @@ export async function deskCheckIn(ctx: ClinicContext, raw: Record<string, unknow
 
   let vitalsSaved = false;
   const vitals = Object.fromEntries(VITAL_KINDS.map((k) => [k, String(raw[k] ?? "")] as const).filter(([, v]) => v.trim() !== ""));
+  // Measurements that were typed but could not be saved are reported back, never dropped silently.
+  let vitalsLost = Object.keys(vitals).length > 0;
   if (Object.keys(vitals).length && ctx.permissions.has("vitals.write")) {
     try {
       await recordVitals(ctx, patientId, vitals, meta);
       vitalsSaved = true;
+      vitalsLost = false;
     } catch (e) {
       if (!(e instanceof DomainError)) throw e;
     }
@@ -182,7 +189,7 @@ export async function deskCheckIn(ctx: ClinicContext, raw: Record<string, unknow
 
   const invoiceId = await billServices(ctx, { patientId, branchId: input.branchId, appointmentId, billing: input, services }, meta);
   const queueNumber = (await inClinic(ctx, (tx) => tx.appointment.findUnique({ where: { id: appointmentId }, select: { queueNumber: true } })))?.queueNumber ?? null;
-  return { ok: true, appointmentId, patientId, queueNumber, invoiceId, vitalsSaved };
+  return { ok: true, appointmentId, patientId, queueNumber, invoiceId, vitalsSaved, vitalsLost };
 }
 
 export const extraServicesSchema = billingSchema.extend({ patientId: uuid, branchId: uuid, appointmentId: optionalUuid });

@@ -27,7 +27,9 @@ export function DiagnosticFields({ templates }: { templates: StudyTemplate[] }) 
   const locale = useLocale();
   /** Numbers of the clinic's ranges with a decimal comma, except in English. */
   const dec = (n: number) => (locale === "en" ? String(n) : String(n).replace(".", ","));
-  const [templateId, setTemplateId] = useState<string>(templates[0]?.id ?? "");
+  // Starts with the built-in study (ECG, echo, ...): one of the clinic's templates (e.g. a
+  // pregnancy ultrasound form) is picked on purpose, never pre-selected for every patient.
+  const [templateId, setTemplateId] = useState<string>("");
   const tpl = templates.find((x) => x.id === templateId) ?? null;
   const [kind, setKind] = useState<DiagnosticKindKey>("ECG");
   const [title, setTitle] = useState<string>(tpl?.name ?? t("kind.ECG"));
@@ -87,12 +89,12 @@ export function DiagnosticFields({ templates }: { templates: StudyTemplate[] }) 
         <label className="block">
           <span className="mb-1 block text-[13px] font-medium">{t("template")}</span>
           <select value={templateId} onChange={(e) => pickTemplate(e.target.value)} className={input}>
+            <option value="">{t("noTemplate")}</option>
             {templates.map((x) => (
               <option key={x.id} value={x.id}>
                 {x.name}
               </option>
             ))}
-            <option value="">{t("noTemplate")}</option>
           </select>
         </label>
       ) : null}

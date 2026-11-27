@@ -4,10 +4,10 @@ import { z } from "zod";
 import { Prisma, type VitalKind } from "@/generated/prisma/client";
 import type { ClinicContext } from "../auth/clinic-auth";
 import type { RequestMeta } from "../auth/platform-auth";
-import { auditClinic, inClinic } from "../clinic/context";
+import { auditClinic, canUseBranch, inClinic } from "../clinic/context";
 import type { Tx } from "../db";
 import { uuidv7 } from "../security/crypto";
-import { instantToLocalDate, localToInstant } from "../scheduling/time";
+import { addDays, instantToLocalDate, localToInstant } from "../scheduling/time";
 import { DomainError } from "../tenancy/provisioning";
 import { withRecordAccess, type BreakGlassReason } from "./access";
 import { labOrdersForRecord } from "../lab/lab";
@@ -365,6 +365,27 @@ export const vitalsSchema = z
 export async function recordVitals(ctx: ClinicContext, patientId: string, raw: unknown, meta: RequestMeta, opts: { encounterId?: string } = {}) {
   if (!ctx.permissions.has("vitals.write")) throw new DomainError("errors.forbidden");
   const values = vitalsSchema.parse(raw);
+  if (!ctx.permissions.has("emr.read")) {
+    // Front desk measuring before the visit (vitals.write without record access): write only,
+    // nothing of the record is read, and only for a patient with a visit today in one of the
+    // person's branches. Visit-bound measurements stay with clinical staff.
+    if (opts.encounterId) throw new DomainError("errors.forbidden");
+    await inClinic(ctx, async (tx) => {
+      const tz = ctx.tenant.timezone;
+      const today = instantToLocalDate(new Date(), tz);
+      const visits = await tx.appointment.findMany({
+        where: { patientId, status: { in: ["BOOKED", "CHECKED_IN", "IN_PROGRESS"] }, startsAt: { gte: localToInstant(today, 0, tz), lt: localToInstant(addDays(today, 1), 0, tz) } },
+        select: { branchId: true },
+      });
+      if (!visits.some((v) => canUseBranch(ctx, v.branchId))) throw new DomainError("errors.noCareRelationship");
+      const measuredAt = new Date();
+      await tx.vitalSign.createMany({
+        data: values.map((v) => ({ id: uuidv7(), tenantId: ctx.tenant.id, patientId, kind: v.kind, value: v.value, unit: VITALS[v.kind].unit, measuredAt, recordedById: ctx.principal.user.id })),
+      });
+      await auditClinic(tx, ctx, meta, { action: "vitals.recorded", entityType: "Patient", entityId: patientId, metadata: { count: values.length, desk: true } });
+    });
+    return;
+  }
   await withRecordAccess(ctx, patientId, meta, { auditView: false }, async (tx) => {
     if (opts.encounterId) {
       const e = await loadEncounter(tx, opts.encounterId);

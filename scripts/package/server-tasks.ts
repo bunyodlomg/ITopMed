@@ -5,6 +5,9 @@
  *   node tasks.mjs backup    encrypted backup into ITM_BACKUP_DIR, keep the latest 14
  *   node tasks.mjs create-clinic <spec.json> <owner-login> "<Owner Name>"
  *                            open a clinic ready to work (asks for the owner's password)
+ *   node tasks.mjs clinic-admin <slug> <ops.json>
+ *                            the owner's administration on the server (roles, staff, test patients;
+ *                            see scripts/lib/clinic-admin.ts); prints new staff passwords once
  * Settings come from the service environment (/etc/itopmed/itopmed.env).
  */
 import fs from "node:fs";
@@ -15,6 +18,7 @@ import { startEmbeddedDb } from "../lib/embedded-db";
 import { applyMigrations } from "../lib/migrate";
 import { seedPlans } from "../lib/seed-plans";
 import { applyClinicExtras, clinicSpecSchema, createClinicFromSpec } from "../lib/create-clinic";
+import { runClinicAdmin } from "../lib/clinic-admin";
 
 /** Reads a password without showing it (falls back to a plain prompt when not on a terminal). */
 function askHidden(question: string): Promise<string> {
@@ -106,6 +110,12 @@ async function main() {
     const s = r.services;
     console.log(`Klinika yangilandi: ${r.templatesAdded} ta yangi shablon; blankada to'ldirildi: ${r.letterhead.join(", ") || "-"}`);
     console.log(`Xizmatlar: ${s.created} yangi, ${s.updated} narxi yangilandi, ${s.renamed} nomi o'zgardi, ${s.retired} arxivlandi`);
+  } else if (task === "clinic-admin") {
+    const [slug, opsFile] = process.argv.slice(3);
+    if (!slug || !opsFile) throw new Error("Usage: tasks.mjs clinic-admin <slug> <ops.json>");
+    for (const r of await runClinicAdmin(slug, JSON.parse(fs.readFileSync(opsFile, "utf8")))) {
+      console.log(`✓ ${r.op}: ${r.detail}${r.password ? `  — birinchi parol / first password: ${r.password}` : ""}`);
+    }
   } else if (task === "check-db") {
     const c = new pg.Client({ connectionString: need("MIGRATION_DATABASE_URL") });
     await c.connect();
