@@ -7,6 +7,7 @@ import { withAppContext } from "../db";
 import { DomainError } from "../errors";
 import { randomToken, sha256Hex, uuidv7 } from "../security/crypto";
 import { addDays, localToInstant, todayIn } from "../scheduling/time";
+import { queueEta, roundUp5 } from "@/lib/queue-eta";
 
 /**
  * Waiting room: the doctor presses "Next patient", the waiting-room screen (a
@@ -117,7 +118,8 @@ export interface Board {
   branch: string;
   voice: boolean;
   calls: BoardCall[];
-  waiting: { number: number | null; doctor: string }[];
+  /** eta: about when the patient goes in ("10:35", clinic time), an estimate from the planned visit lengths. */
+  waiting: { number: number | null; doctor: string; eta: string | null }[];
 }
 
 /** What a screen shows; null for an unknown or revoked link. */
@@ -136,6 +138,10 @@ export async function boardForToken(token: string): Promise<Board | null> {
         id: true,
         queueNumber: true,
         status: true,
+        doctorProfileId: true,
+        startsAt: true,
+        endsAt: true,
+        startedAt: true,
         calledAt: true,
         calledCount: true,
         checkedInAt: true,
@@ -160,7 +166,12 @@ export async function boardForToken(token: string): Promise<Board | null> {
         calls: r.calledCount,
         state: r.status === "IN_PROGRESS" ? "inVisit" : "called",
       }));
-    const waiting = rows.filter((r) => !r.calledAt && r.status === "CHECKED_IN").slice(0, 12).map((r) => ({ number: r.queueNumber, doctor: r.doctor.membership.user.fullName }));
+    const eta = queueEta(rows, new Date());
+    const hhmm = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: tenant.timezone });
+    const waiting = rows
+      .filter((r) => !r.calledAt && r.status === "CHECKED_IN")
+      .slice(0, 12)
+      .map((r) => ({ number: r.queueNumber, doctor: r.doctor.membership.user.fullName, eta: eta.get(r.id) ? hhmm.format(roundUp5(eta.get(r.id)!.at)) : null }));
     return { clinic: tenant.name, branch: branch.name, voice: s.voice, calls, waiting };
   });
 }

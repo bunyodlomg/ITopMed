@@ -1,10 +1,12 @@
-import { ShieldAlert } from "lucide-react";
+import { Printer, ShieldAlert } from "lucide-react";
+import { summarizeDiagnoses } from "@/lib/dx-summary";
+import { rxDrugLabel } from "@/lib/rx";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { AllergyBanner, DiagnosisList, SignedNote, VitalsTable } from "@/components/clinical";
 import { formatBirthDate, patientName } from "@/components/patients";
-import { Alert, Badge, Card, CardBody, CardHeader, PageHeader, STATUS_TONE, buttonClass } from "@/components/ui/primitives";
+import { Alert, Badge, Card, CardBody, CardHeader, PageHeader, STATUS_TONE, Table, Td, Th, buttonClass } from "@/components/ui/primitives";
 import { requireClinic } from "@/server/auth/guards";
 import { BREAK_GLASS_REASONS, type BreakGlassReason } from "@/server/emr/access";
 import { getMedicalRecord } from "@/server/emr/record";
@@ -73,7 +75,10 @@ export default async function RecordPage({ params }: { params: Promise<{ slug: s
     throw e;
   }
 
-  const { patient, allergies, diagnoses, vitals, encounters, access, labOrders, dental } = record;
+  const { patient, allergies, diagnoses, vitals, encounters, access, labOrders, dental, prescriptions, studies } = record;
+  const dxAll = summarizeDiagnoses(diagnoses);
+  const activeMeds = prescriptions.filter((p) => p.status === "ACTIVE").slice(0, 30);
+  const canExtract = access.mode === "care" || access.mode === "oversight";
   const tz = ctx.tenant.timezone;
   const s = ctx.tenant.slug;
   return (
@@ -84,6 +89,11 @@ export default async function RecordPage({ params }: { params: Promise<{ slug: s
         description={`${await formatBirthDate(patient.birthDate)} · ${t(`sex.${patient.sex}`)}`}
         action={
           <div className="flex flex-wrap items-center gap-2">
+            {canExtract ? (
+              <Link href={`/c/${s}/patients/${patient.id}/record/print`} className={buttonClass("primary", "sm")}>
+                <Printer aria-hidden className="size-4" /> {t("clinic.profile.print")}
+              </Link>
+            ) : null}
             <Badge tone={access.mode === "break_glass" ? "danger" : "neutral"}>{t("clinic.record.accessAs", { mode: t(`accessMode.${access.mode}`) })}</Badge>
             {access.mode === "care" || access.mode === "oversight" ? (
               <form method="post" action={`/c/${s}/patients/${patient.id}/record/xlsx`}>
@@ -103,6 +113,75 @@ export default async function RecordPage({ params }: { params: Promise<{ slug: s
         }
       />
       <AllergyBanner allergies={allergies.filter((a) => a.status === "ACTIVE")} />
+
+      <Card>
+        <CardHeader title={t("clinic.profile.dxTitle")} description={t("clinic.profile.dxHint")} />
+        {dxAll.length === 0 ? (
+          <CardBody><p className="text-[14px] text-text-2">{t("clinic.profile.noDx")}</p></CardBody>
+        ) : (
+          <Table caption={t("clinic.profile.dxTitle")}>
+            <thead>
+              <tr>
+                <Th>{t("clinic.profile.colDx")}</Th>
+                <Th>{t("clinic.profile.colCode")}</Th>
+                <Th>{t("clinic.profile.colFirst")}</Th>
+                <Th>{t("clinic.profile.colLast")}</Th>
+                <Th>{t("clinic.profile.colTimes")}</Th>
+                <Th>{t("clinic.profile.colStatus")}</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {dxAll.map((d) => (
+                <tr key={d.key}>
+                  <Td>
+                    <span className="font-semibold">{d.description}</span>
+                    {d.stage ? <span className="text-text-2">, {d.stage}</span> : null}
+                    <span className="block text-[12.5px] text-text-3">{t(`diagnosisKind.${d.kind}` as never)}</span>
+                  </Td>
+                  <Td label={t("clinic.profile.colCode")}><span className="font-mono">{d.icd10Code || "—"}</span></Td>
+                  <Td label={t("clinic.profile.colFirst")}>{format.dateTime(d.first, { dateStyle: "short", timeZone: tz })}</Td>
+                  <Td label={t("clinic.profile.colLast")}>{format.dateTime(d.last, { dateStyle: "short", timeZone: tz })}</Td>
+                  <Td label={t("clinic.profile.colTimes")}>{d.count}</Td>
+                  <Td label={t("clinic.profile.colStatus")}><Badge tone={d.status === "ACTIVE" ? "accent" : "neutral"}>{t(`status.${d.status}` as never)}</Badge></Td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader title={t("clinic.profile.medsTitle")} />
+          {activeMeds.length === 0 ? (
+            <CardBody><p className="text-[14px] text-text-2">{t("clinic.rx.none")}</p></CardBody>
+          ) : (
+            <ul className="divide-y divide-border">
+              {activeMeds.map((p) => (
+                <li key={p.id} className="px-6 py-2.5 text-[14px]">
+                  <p className="font-medium">{rxDrugLabel(p)}</p>
+                  <p className="text-text-2">{[p.dose, p.frequency, p.times, format.dateTime(p.createdAt, { dateStyle: "short", timeZone: tz })].filter(Boolean).join(" · ")}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card>
+          <CardHeader title={t("clinic.profile.studiesTitle")} />
+          {studies.length === 0 ? (
+            <CardBody><p className="text-[14px] text-text-2">{t("diagnostics.none")}</p></CardBody>
+          ) : (
+            <ul className="divide-y divide-border">
+              {studies.slice(0, 20).map((r) => (
+                <li key={r.id} className="px-6 py-2.5 text-[14px]">
+                  <p className="font-medium">{r.title} <span className="font-normal text-text-3">· {format.dateTime(r.performedAt, { dateStyle: "short", timeZone: tz })}</span></p>
+                  <p className="line-clamp-3 whitespace-pre-wrap text-text-2">{r.conclusion}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

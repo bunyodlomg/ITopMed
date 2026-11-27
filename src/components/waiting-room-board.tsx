@@ -173,8 +173,9 @@ export function WaitingRoomBoard({ token, initial, labels }: { token: string; in
             {board.waiting.length ? (
               <ul className="grid grid-cols-3 gap-3">
                 {board.waiting.map((w, i) => (
-                  <li key={`${w.number}-${i}`} className="rounded-[20px] bg-surface py-4 text-center text-[40px] font-extrabold tracking-[-0.03em] tabular-nums">
-                    {w.number ?? "—"}
+                  <li key={`${w.number}-${i}`} className="rounded-[20px] bg-surface py-4 text-center tabular-nums">
+                    <span className="block text-[40px] font-extrabold leading-none tracking-[-0.03em]">{w.number ?? "—"}</span>
+                    {w.eta ? <span className="mt-1 block text-[18px] font-semibold text-text-2">≈ {w.eta}</span> : null}
                   </li>
                 ))}
               </ul>

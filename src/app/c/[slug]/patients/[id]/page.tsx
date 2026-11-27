@@ -11,6 +11,8 @@ import { consentAction } from "../../../../care-actions";
 import { portalCodeAction } from "../../../../portal-actions";
 import { PortalAccessCard } from "@/components/portal-staff";
 import { getPortalAccount } from "@/server/portal/staff";
+import { todayMoney } from "@/server/reception/desk";
+import { moneyFormatter } from "@/components/money";
 
 export default async function PatientPage({ params, searchParams }: { params: Promise<{ slug: string; id: string }>; searchParams: Promise<{ registered?: string; saved?: string; booked?: string }> }) {
   const { slug, id } = await params;
@@ -24,6 +26,8 @@ export default async function PatientPage({ params, searchParams }: { params: Pr
   const canUpdate = ctx.permissions.has("patients.update");
   const activeConsents = p.consents.filter((c) => !c.withdrawnAt);
   const missingPurposes = CONSENT_PURPOSES.filter((pp) => !activeConsents.some((c) => c.purpose === pp));
+  const owes = (await todayMoney(ctx, [p.id])).debt.get(p.id) ?? 0n;
+  const money = owes > 0n ? await moneyFormatter() : null;
   const ident = (type: string) => p.identifiers.find((i) => i.type === type)?.value ?? "—";
 
   return (
@@ -52,6 +56,14 @@ export default async function PatientPage({ params, searchParams }: { params: Pr
       {sp.registered ? <Alert tone="success">{t("clinic.patients.registered", { mrn: sp.registered })}</Alert> : null}
       {sp.saved ? <Alert tone="success">{t("clinic.patients.saved")}</Alert> : null}
       {sp.booked ? <Alert tone="success">{t("clinic.booking.booked")}</Alert> : null}
+      {owes > 0n && money ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] border border-danger bg-danger-soft px-5 py-3" role="status">
+          <p className="text-[14px] font-semibold text-danger">{t("clinic.desk.hasDebt", { amount: money(owes, ctx.tenant.currency) })}</p>
+          {ctx.permissions.has("billing.payment") && ctx.permissions.has("billing.read") ? (
+            <ButtonLink href={`${base}/checkout?patient=${p.id}`} size="sm">{t("clinic.checkout.openCheckout")}</ButtonLink>
+          ) : null}
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader title={t("clinic.patients.identity")} action={canUpdate ? <ButtonLink href={`${base}/patients/${p.id}/edit`} variant="ghost" size="sm"><Pencil aria-hidden className="size-4" />{t("clinic.patients.edit")}</ButtonLink> : null} />

@@ -51,7 +51,8 @@ export const createInvoiceSchema = z.object({
  * that service is added as the first line (price snapshot).
  */
 export async function createInvoice(ctx: ClinicContext, raw: unknown, meta: RequestMeta): Promise<string> {
-  requirePermission(ctx, "billing.invoice");
+  // billing.charge: doctors, nurses, lab put services on the bill at the catalogue price (see addInvoiceLine).
+  requirePermission(ctx, "billing.invoice", "billing.charge");
   const input = createInvoiceSchema.parse(raw);
   assertBranch(ctx, input.branchId);
   const id = uuidv7();
@@ -95,8 +96,10 @@ export const lineSchema = z.object({
 });
 
 export async function addInvoiceLine(ctx: ClinicContext, invoiceId: string, raw: unknown, meta: RequestMeta) {
-  requirePermission(ctx, "billing.invoice");
+  requirePermission(ctx, "billing.invoice", "billing.charge");
   const input = lineSchema.parse(raw);
+  // Charging only (no billing.invoice): catalogue price, never a manual discount.
+  if (!ctx.permissions.has("billing.invoice") && input.discount.trim()) throw new DomainError("errors.forbidden");
   await inClinic(ctx, async (tx) => {
     const inv = await lockInvoice(tx, invoiceId);
     assertBranch(ctx, inv.branchId);
@@ -155,7 +158,7 @@ export async function removeInvoiceLine(ctx: ClinicContext, lineId: string, meta
 
 /** Freezes the invoice and assigns its sequential number (per clinic and year). */
 export async function issueInvoice(ctx: ClinicContext, invoiceId: string, meta: RequestMeta): Promise<string> {
-  requirePermission(ctx, "billing.invoice");
+  requirePermission(ctx, "billing.invoice", "billing.charge");
   return inClinic(ctx, async (tx) => {
     const inv = await lockInvoice(tx, invoiceId);
     assertBranch(ctx, inv.branchId);

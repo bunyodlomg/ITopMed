@@ -108,7 +108,7 @@ async function nextLabNumber(tx: Tx, ctx: ClinicContext) {
 }
 
 /** The treating doctor orders lab tests from their own open visit. */
-export async function createLabOrder(ctx: ClinicContext, encounterId: string, raw: unknown, meta: RequestMeta): Promise<{ id: string; number: string }> {
+export async function createLabOrder(ctx: ClinicContext, encounterId: string, raw: unknown, meta: RequestMeta): Promise<{ id: string; number: string; charged: boolean }> {
   requirePermission(ctx, "orders.create");
   const input = labOrderSchema.parse(raw);
   const enc = await inClinic(ctx, async (tx) => {
@@ -116,7 +116,7 @@ export async function createLabOrder(ctx: ClinicContext, encounterId: string, ra
     if (!e) throw new DomainError("errors.notFound");
     return e;
   });
-  return withRecordAccess(ctx, enc.patientId, meta, { auditView: false }, async (tx, access) => {
+  const order = await withRecordAccess(ctx, enc.patientId, meta, { auditView: false }, async (tx, access) => {
     if (access.doctorProfileId !== enc.doctorProfileId) throw new DomainError("errors.notYourPatient");
     if (enc.status !== "OPEN") throw new DomainError("errors.encounterClosed");
     const ids = [...new Set(input.serviceIds)];
@@ -140,8 +140,14 @@ export async function createLabOrder(ctx: ClinicContext, encounterId: string, ra
     });
     await tx.labOrderItem.createMany({ data: tests.map((s) => ({ id: uuidv7(), tenantId: ctx.tenant.id, orderId: id, serviceId: s.id, name: s.name })) });
     await auditClinic(tx, ctx, meta, { action: "lab.ordered", entityType: "LabOrder", entityId: id, metadata: { tests: tests.length, priority: input.priority } });
-    return { id, number };
+    return { id, number, serviceIds: ids };
   });
+  // Ordered = owed: the priced tests go on the patient's bill as unpaid (not those the desk
+  // already billed today), so the patient pays everything at the cashier before leaving.
+  // Loaded lazily: the desk module reaches the lab through the record services (import cycle).
+  const { chargeOrderedServices } = await import("../reception/desk");
+  const charged = await chargeOrderedServices(ctx, { patientId: enc.patientId, branchId: enc.branchId, serviceIds: order.serviceIds }, meta);
+  return { id: order.id, number: order.number, charged: Boolean(charged) };
 }
 
 // ───────────── Laboratory work (lab staff, nurses) ─────────────
@@ -203,7 +209,7 @@ export async function getLabOrder(ctx: ClinicContext, orderId: string, meta: Req
  * when the clinic prints only at the desk, once the report was verified today
  * and the patient's bills are settled. Printing is audited; no prices.
  */
-export async function labOrderForPrint(ctx: ClinicContext, orderId: string, meta: RequestMeta) {
+export async function labOrderForPrint(ctx: ClinicContext, orderId: string, meta: RequestMeta, opts?: { via?: "print" | "telegram" }) {
   if (!canWorkLab(ctx) && !ctx.permissions.has("documents.print")) throw new DomainError("errors.forbidden");
   const desk = await printsAtDesk(ctx, canWorkLab(ctx));
   return inClinic(ctx, async (tx) => {
@@ -214,7 +220,7 @@ export async function labOrderForPrint(ctx: ClinicContext, orderId: string, meta
       if (gate !== "ok") throw new DomainError(`errors.deskPrint.${gate}`);
     }
     const verifier = o.verifiedById ? await tx.user.findUnique({ where: { id: o.verifiedById }, select: { fullName: true } }) : null;
-    await auditClinic(tx, ctx, meta, { action: desk ? "lab.printed_at_desk" : "lab.printed", entityType: "LabOrder", entityId: o.id });
+    await auditClinic(tx, ctx, meta, { action: opts?.via === "telegram" ? "lab.sent_telegram" : desk ? "lab.printed_at_desk" : "lab.printed", entityType: "LabOrder", entityId: o.id });
     return { order: o, verifiedBy: verifier?.fullName ?? null };
   });
 }

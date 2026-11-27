@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Form, SelectField, SubmitButton, TextAreaField, TextField } from "@/components/ui/form";
 import { ButtonLink, Card, CardBody, CardHeader, PageHeader, buttonClass } from "@/components/ui/primitives";
 import { requireClinic } from "@/server/auth/guards";
+import { listServices } from "@/server/clinic/resources";
 import { PLACEHOLDERS, getTemplate, parseNoteContent } from "@/server/clinic/templates";
 import { NOTE_SECTIONS } from "@/server/emr/record";
 import { DomainError } from "@/server/errors";
@@ -32,6 +33,7 @@ export default async function TemplateEditPage({ params, searchParams }: { param
   const study = template && kind === "DIAGNOSTIC" ? parseTemplateContent(template.content) : null;
   const note = template && kind === "NOTE" ? parseNoteContent(template.content) : null;
   const back = `/c/${ctx.tenant.slug}/templates`;
+  const services = ctx.permissions.has("services.read") ? await listServices(ctx) : [];
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
@@ -55,7 +57,16 @@ export default async function TemplateEditPage({ params, searchParams }: { param
                   defaultValue={template?.specialty ?? ""}
                   options={[{ value: "", label: t("templates.allSpecialties") }, ...SPECIALTIES.map((x) => ({ value: x, label: t(`specialties.${x}`) }))]}
                 />
+                {services.length ? (
+                  <SelectField
+                    name="serviceId"
+                    label={t("templates.service")}
+                    defaultValue={template?.serviceId ?? ""}
+                    options={[{ value: "", label: t("templates.anyService") }, ...services.filter((x) => !x.archivedAt || x.id === template?.serviceId).map((x) => ({ value: x.id, label: x.name }))]}
+                  />
+                ) : null}
               </div>
+              {services.length ? <p className="-mt-3 text-[12.5px] text-text-3">{t("templates.serviceHint")}</p> : null}
               {kind === "PRESCRIPTION" ? (
                 <TextAreaField
                   name="schemeText"

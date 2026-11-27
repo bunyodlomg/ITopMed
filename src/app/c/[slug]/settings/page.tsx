@@ -87,6 +87,13 @@ export default async function ClinicSettingsPage({ params }: { params: Promise<{
                   <span className="block text-[13px] text-text-2">{t("clinic.policy.printOnlyAtDeskHint")}</span>
                 </span>
               </label>
+              <label className="flex items-start gap-3 text-[14px]">
+                <input type="checkbox" name="telegramDocuments" defaultChecked={policy.telegramDocuments} className="mt-0.5 size-4 accent-[var(--accent)]" />
+                <span>
+                  <span className="font-medium">{t("clinic.policy.telegramDocuments")}</span>
+                  <span className="block text-[13px] text-text-2">{t("clinic.policy.telegramDocumentsHint")}</span>
+                </span>
+              </label>
               <div className="border-t border-border pt-4">
                 <p className="text-[14px] font-medium">{t("clinic.policy.onlineTitle")}</p>
                 <p className="mb-3 text-[13px] text-text-2">{t("clinic.policy.onlineHint")}</p>

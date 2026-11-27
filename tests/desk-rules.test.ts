@@ -16,7 +16,7 @@ import { addDiagnosticResult, diagnosticForPrint } from "@/server/emr/diagnostic
 import { deskPrintGate, deskPrintables, documentForVisit, prescriptionForPrint, printsAtDesk } from "@/server/emr/documents";
 import { addDiagnosis, finishEncounter, saveDraft, signNote, startVisit, getEncounter } from "@/server/emr/record";
 import { getPatient } from "@/server/patients/patients";
-import { deskCheckIn } from "@/server/reception/desk";
+import { approvePatientDebt, deskCheckIn } from "@/server/reception/desk";
 import { META, PASSWORD, clinicContext, clinicWithOwner, platformActor, uniq } from "./helpers/fixtures";
 
 async function staff(o: Awaited<ReturnType<typeof clinicWithOwner>>, roleKeys: string[]) {
@@ -206,7 +206,10 @@ describe("desk prints final documents only after the cashier", () => {
     // The desk lists it with today's papers, but prints only once the bill is settled.
     expect((await deskPrintables(s.desk.ctx, r.appointmentId)).labOrders.map((o) => o.id)).toEqual([id]);
     await expect(labOrderForPrint(s.desk.ctx, id, META)).rejects.toThrow("errors.deskPrint.unpaid");
+    // The ordered test went on the bill as well (ordered = owed): approving only the visit's bill is not enough.
     await approveDebt(s.cashier.ctx, (await invoiceOf(s.cashier.ctx, r.appointmentId)).id, META);
+    await expect(labOrderForPrint(s.desk.ctx, id, META)).rejects.toThrow("errors.deskPrint.unpaid");
+    expect(await approvePatientDebt(s.cashier.ctx, r.patientId, META)).toBe(1);
     expect((await labOrderForPrint(s.desk.ctx, id, META)).order.number).toBe(printed.order.number);
     await expect(labOrderForPrint(s.doctor.ctx, "00000000-0000-0000-0000-000000000000", META)).rejects.toThrow();
 

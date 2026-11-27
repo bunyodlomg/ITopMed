@@ -6,7 +6,7 @@ import { parseTemplateContent, parseTemplateValues, type TemplateField } from "@
 import { DIAGNOSTIC_FILE_MAX_BYTES, DIAGNOSTIC_KINDS, parseDiagnosticData, sniffFileType, type DiagnosticKindKey } from "@/lib/diagnostics";
 import type { ClinicContext } from "../auth/clinic-auth";
 import type { RequestMeta } from "../auth/platform-auth";
-import { auditClinic, inClinic } from "../clinic/context";
+import { auditClinic, branchWhere, inClinic } from "../clinic/context";
 import { DomainError } from "../errors";
 import { uuidv7 } from "../security/crypto";
 import { withRecordAccess } from "./access";
@@ -14,13 +14,16 @@ import { loadEncounter } from "./record";
 import { deskDiagnosticGate } from "./documents";
 import { printsAtDesk } from "./print-rules";
 import { printOnlyAtDesk } from "../clinic/policy";
+import { addDays, instantToLocalDate, localToInstant } from "../scheduling/time";
 
 /**
  * Diagnostic studies (ECG, echo, ultrasound, Holter, ABPM, stress test…):
  * values entered from the device or paper, a written conclusion, and attached
  * images / PDFs. Clinical data under the medical-record access rules; whoever
- * writes clinical notes (emr.write) and has a care relationship may enter a
- * result - the ultrasound or echo doctor need not be the treating doctor.
+ * writes clinical notes (emr.write) - or works in the functional-diagnostics
+ * room (diagnostics.record: ECG / echo / ultrasound devices, no notes) - and
+ * has a care relationship may enter a result; the ultrasound or echo doctor
+ * need not be the treating doctor.
  */
 
 const uuid = z.uuid();
@@ -34,8 +37,11 @@ export const resultSchema = z.object({
   conclusion: z.string().trim().min(1, "validation.required").max(10_000, "validation.tooLong"),
 });
 
+/** Doctors (emr.write) or the functional-diagnostics room (diagnostics.record) enter study results. */
+export const canRecordStudies = (ctx: ClinicContext) => ctx.permissions.has("emr.write") || ctx.permissions.has("diagnostics.record");
+
 export async function addDiagnosticResult(ctx: ClinicContext, patientId: string, raw: Record<string, string>, meta: RequestMeta): Promise<string> {
-  if (!ctx.permissions.has("emr.write")) throw new DomainError("errors.forbidden");
+  if (!canRecordStudies(ctx)) throw new DomainError("errors.forbidden");
   const input = resultSchema.parse(raw);
   let kind = input.kind as DiagnosticKindKey;
   let data: Record<string, string | number>;
@@ -65,6 +71,57 @@ export async function addDiagnosticResult(ctx: ClinicContext, patientId: string,
     await auditClinic(tx, ctx, meta, { action: "diagnostic.recorded", entityType: "DiagnosticResult", entityId: id, metadata: { kind, template: Boolean(snapshot) } });
   });
   return id;
+}
+
+/**
+ * The functional-diagnostics room's worklist: today's patients in the
+ * person's branches who came in (checked in, being seen or seen), with how
+ * many studies each has today. Names and times only - no clinical content.
+ */
+export async function studiesWorklist(ctx: ClinicContext) {
+  if (!canRecordStudies(ctx)) throw new DomainError("errors.forbidden");
+  const tz = ctx.tenant.timezone;
+  const today = instantToLocalDate(new Date(), tz);
+  const from = localToInstant(today, 0, tz);
+  const to = localToInstant(addDays(today, 1), 0, tz);
+  return inClinic(ctx, async (tx) => {
+    const appts = await tx.appointment.findMany({
+      where: { ...branchWhere(ctx), startsAt: { gte: from, lt: to }, status: { in: ["CHECKED_IN", "IN_PROGRESS", "COMPLETED"] } },
+      orderBy: [{ queueNumber: "asc" }, { startsAt: "asc" }],
+      take: 300,
+      select: {
+        id: true,
+        status: true,
+        startsAt: true,
+        queueNumber: true,
+        patient: { select: { id: true, mrn: true, lastName: true, firstName: true, middleName: true } },
+        doctor: { select: { membership: { select: { user: { select: { fullName: true } } } } } },
+      },
+    });
+    const counts = await tx.diagnosticResult.groupBy({
+      by: ["patientId"],
+      where: { patientId: { in: [...new Set(appts.map((a) => a.patient.id))] }, enteredInErrorAt: null, performedAt: { gte: from, lt: to } },
+      _count: { _all: true },
+    });
+    const byPatient = new Map(counts.map((c) => [c.patientId, c._count._all]));
+    return appts.map((a) => ({ ...a, studiesToday: byPatient.get(a.patient.id) ?? 0 }));
+  });
+}
+
+/** One patient's studies of today (the room sees what it did today, not the whole history). */
+export async function todayStudies(ctx: ClinicContext, patientId: string, meta: RequestMeta) {
+  if (!canRecordStudies(ctx)) throw new DomainError("errors.forbidden");
+  const tz = ctx.tenant.timezone;
+  const today = instantToLocalDate(new Date(), tz);
+  return withRecordAccess(ctx, patientId, meta, {}, async (tx) => {
+    const patient = await tx.patient.findUniqueOrThrow({ where: { id: patientId }, select: { id: true, mrn: true, lastName: true, firstName: true, middleName: true, birthDate: true, birthYearOnly: true, sex: true } });
+    const rows = await tx.diagnosticResult.findMany({
+      where: { patientId, performedAt: { gte: localToInstant(today, 0, tz), lt: localToInstant(addDays(today, 1), 0, tz) } },
+      orderBy: { performedAt: "asc" },
+      include: { files: { select: { id: true, fileName: true, mimeType: true, sizeBytes: true }, orderBy: { createdAt: "asc" } } },
+    });
+    return { patient, results: rows.map((r) => ({ ...r, data: r.data as Record<string, string | number> })) };
+  });
 }
 
 export async function listDiagnosticResults(ctx: ClinicContext, patientId: string, meta: RequestMeta) {
@@ -102,7 +159,7 @@ async function assertDeskMayPrint(ctx: ClinicContext, r: Awaited<ReturnType<type
  * doctor prints under the record rules; the desk (or everyone, when the clinic
  * prints only at the desk) under the desk rules.
  */
-export async function diagnosticForPrint(ctx: ClinicContext, resultId: string, meta: RequestMeta) {
+export async function diagnosticForPrint(ctx: ClinicContext, resultId: string, meta: RequestMeta, opts?: { via?: "print" | "telegram" }) {
   if (!ctx.permissions.has("emr.read") && !ctx.permissions.has("documents.print")) throw new DomainError("errors.forbidden");
   const r = await loadResult(ctx, resultId);
   const desk = await printsAtDesk(ctx, ctx.permissions.has("emr.read"));
@@ -111,7 +168,7 @@ export async function diagnosticForPrint(ctx: ClinicContext, resultId: string, m
     const result = await tx.diagnosticResult.findUniqueOrThrow({ where: { id: resultId }, include: { files: { select: { id: true, fileName: true, mimeType: true } } } });
     const patient = await tx.patient.findUniqueOrThrow({ where: { id: r.patientId }, select: { mrn: true, lastName: true, firstName: true, middleName: true, birthDate: true, birthYearOnly: true, sex: true } });
     const author = await tx.user.findUnique({ where: { id: result.performedById }, select: { fullName: true } });
-    await auditClinic(tx, ctx, meta, { action: desk ? "diagnostic.printed_at_desk" : "diagnostic.printed", entityType: "DiagnosticResult", entityId: resultId });
+    await auditClinic(tx, ctx, meta, { action: opts?.via === "telegram" ? "diagnostic.sent_telegram" : desk ? "diagnostic.printed_at_desk" : "diagnostic.printed", entityType: "DiagnosticResult", entityId: resultId });
     return { result: { ...result, data: result.data as Record<string, string | number> }, patient, authorName: author?.fullName ?? "—" };
   };
   return desk ? inClinic(ctx, load) : withRecordAccess(ctx, r.patientId, meta, { auditView: false }, load);
@@ -134,7 +191,7 @@ const safeName = (name: string) =>
 
 /** Attaches an image or PDF. The real type is read from the bytes; the browser's claim is ignored. */
 export async function addDiagnosticFile(ctx: ClinicContext, resultId: string, file: { name: string; bytes: Uint8Array }, meta: RequestMeta): Promise<string> {
-  if (!ctx.permissions.has("emr.write")) throw new DomainError("errors.forbidden");
+  if (!canRecordStudies(ctx)) throw new DomainError("errors.forbidden");
   if (file.bytes.length === 0 || file.bytes.length > DIAGNOSTIC_FILE_MAX_BYTES) throw new DomainError("errors.fileTooLarge");
   const mime = sniffFileType(file.bytes);
   if (!mime) throw new DomainError("errors.fileType");

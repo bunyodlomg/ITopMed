@@ -8,6 +8,7 @@ import { uuidv7 } from "../security/crypto";
 import type { Tx } from "../db";
 import { parseSchemeContent } from "@/lib/rx-scheme";
 import { withRecordAccess } from "./access";
+import { catalogForPrescription } from "./medicines";
 import { loadEncounter, ownOpenEncounter } from "./record";
 
 const optionalText = (max: number) =>
@@ -36,6 +37,10 @@ export const prescriptionSchema = z.object({
     .optional(),
   instructions: optionalText(1000),
   allergyOverride: z.boolean().default(false),
+  /** The catalog entry the doctor picked (null = typed by hand). */
+  medicineId: z.union([z.literal("").transform(() => undefined), z.uuid()]).optional(),
+  /** A typed medicine is also kept in the clinic's catalog (needs medicines.manage). */
+  saveToCatalog: z.preprocess((v) => v === true || v === "on" || v === "true", z.boolean()).default(false),
 });
 
 /**
@@ -57,6 +62,7 @@ type PrescriptionInput = z.infer<typeof prescriptionSchema>;
 /** Inserts one prescription and its audit event (caller has checked access and the open visit). */
 async function insertPrescription(tx: Tx, ctx: ClinicContext, enc: { id: string; patientId: string }, input: PrescriptionInput, allergyOverride: boolean, meta: RequestMeta, schemeId?: string) {
   const id = uuidv7();
+  const medicineId = await catalogForPrescription(tx, ctx, input, meta);
   await tx.prescription.create({
     data: {
       id,
@@ -73,6 +79,7 @@ async function insertPrescription(tx: Tx, ctx: ClinicContext, enc: { id: string;
       times: input.times ?? null,
       instructions: input.instructions ?? null,
       allergyOverride,
+      medicineId,
     },
   });
   await auditClinic(tx, ctx, meta, { action: "prescription.created", entityType: "Prescription", entityId: id, metadata: { allergyOverride, ...(schemeId ? { schemeId } : {}) } });

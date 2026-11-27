@@ -94,11 +94,13 @@ describe("reception desk", () => {
     expect(money.debt.get(first.patientId)).toBe(8_000_000n);
     expect(money.today.get(second.patientId)?.services).toEqual(["Umumiy ayollar"]);
 
-    // The doctor sees the measurements before the patient comes in; without billing rights, no money.
+    // The doctor sees the measurements before the patient comes in, and (billing.charge) what is on the bill.
     const v = await todayVitals(doctor.ctx, [first.patientId]);
     expect(v.get(first.patientId)).toMatchObject({ systolic: "140", diastolic: "80", weight: "82", height: "176" });
-    expect((await todayMoney(doctor.ctx, [first.patientId])).debt.size).toBe(0);
-    await expect(addExtraServices(doctor.ctx, { patientId: first.patientId, branchId: branch!.id, serviceIds: [sid("EXO")], payMode: "debt" }, META)).rejects.toThrow("errors.forbidden");
+    expect((await todayMoney(doctor.ctx, [first.patientId])).debt.get(first.patientId)).toBe(8_000_000n);
+    // A receptionist without any billing right cannot put services on a bill.
+    const reception = await staff(o, ["receptionist"]);
+    await expect(addExtraServices(reception.ctx, { patientId: first.patientId, branchId: branch!.id, serviceIds: [sid("EXO")], payMode: "debt" }, META)).rejects.toThrow("errors.forbidden");
 
     // A doctor who also has the cashier role adds an echo on debt.
     const fullDoctor = await staff(o, ["doctor", "receptionist", "cashier"]);

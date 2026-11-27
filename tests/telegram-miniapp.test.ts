@@ -160,7 +160,7 @@ describe("who opened a clinic bot's Mini App", () => {
     expect(await resolveWebApp(c.launch(newTgId()), "staff", META, c.slug)).toEqual({ status: "patient", phoneKnown: false });
     expect(homeForRoles("x", ["clinic_owner", "doctor"])).toBe("/c/x");
     expect(homeForRoles("x", ["doctor"])).toBe("/c/x/my-queue");
-    expect(homeForRoles("x", ["cashier"])).toBe("/c/x/billing");
+    expect(homeForRoles("x", ["cashier"])).toBe("/c/x/checkout");
   });
 });
 

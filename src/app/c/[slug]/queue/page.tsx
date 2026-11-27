@@ -13,6 +13,8 @@ import { withAppContext } from "@/server/db";
 import { searchPatients } from "@/server/patients/patients";
 import { isLocalDate, todayIn } from "@/server/scheduling/time";
 import { queueAction, rescheduleAction, walkInAction } from "../../../care-actions";
+import { FilterChips, hrefWith } from "@/components/ui/toolbar";
+import { queueEta, roundUp5 } from "@/lib/queue-eta";
 
 const UUID = /^[0-9a-f-]{36}$/;
 
@@ -27,7 +29,17 @@ export default async function QueuePage({ params, searchParams }: { params: Prom
   const base = `/c/${ctx.tenant.slug}/queue`;
   const canManage = ctx.permissions.has("appointments.manage");
 
-  const [appointments, doctors, branches] = await Promise.all([listDay(ctx, date), listDoctors(ctx), listOperationalBranches(ctx)]);
+  const [all, doctors, branches] = await Promise.all([listDay(ctx, date), listDoctors(ctx), listOperationalBranches(ctx)]);
+  // Quick filters: what the desk asks most - who is waiting, who is inside, who is done; by doctor.
+  const show = (["waiting", "inside", "done", "booked"] as const).find((x) => x === sp.show);
+  const doctorFilter = sp.doctor && UUID.test(sp.doctor) ? sp.doctor : undefined;
+  const inGroup = (a: (typeof all)[number], g: NonNullable<typeof show>) =>
+    g === "waiting" ? a.status === "CHECKED_IN" : g === "inside" ? a.status === "IN_PROGRESS" : g === "done" ? a.status === "COMPLETED" : a.status === "BOOKED";
+  const ofDoctor = doctorFilter ? all.filter((a) => a.doctorProfileId === doctorFilter) : all;
+  const appointments = show ? ofDoctor.filter((a) => inGroup(a, show)) : ofDoctor;
+  const eta = date === today ? queueEta(all, new Date()) : new Map<string, never>();
+  const here = { date: sp.date, show: sp.show, doctor: sp.doctor };
+  const dayDoctors = [...new Map(all.map((a) => [a.doctorProfileId, a.doctor.membership.user.fullName])).entries()];
   const usableBranches = branches.filter((b) => canUseBranch(ctx, b.id));
   const patientId = sp.patient && UUID.test(sp.patient) ? sp.patient : undefined;
   const walkInPatient = patientId
@@ -57,9 +69,30 @@ export default async function QueuePage({ params, searchParams }: { params: Prom
       />
       {sp.added ? <Alert tone="success">{t("clinic.queue.added")}</Alert> : null}
 
+      {all.length ? (
+        <div className="space-y-3">
+          <FilterChips
+            label={t("clinic.queue.filterStatus")}
+            chips={[
+              { label: t("common.all"), count: ofDoctor.length, href: hrefWith(base, here, { show: undefined }), active: !show },
+              ...(["waiting", "inside", "done", "booked"] as const).map((g) => ({ label: t(`clinic.queue.group.${g}`), count: ofDoctor.filter((a) => inGroup(a, g)).length, href: hrefWith(base, here, { show: g }), active: show === g })),
+            ]}
+          />
+          {dayDoctors.length > 1 ? (
+            <FilterChips
+              label={t("clinic.queue.filterDoctor")}
+              chips={[
+                { label: t("clinic.queue.allDoctors"), href: hrefWith(base, here, { doctor: undefined }), active: !doctorFilter },
+                ...dayDoctors.map(([id, name]) => ({ label: name, count: all.filter((a) => a.doctorProfileId === id && a.status === "CHECKED_IN").length, href: hrefWith(base, here, { doctor: id }), active: doctorFilter === id })),
+              ]}
+            />
+          ) : null}
+        </div>
+      ) : null}
+
       <Card className="overflow-hidden">
         {appointments.length === 0 ? (
-          <EmptyState icon={<CalendarClock className="size-6" />} title={t("clinic.queue.empty")} />
+          <EmptyState icon={<CalendarClock className="size-6" />} title={all.length ? t("clinic.queue.emptyFilter") : t("clinic.queue.empty")} />
         ) : (
           <ul className="divide-y divide-border">
             {appointments.map((a) => (
@@ -78,6 +111,13 @@ export default async function QueuePage({ params, searchParams }: { params: Prom
                     {a.room ? ` · ${a.room.name}` : ""} · {t(`apptSource.${a.source}`)}
                   </p>
                   {a.adminNote ? <p className="text-[12.5px] text-text-3">{a.adminNote}</p> : null}
+                  {eta.get(a.id) ? (
+                    <p className="text-[13px] font-medium text-accent">
+                      {eta.get(a.id)!.waitMinutes === 0
+                        ? t("clinic.queue.etaNext")
+                        : t("clinic.queue.etaLong", { time: format.dateTime(roundUp5(eta.get(a.id)!.at), { timeStyle: "short", timeZone: tz }), minutes: eta.get(a.id)!.waitMinutes, ahead: eta.get(a.id)!.ahead })}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                   <Badge tone={STATUS_TONE[a.status]}>{t(`status.${a.status}`)}</Badge>

@@ -34,6 +34,8 @@ export const PERMISSIONS = [
   "vitals.write",
   "nursing.write",
   "orders.create",
+  /** Enter study results (ECG, echo, ultrasound…) and attach device files for today's patients. */
+  "diagnostics.record",
   "lab.read",
   "lab.process",
   "lab.verify",
@@ -46,9 +48,13 @@ export const PERMISSIONS = [
   /** Print finished visit documents at the desk (only once the bill is settled). */
   "documents.print",
   "prescriptions.write",
+  /** Write the clinic's medicine catalog (names, INN, forms, defaults, photos). */
+  "medicines.manage",
   // Finance
   "billing.read",
   "billing.invoice",
+  /** Put ordered / performed services on the patient's bill as unpaid (catalogue price; no discount, no payment). */
+  "billing.charge",
   "billing.payment",
   "billing.refund",
   /** Free follow-up visit outside the free period (exception with reason; audited). */
@@ -84,6 +90,7 @@ export const SYSTEM_ROLE_KEYS = [
   "accountant",
   "pharmacist",
   "hr_manager",
+  "diagnostics",
 ] as const;
 
 export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
@@ -121,6 +128,7 @@ export const ROLE_TEMPLATES: Record<SystemRoleKey, Permission[]> = {
     "finance.reports",
     "inventory.read",
     "hr.read",
+    "medicines.manage",
   ],
   clinic_admin: [
     ...ADMIN_BASE,
@@ -157,6 +165,8 @@ export const ROLE_TEMPLATES: Record<SystemRoleKey, Permission[]> = {
     "documents.read",
     "documents.upload",
     "prescriptions.write",
+    "medicines.manage",
+    "billing.charge",
     "services.read",
   ],
   head_doctor: [
@@ -170,17 +180,21 @@ export const ROLE_TEMPLATES: Record<SystemRoleKey, Permission[]> = {
     "orders.create",
     "lab.read",
     "documents.read",
+    "medicines.manage",
+    "billing.charge",
     "reports.operational",
     "staff.read",
     "services.read",
     "schedules.read",
   ],
-  nurse: ["patients.read", "appointments.read", "emr.read", "vitals.write", "nursing.write", "documents.read", "queue.manage", "schedules.read", "lab.collect", "billing.invoice", "services.read"],
-  lab_staff: ["patients.read", "lab.read", "lab.process", "lab.verify", "lab.collect", "lab.manage"],
+  nurse: ["patients.read", "appointments.read", "emr.read", "vitals.write", "nursing.write", "documents.read", "queue.manage", "schedules.read", "lab.collect", "billing.invoice", "billing.charge", "services.read"],
+  lab_staff: ["patients.read", "lab.read", "lab.process", "lab.verify", "lab.collect", "lab.manage", "billing.charge"],
   cashier: ["patients.read", "billing.read", "billing.invoice", "billing.payment", "billing.refund", "billing.free_visit", "cash.shift", "services.read"],
   accountant: ["billing.read", "finance.reports", "finance.manage", "reports.operational", "services.read"],
-  pharmacist: ["inventory.read", "inventory.manage", "inventory.dispense"],
+  pharmacist: ["inventory.read", "inventory.manage", "inventory.dispense", "medicines.manage"],
   hr_manager: ["staff.read", "hr.read", "hr.manage", "schedules.read", "schedules.manage"],
+  /** Functional diagnostics room (ECG, echo, ultrasound devices): results and device files only, no notes or diagnoses. */
+  diagnostics: ["patients.read", "appointments.read", "emr.read", "diagnostics.record", "documents.read", "services.read", "billing.charge"],
 };
 
 export function isPermission(v: string): v is Permission {

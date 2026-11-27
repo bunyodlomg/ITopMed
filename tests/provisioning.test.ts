@@ -59,7 +59,7 @@ describe("acceptance 2–5: clinic provisioning and owner account (login + passw
     expect(t.branches).toHaveLength(1);
     expect(t.branches[0]!.isMain).toBe(true);
     expect(t.roles.map((x) => x.key).sort()).toContain("clinic_owner");
-    expect(t.roles).toHaveLength(12);
+    expect(t.roles).toHaveLength(13);
     expect(t.subscription?.status).toBe("TRIALING");
     expect(t.modules.find((m) => m.moduleKey === "core")?.enabled).toBe(true);
     expect(t.modules.find((m) => m.moduleKey === "laboratory")?.enabled).toBe(false); // not in starter plan

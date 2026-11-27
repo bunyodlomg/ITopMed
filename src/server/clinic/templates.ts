@@ -85,6 +85,8 @@ export const templateSchema = z
     kind: z.enum(["NOTE", "DOCUMENT", "DIAGNOSTIC", "PRESCRIPTION"]),
     name: z.string().trim().min(2, "validation.required").max(120, "validation.tooLong"),
     specialty: z.union([z.literal("").transform(() => undefined), z.enum(SPECIALTIES)]).optional(),
+    /** Optional: the service this template belongs to (offered first in visits with it). */
+    serviceId: z.union([z.literal("").transform(() => undefined), z.uuid()]).optional(),
     body: z.string().max(20_000, "validation.tooLong").default(""),
     note: noteContentSchema.optional(),
     /** DIAGNOSTIC: study type, fields (one per line), default conclusion. */
@@ -110,7 +112,7 @@ export const templateSchema = z
         return z.NEVER;
       }
       const content: RxSchemeContent = { items };
-      return { kind: "PRESCRIPTION" as TemplateKind, name: v.name, specialty: v.specialty ?? null, content: JSON.stringify(content) };
+      return { kind: "PRESCRIPTION" as TemplateKind, name: v.name, specialty: v.specialty ?? null, serviceId: v.serviceId ?? null, content: JSON.stringify(content) };
     }
     if (v.kind === "DIAGNOSTIC") {
       const { fields, badLines } = parseFieldLines(v.fieldsText);
@@ -131,14 +133,14 @@ export const templateSchema = z
         return z.NEVER;
       }
       const content: DiagnosticTemplateContent = { study: v.study ?? "OTHER", fields, body: v.body.trim(), ...(v.conclusion.trim() ? { conclusion: v.conclusion.trim() } : {}) };
-      return { kind: "DIAGNOSTIC" as TemplateKind, name: v.name, specialty: v.specialty ?? null, content: JSON.stringify(content) };
+      return { kind: "DIAGNOSTIC" as TemplateKind, name: v.name, specialty: v.specialty ?? null, serviceId: v.serviceId ?? null, content: JSON.stringify(content) };
     }
     const content = v.kind === "NOTE" ? JSON.stringify(v.note ?? {}) : v.body.trim();
     if (v.kind === "NOTE" ? Object.values(v.note ?? {}).every((x) => !x.trim()) : !content) {
       c.addIssue({ code: "custom", message: "validation.required", path: [v.kind === "NOTE" ? "complaints" : "body"] });
       return z.NEVER;
     }
-    return { kind: v.kind as TemplateKind, name: v.name, specialty: v.specialty ?? null, content };
+    return { kind: v.kind as TemplateKind, name: v.name, specialty: v.specialty ?? null, serviceId: v.serviceId ?? null, content };
   });
 
 export function parseNoteContent(content: string): NoteContent {
@@ -168,6 +170,27 @@ export async function listTemplates(ctx: ClinicContext, opts: { kind?: TemplateK
   );
 }
 
+/**
+ * The templates a doctor sees in a visit: those for every specialty or the
+ * doctor's own, and - when a template belongs to a service - only if the visit
+ * has that service or the doctor provides it. The visit's own services first.
+ */
+export async function templatesForVisit(ctx: ClinicContext, visit: { doctorProfileId: string; serviceIds: string[] }) {
+  canUse(ctx);
+  return inClinic(ctx, async (tx) => {
+    const doctor = await tx.doctorProfile.findUnique({ where: { id: visit.doctorProfileId }, select: { specialty: true, services: { select: { serviceId: true } } } });
+    const visitServices = new Set(visit.serviceIds);
+    const offered = new Set([...visitServices, ...(doctor?.services.map((s) => s.serviceId) ?? [])]);
+    const rows = await tx.clinicTemplate.findMany({
+      where: { tenantId: ctx.tenant.id, archivedAt: null, OR: [{ specialty: null }, ...(doctor ? [{ specialty: doctor.specialty }] : [])] },
+      orderBy: [{ kind: "asc" }, { name: "asc" }],
+    });
+    return rows
+      .filter((t) => !t.serviceId || offered.has(t.serviceId))
+      .sort((a, b) => Number(Boolean(b.serviceId && visitServices.has(b.serviceId))) - Number(Boolean(a.serviceId && visitServices.has(a.serviceId))) || Number(Boolean(b.specialty)) - Number(Boolean(a.specialty)));
+  });
+}
+
 export async function getTemplate(ctx: ClinicContext, id: string) {
   canUse(ctx);
   if (!z.uuid().safeParse(id).success) throw new DomainError("errors.notFound");
@@ -180,9 +203,10 @@ export async function saveTemplate(ctx: ClinicContext, id: string | null, raw: u
   requirePermission(ctx, "clinic.settings.manage");
   const input = templateSchema.parse(raw);
   return inClinic(ctx, async (tx) => {
+    if (input.serviceId && !(await tx.service.findFirst({ where: { id: input.serviceId, archivedAt: null }, select: { id: true } }))) throw new DomainError("errors.notFound");
     if (id) {
       if (!z.uuid().safeParse(id).success) throw new DomainError("errors.notFound");
-      const r = await tx.clinicTemplate.updateMany({ where: { id, tenantId: ctx.tenant.id, archivedAt: null }, data: { name: input.name, specialty: input.specialty, content: input.content } });
+      const r = await tx.clinicTemplate.updateMany({ where: { id, tenantId: ctx.tenant.id, archivedAt: null }, data: { name: input.name, specialty: input.specialty, serviceId: input.serviceId, content: input.content } });
       if (r.count !== 1) throw new DomainError("errors.notFound");
       await auditClinic(tx, ctx, meta, { action: "template.updated", entityType: "ClinicTemplate", entityId: id, metadata: { kind: input.kind } });
       return id;

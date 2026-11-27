@@ -63,7 +63,8 @@ async function withinFreePeriod(tx: Tx, patientId: string, serviceId: string, da
 }
 
 export async function applyPriceRules(ctx: ClinicContext, invoiceId: string, opts: { freeVisit?: FreeVisitException } = {}, meta: RequestMeta): Promise<{ applied: { kind: DiscountKind; lines: number }[] }> {
-  requirePermission(ctx, "billing.invoice");
+  // Clinic rules (benefit category, package, free follow-up) apply to charged services too.
+  requirePermission(ctx, "billing.invoice", "billing.charge");
   if (opts.freeVisit) {
     requirePermission(ctx, "billing.free_visit");
     if (opts.freeVisit.reason.trim().length < 3) throw new DomainError("errors.freeVisitReasonRequired");

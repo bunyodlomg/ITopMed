@@ -257,3 +257,14 @@ Navbat bilan:
    - kechikish yoki erta kelishni boshqarish.
 7. ~~Blankada lokatsiya QR kodi~~ — tayyor: Sozlamalar → Blanka → «Joylashuv havolasi (xarita)». Havola kiritilsa, A4 blankalar sarlavhasining o'ng tomonida QR kod chiqadi.
 8. **Oflayn ishlash va server bilan sinxronlash.** Alohida loyihalanadi: to'qnashuvlarni hal qilish qoidalari bilan; localStorage taqlidi qilinmaydi.
+
+## 26.11.2026 — yagona hisob, dori bazasi, xulosa va profil
+- ✅ **Bitta hisob, to'lov kassada.** Shifokor, hamshira, laboratoriya (`billing.charge`) xizmatni bemor hisobiga faqat to'lanmagan holda, katalog narxida qo'shadi (chegirma va pul olish yo'q). Shifokor buyurgan narxli tahlillar avtomatik hisobga tushadi (bugun registraturada to'langani qayta qo'shilmaydi).
+- ✅ **Kassa: to'lov** sahifasi (`/checkout`): qarzi borlar (bugungilar birinchi), har bir xizmat — kim qo'shgan va qachon, jami summa; bitta to'lov: hammasi / aralash (naqd + karta + o'tkazma) / bir qismi, qaytim hisobi; "qarz bilan ketadi" ruxsati; bugungi umumiy chek. Kassir kirganda shu sahifa ochiladi.
+- ✅ **Dori bazasi** (`/medicines`): savdo nomi, xalqaro nomi, shakli, guruhi, odatiy doza/soat/kun, qutining rasmi. Retseptda jonli qidiruv (lotin/kirill, xato yozilsa ham), tanlanganda maydonlar to'ladi; qo'lda yozilgan dori "bazaga saqlash" bilan qo'shiladi. ITop Med o'zidan dori yoki doza qo'ymaydi.
+- ✅ **Tashxis qidiruvi**: klinikaning o'z kodlari va iboralaridan (kod yoki so'z). Bir marta ishlatilgan iboralar faqat yozgan shifokorga chiqadi. Rasmiy MKB-10 fayli hali yuklanmagan.
+- ✅ **Qabul xulosasi** (tayyor A4 shakl): shikoyat, ko'rik, ko'rsatkichlar, tashxis, tekshiruv xulosalari, dorilar jadvali (soatlar qizil), topshiriladigan tahlillar, tavsiyalar, keyingi ko'rik, imzo/muhr. Shifokorning ichki fikri (assessment) va narxlar chiqmaydi; bo'limlarni belgilab chop etish mumkin.
+- ✅ **Bemor profili**: barcha tashxislar jamlanmasi (birinchi/oxirgi sana, necha marta), hozirgi dorilar, tekshiruvlar; "Ko'chirma chop etish" — bo'limlar tanlanadi.
+- ✅ **Navbat**: taxminiy kirish vaqti (registratura, navbat, chipta, TV ekran); holat va shifokor bo'yicha filtrlar.
+- ✅ **Shablon ↔ xizmat**: shablon xizmatga bog'lanadi; qabulda va registratura chop etish ro'yxatida faqat shu shifokorga mos shablonlar chiqadi.
+- ⏳ Qabul xulosasini Telegram orqali PDF/Word qilib yuborish (hozir faqat chop etiladi).

@@ -1,12 +1,15 @@
-import { CheckCircle2, FileText, FlaskConical, Pill, ScanLine, XCircle } from "lucide-react";
+import { CheckCircle2, FileText, FlaskConical, Pill, ScanLine, Send, XCircle } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { patientName } from "@/components/patients";
-import { Alert, ButtonLink, Card, CardHeader, EmptyState, PageHeader, buttonClass } from "@/components/ui/primitives";
+import { Alert, ButtonLink, Card, CardBody, CardHeader, EmptyState, PageHeader, buttonClass } from "@/components/ui/primitives";
+import { Form, SubmitButton } from "@/components/ui/form";
+import { sendPapersAction } from "@/app/desk-actions";
+import { telegramPapersState } from "@/server/papers/send";
 import { requireClinic } from "@/server/auth/guards";
-import { listTemplates } from "@/server/clinic/templates";
+import { templatesForVisit } from "@/server/clinic/templates";
 import { deskPrintables } from "@/server/emr/documents";
 import { DomainError } from "@/server/errors";
 
@@ -24,20 +27,26 @@ export default async function DeskPrintPage({ params }: { params: Promise<{ slug
     if (e instanceof DomainError) notFound();
     throw e;
   });
-  const templates = p.encounterId ? await listTemplates(ctx, { kind: "DOCUMENT" }) : [];
+  // The visit doctor's documents only (specialty / service), not every form of the clinic.
+  const templates = p.encounterId ? (await templatesForVisit(ctx, { doctorProfileId: p.appointment.doctorProfileId, serviceIds: p.appointment.serviceId ? [p.appointment.serviceId] : [] })).filter((x) => x.kind === "DOCUMENT") : [];
   const base = `/c/${ctx.tenant.slug}`;
   const ok = p.gate === "ok";
-  const items: { key: string; href: string; label: string; icon: ReactNode }[] = [
-    ...templates.map((tpl) => ({ key: `t-${tpl.id}`, href: `${base}/encounters/${p.encounterId}/document/${tpl.id}?print=1`, label: tpl.name, icon: <FileText aria-hidden className="size-4" /> })),
-    ...(p.encounterId && p.hasPrescription ? [{ key: "rx", href: `${base}/encounters/${p.encounterId}/prescription`, label: t("clinic.deskPrint.prescription"), icon: <Pill aria-hidden className="size-4" /> }] : []),
+  const tg = await telegramPapersState(ctx, p.appointment.patientId);
+  const items: { key: string; send?: string; href: string; label: string; icon: ReactNode }[] = [
+    // The built-in visit conclusion first: everything the patient needs on one paper.
+    ...(p.encounterId ? [{ key: "summary", href: `${base}/encounters/${p.encounterId}/summary`, label: t("clinic.summary.title"), icon: <FileText aria-hidden className="size-4" /> }] : []),
+    ...templates.map((tpl) => ({ key: `t-${tpl.id}`, send: `doc:${tpl.id}`, href: `${base}/encounters/${p.encounterId}/document/${tpl.id}?print=1`, label: tpl.name, icon: <FileText aria-hidden className="size-4" /> })),
+    ...(p.encounterId && p.hasPrescription ? [{ key: "rx", send: "rx", href: `${base}/encounters/${p.encounterId}/prescription`, label: t("clinic.deskPrint.prescription"), icon: <Pill aria-hidden className="size-4" /> }] : []),
     ...p.labOrders.map((o) => ({
       key: `l-${o.id}`,
+      send: `lab:${o.id}`,
       href: `${base}/lab/${o.id}/print`,
       label: `${t("clinic.deskPrint.labReport")}: ${o.items.map((i) => i.name).join(", ")} · ${o.number}`,
       icon: <FlaskConical aria-hidden className="size-4" />,
     })),
     ...p.diagnostics.map((d) => ({
       key: `d-${d.id}`,
+      send: `study:${d.id}`,
       href: `${base}/diagnostics/${d.id}/print`,
       label: `${d.title} · ${format.dateTime(d.performedAt, { timeStyle: "short", timeZone: ctx.tenant.timezone })}`,
       icon: <ScanLine aria-hidden className="size-4" />,
@@ -89,6 +98,49 @@ export default async function DeskPrintPage({ params }: { params: Promise<{ slug
           </ul>
         )}
       </Card>
+      {tg.enabled && items.some((i) => i.send) ? (
+        <Card>
+          <CardHeader title={t("clinic.deskPrint.tgTitle")} description={t("clinic.deskPrint.tgHint")} />
+          <CardBody>
+            {!ok ? (
+              <p className="text-[14px] text-text-2">{t("clinic.deskPrint.tgLocked")}</p>
+            ) : !tg.ready ? (
+              <Alert tone="accent">{t("clinic.deskPrint.tgNoBot")}</Alert>
+            ) : !tg.linked ? (
+              <Alert tone="accent">{t("clinic.deskPrint.tgNotLinked")}</Alert>
+            ) : (
+              <Form action={sendPapersAction} className="space-y-4">
+                <input type="hidden" name="$slug" value={ctx.tenant.slug} />
+                <input type="hidden" name="appointmentId" value={appointmentId} />
+                <fieldset className="space-y-2">
+                  <legend className="mb-1 text-[14px] font-medium">{t("clinic.deskPrint.tgWhich")}</legend>
+                  {items.filter((i) => i.send).map((i) => (
+                    <label key={i.key} className="flex items-start gap-3 text-[14px]">
+                      <input type="checkbox" name="items" value={i.send} defaultChecked className="mt-0.5 size-4 shrink-0 accent-[var(--accent)]" />
+                      <span className="min-w-0 break-words">{i.label}</span>
+                    </label>
+                  ))}
+                </fieldset>
+                <fieldset className="flex flex-wrap gap-x-6 gap-y-2">
+                  <legend className="mb-1 text-[14px] font-medium">{t("clinic.deskPrint.tgFormat")}</legend>
+                  <label className="flex items-center gap-2 text-[14px]">
+                    <input type="radio" name="format" value="pdf" defaultChecked className="size-4 accent-[var(--accent)]" />
+                    {t("clinic.deskPrint.tgPdf")}
+                  </label>
+                  <label className="flex items-center gap-2 text-[14px]">
+                    <input type="radio" name="format" value="docx" className="size-4 accent-[var(--accent)]" />
+                    {t("clinic.deskPrint.tgWord")}
+                  </label>
+                </fieldset>
+                <SubmitButton pendingLabel={t("clinic.deskPrint.tgSending")}>
+                  <Send aria-hidden className="size-4" />
+                  {t("clinic.deskPrint.tgSend")}
+                </SubmitButton>
+              </Form>
+            )}
+          </CardBody>
+        </Card>
+      ) : null}
       {!p.encounterId && p.gate !== "notFinished" ? <Alert tone="accent">{t("clinic.deskPrint.noRecord")}</Alert> : null}
     </div>
   );

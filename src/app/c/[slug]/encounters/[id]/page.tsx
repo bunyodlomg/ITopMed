@@ -26,7 +26,8 @@ import { LabResultsList } from "@/components/lab";
 import { DentalChart, DentalHistory, ToothForm } from "@/components/dental";
 import { toothAction } from "../../../../dental-actions";
 import { listLabTests } from "@/server/lab/lab";
-import { listTemplates } from "@/server/clinic/templates";
+import { listTemplates, templatesForVisit } from "@/server/clinic/templates";
+import { withAppContext } from "@/server/db";
 import { listServices } from "@/server/clinic/resources";
 import { todayMoney } from "@/server/reception/desk";
 import { moneyFormatter } from "@/components/money";
@@ -44,6 +45,8 @@ import { DIAGNOSTIC_FIELDS, unitKey, type DiagnosticKindKey } from "@/lib/diagno
 import { listDiagnosticResults } from "@/server/emr/diagnostics";
 import { parseTemplateContent } from "@/lib/diagnostic-template";
 import { VisitStepper } from "@/components/visit-stepper";
+import { MedicinePicker } from "@/components/medicine-picker";
+import { DiagnosisPicker } from "@/components/diagnosis-picker";
 
 /**
  * The doctor's visit workspace, in steps (see VisitStepper): complaints and
@@ -65,7 +68,13 @@ export default async function EncounterPage({ params, searchParams }: { params: 
   const open = e.status === "OPEN";
   const canWrite = isOwn && open && ctx.permissions.has("emr.write");
   const canPrescribe = isOwn && open && ctx.permissions.has("prescriptions.write");
-  const templates = await listTemplates(ctx);
+  // Only this doctor's templates: their specialty (or all), and service-bound ones when the visit has / the doctor provides that service.
+  const visitServiceIds = await withAppContext({ tenantId: ctx.tenant.id, userId: ctx.principal.user.id }, async (tx) => {
+    const appt = e.appointmentId ? await tx.appointment.findUnique({ where: { id: e.appointmentId }, select: { serviceId: true } }) : null;
+    const lines = await tx.invoiceLine.findMany({ where: { serviceId: { not: null }, invoice: { patientId: e.patient.id, status: { not: "VOID" }, createdAt: { gte: new Date(+e.startedAt - 12 * 3_600_000) } } }, select: { serviceId: true } });
+    return [...new Set([appt?.serviceId, ...lines.map((l) => l.serviceId)].filter((x): x is string => Boolean(x)))];
+  });
+  const templates = e.doctorProfileId ? await templatesForVisit(ctx, { doctorProfileId: e.doctorProfileId, serviceIds: visitServiceIds }) : await listTemplates(ctx);
   const noteTemplates = templates.filter((x) => x.kind === "NOTE");
   const rxSchemes = templates.filter((x) => x.kind === "PRESCRIPTION").map((x) => ({ ...x, items: parseSchemeContent(x.content).items }));
   const docTemplates = templates.filter((x) => x.kind === "DOCUMENT");
@@ -75,7 +84,9 @@ export default async function EncounterPage({ params, searchParams }: { params: 
   const hasDraft = e.notes.some((n) => n.status === "DRAFT" && n.authorId === ctx.principal.user.id);
   const authors = new Map([[ctx.principal.user.id, ctx.principal.user.fullName]]);
   const s = ctx.tenant.slug;
-  const canBill = ctx.permissions.has("billing.invoice");
+  // billing.charge (doctors): services go on the patient's bill as unpaid; the cashier takes the money.
+  const canBill = ctx.permissions.has("billing.invoice") || ctx.permissions.has("billing.charge");
+  const canTakeMoney = ctx.permissions.has("billing.invoice") && ctx.permissions.has("billing.payment");
   const [priced, money, billing] = await Promise.all([
     canBill ? listServices(ctx).then((l) => l.filter((x) => x.priceMinor > 0n).map((x) => ({ id: x.id, name: x.name, priceMinor: x.priceMinor.toString(), currency: x.currency }))) : Promise.resolve([]),
     moneyFormatter(),
@@ -305,14 +316,7 @@ export default async function EncounterPage({ params, searchParams }: { params: 
                     <Form action={diagnosisAction} className="border-t border-border pt-4">
                       <input type="hidden" name="$slug" value={s} />
                       <input type="hidden" name="encounterId" value={e.id} />
-                      <div className="grid gap-3 sm:grid-cols-[120px_1fr]">
-                        <TextField name="icd10Code" label={t("clinic.visit.icd10")} hint={t("clinic.visit.icd10Optional")} optionalLabel={t("common.optional")} />
-                        <TextAreaField name="description" label={t("clinic.visit.description")} rows={2} />
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <SelectField name="kind" label={t("clinic.visit.kind")} options={(["PRIMARY", "SECONDARY", "COMPLICATION"] as const).map((k) => ({ value: k, label: t(`diagnosisKind.${k}`) }))} />
-                        <TextField name="stage" label={tv("stage")} hint={tv("stageHint")} optionalLabel={t("common.optional")} />
-                      </div>
+                      <DiagnosisPicker slug={s} stageHint={tv("stageHint")} />
                       <SubmitButton variant="secondary">{t("clinic.visit.addDiagnosis")}</SubmitButton>
                     </Form>
                     </div>
@@ -428,6 +432,7 @@ export default async function EncounterPage({ params, searchParams }: { params: 
                           <SelectField name="priority" label={t("clinic.lab.priority")} options={(["ROUTINE", "URGENT"] as const).map((p) => ({ value: p, label: t(`priority.${p}`) }))} />
                           <TextField name="indication" label={t("clinic.lab.indication")} optionalLabel={t("common.optional")} />
                         </div>
+                        {canBill ? <p className="text-[13px] text-text-2">{t("clinic.checkout.labChargeHint")}</p> : null}
                         <SubmitButton variant="secondary">{t("clinic.labOrder.order")}</SubmitButton>
                       </Form>
                     )
@@ -469,11 +474,18 @@ export default async function EncounterPage({ params, searchParams }: { params: 
                   title={t("clinic.rx.title")}
                   description={canPrescribe ? t("clinic.rx.hint") : undefined}
                   action={
-                    canPrintHere && e.prescriptions.some((p) => p.status === "ACTIVE") ? (
-                      <ButtonLink href={`/c/${s}/encounters/${e.id}/prescription`} variant="secondary" size="sm">
-                        {t("clinic.rx.print")}
-                      </ButtonLink>
-                    ) : null
+                    <>
+                      {canPrescribe ? (
+                        <ButtonLink href={`/c/${s}/medicines`} variant="ghost" size="sm">
+                          {t("nav.medicines")}
+                        </ButtonLink>
+                      ) : null}
+                      {canPrintHere && e.prescriptions.some((p) => p.status === "ACTIVE") ? (
+                        <ButtonLink href={`/c/${s}/encounters/${e.id}/prescription`} variant="secondary" size="sm">
+                          {t("clinic.rx.print")}
+                        </ButtonLink>
+                      ) : null}
+                    </>
                   }
                 />
                 <CardBody className="space-y-4">
@@ -520,21 +532,7 @@ export default async function EncounterPage({ params, searchParams }: { params: 
                     <Form action={prescriptionAction} className="border-t border-border pt-4">
                       <input type="hidden" name="$slug" value={s} />
                       <input type="hidden" name="encounterId" value={e.id} />
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <TextField name="drug" label={t("clinic.rx.drug")} hint={t("clinic.rx.drugHint")} required />
-                        <TextField name="inn" label={t("clinic.rx.inn")} hint={t("clinic.rx.innHint")} optionalLabel={t("common.optional")} />
-                        <TextField name="dose" label={t("clinic.rx.dose")} placeholder={t("clinic.rx.dosePlaceholder")} hint={t("clinic.rx.doseHint")} list="rx-dose-suggestions" required />
-                        <datalist id="rx-dose-suggestions">
-                          {DOSE_SUGGESTIONS.map((d) => (
-                            <option key={d} value={`${d} ${t("clinic.rx.tabletWord")}`} />
-                          ))}
-                        </datalist>
-                        <TextField name="frequency" label={t("clinic.rx.frequency")} placeholder={t("clinic.rx.frequencyPlaceholder")} required />
-                        <TextField name="route" label={t("clinic.rx.route")} placeholder={t("clinic.rx.routePlaceholder")} optionalLabel={t("common.optional")} />
-                        <TextField name="durationDays" label={t("clinic.rx.duration")} inputMode="numeric" optionalLabel={t("common.optional")} />
-                        <TextField name="times" label={tv("rxTimes")} hint={tv("rxTimesHint")} placeholder="08:00, 20:00" optionalLabel={t("common.optional")} />
-                      </div>
-                      <TextAreaField name="instructions" label={t("clinic.rx.instructions")} rows={2} optionalLabel={t("common.optional")} />
+                      <MedicinePicker slug={s} canManage={ctx.permissions.has("medicines.manage")} doseSuggestions={[...DOSE_SUGGESTIONS]} tabletWord={t("clinic.rx.tabletWord")} />
                       {allergies.length > 0 ? (
                         <div className="space-y-2 rounded-[var(--radius-control)] border border-border bg-sunken p-3 text-[14px]">
                           <p>{t("clinic.rx.allergyCheck", { list: allergies.map((a) => a.substance).join(", ") })}</p>
@@ -631,8 +629,9 @@ export default async function EncounterPage({ params, searchParams }: { params: 
                         <input type="hidden" name="patientId" value={e.patient.id} />
                         <input type="hidden" name="branchId" value={e.branchId} />
                         {e.appointmentId ? <input type="hidden" name="appointmentId" value={e.appointmentId} /> : null}
-                        <ServicePicker services={priced} withPayment={ctx.permissions.has("billing.payment")} />
-                        <SubmitButton>{t("clinic.desk.addExtra")}</SubmitButton>
+                        <ServicePicker services={priced} withPayment={canTakeMoney} />
+                        {!canTakeMoney ? <p className="text-[13px] text-text-2">{t("clinic.checkout.chargeHint")}</p> : null}
+                        <SubmitButton>{canTakeMoney ? t("clinic.desk.addExtra") : t("clinic.checkout.addToBill")}</SubmitButton>
                       </Form>
                     ) : null}
                   </CardBody>
@@ -641,11 +640,14 @@ export default async function EncounterPage({ params, searchParams }: { params: 
               {deskOnly && !canPrintHere ? (
                 <Alert tone="accent">{t("clinic.deskPrint.doctorHint")}</Alert>
               ) : null}
-              {docTemplates.length > 0 && canPrintHere ? (
+              {canPrintHere ? (
                 <Card id="documents">
                   <CardHeader title={t("templates.printTitle")} description={t("templates.printHint")} />
                   <CardBody>
                     <div className="flex flex-wrap gap-2">
+                      <ButtonLink href={`/c/${s}/encounters/${e.id}/summary`} size="sm">
+                        {t("clinic.summary.title")}
+                      </ButtonLink>
                       {docTemplates.map((d) => (
                         <ButtonLink key={d.id} href={`/c/${s}/encounters/${e.id}/document/${d.id}`} variant="secondary" size="sm">
                           {d.name}

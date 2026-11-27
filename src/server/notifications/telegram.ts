@@ -170,7 +170,7 @@ export async function linkChatByPhone(tenantId: string, phone: string, chatId: b
   });
 }
 
-async function botToken(tx: Tx, tenantId: string): Promise<string | null> {
+export async function botToken(tx: Tx, tenantId: string): Promise<string | null> {
   const bot = await tx.telegramBot.findUnique({ where: { tenantId }, select: { tokenEnc: true, enabled: true } });
   return bot?.enabled ? decryptField(bot.tokenEnc, ctxKey(tenantId)) : null;
 }
@@ -257,5 +257,42 @@ export async function sendTelegram(tx: Tx, tenantId: string, chatId: bigint, tex
     return { delivered: true, transport: "telegram" };
   } catch {
     return { delivered: false, transport: "telegram" };
+  }
+}
+
+/**
+ * Sends a file (a visit paper as PDF / Word, a device's PDF) to a chat with a
+ * short caption. The file name and caption must carry no clinical content;
+ * only the file itself does, and it goes only to the patient's own linked chat.
+ * dev-outbox (SIMULATED) writes the file next to a note in .dev-mailbox/telegram.
+ */
+export async function sendTelegramDocument(token: string | null, chatId: bigint, file: { name: string; bytes: Uint8Array; mime: string }, caption: string): Promise<boolean> {
+  const mode = telegramTransport();
+  if (mode === "none") return false;
+  if (mode === "dev-outbox") {
+    try {
+      const dir = path.join(mailboxRoot(), "telegram");
+      await fs.mkdir(dir, { recursive: true });
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+      await fs.writeFile(path.join(dir, `${stamp}_chat-${chatId}_${file.name}`), file.bytes);
+      await writeOutbox(`chat-${chatId}`, `${caption}
+
+[file] ${file.name} (${file.mime}, ${file.bytes.length} bytes)`);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  if (!token) return false;
+  try {
+    const form = new FormData();
+    form.set("chat_id", chatId.toString());
+    form.set("caption", caption);
+    form.set("document", new Blob([new Uint8Array(file.bytes)], { type: file.mime }), file.name);
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendDocument`, { method: "POST", body: form, signal: AbortSignal.timeout(60_000) });
+    const json = (await res.json()) as { ok: boolean };
+    return json.ok;
+  } catch {
+    return false;
   }
 }

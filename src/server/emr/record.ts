@@ -73,6 +73,9 @@ export async function getMedicalRecord(ctx: ClinicContext, patientId: string, me
       }),
       labOrdersForRecord(tx, patientId),
     ]);
+    // For the patient's profile: medicines and study conclusions over time (no files).
+    const prescriptions = await tx.prescription.findMany({ where: { patientId }, orderBy: { createdAt: "desc" }, take: 200 });
+    const studies = await tx.diagnosticResult.findMany({ where: { patientId, enteredInErrorAt: null }, select: { id: true, kind: true, title: true, conclusion: true, performedAt: true, encounterId: true }, orderBy: { performedAt: "desc" }, take: 100 });
     const authorIds = [...new Set(encounters.flatMap((e) => e.notes.flatMap((n) => [n.authorId, ...n.amendments.map((a) => a.authorId)])))];
     const authors = new Map((await tx.user.findMany({ where: { id: { in: authorIds } }, select: { id: true, fullName: true } })).map((u) => [u.id, u.fullName]));
     const dental = ctx.modules.has("dental") ? await dentalChartForRecord(tx, patientId) : null;
@@ -84,6 +87,8 @@ export async function getMedicalRecord(ctx: ClinicContext, patientId: string, me
       vitals,
       labOrders,
       dental,
+      prescriptions,
+      studies,
       encounters: encounters.map((e) => ({
         ...e,
         notes: e.notes.map((n) => ({

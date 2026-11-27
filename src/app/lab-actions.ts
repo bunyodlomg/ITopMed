@@ -20,7 +20,7 @@ export async function labOrderAction(_: FormState, fd: FormData): Promise<FormSt
   try {
     const r = await createLabOrder(ctx, encounterId, { serviceIds: fd.getAll("serviceIds").map(String), priority: str(fd, "priority") || "ROUTINE", indication: str(fd, "indication") }, await requestMeta());
     revalidatePath(`/c/${slug}/encounters/${encounterId}`);
-    return ok("clinic.labOrder.ordered", { number: r.number });
+    return ok(r.charged ? "clinic.labOrder.orderedCharged" : "clinic.labOrder.ordered", { number: r.number });
   } catch (e) {
     return toFormState(e, fd);
   }

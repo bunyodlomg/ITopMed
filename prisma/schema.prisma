@@ -154,7 +154,7 @@ model Tenant {
   logoDataUrl      String?
   licenseText      String?
   /// Map link (https) printed as a QR code on the letterhead so patients find the clinic.
-  locationUrl     String?
+  locationUrl      String?
   /// Setup chosen by the platform when the clinic was created; applied when the owner first opens the clinic.
   setupPreset      Json?
   /// Network (franchise / group of clinics) this clinic belongs to, if any.
@@ -234,6 +234,7 @@ model Tenant {
   dispensaryPlans      DispensaryPlan[]
   patientReadings      PatientReading[]
   visitCheckIns        VisitCheckIn[]
+  medicines            Medicine[]
 
   @@index([status])
   @@index([networkId])
@@ -669,6 +670,7 @@ model Service {
   labAnalytes         LabAnalyte[]
   labItems            LabOrderItem[]
   servicePackageItems ServicePackageItem[]
+  templates           ClinicTemplate[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -2156,6 +2158,9 @@ model ClinicPolicy {
   /// Visit papers, diagnostic reports and prescriptions are printed only at the reception desk
   /// (documents.print, after the bill is settled); doctors cannot print them.
   printOnlyAtDesk          Boolean   @default(false)
+  /// The desk may send a finished visit's papers (PDF / Word) to the patient's own linked
+  /// Telegram chat, under the same rules as printing (clinic decision, owner turns it on).
+  telegramDocuments        Boolean   @default(false)
   updatedById              String?   @db.Uuid
   updatedAt                DateTime  @updatedAt
 
@@ -2191,6 +2196,8 @@ model Prescription {
   /// Intake times, e.g. "08:00, 20:00" (printed as a schedule).
   times           String?
   instructions    String?
+  /// The clinic's medicine catalog entry the doctor picked (null = typed by hand).
+  medicineId      String?            @db.Uuid
   /// The prescriber confirmed despite a recorded allergy that matches the medicine.
   allergyOverride Boolean            @default(false)
   status          PrescriptionStatus @default(ACTIVE)
@@ -2201,9 +2208,54 @@ model Prescription {
   tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   patient   Patient   @relation(fields: [patientId], references: [id], onDelete: Restrict)
   encounter Encounter @relation(fields: [encounterId], references: [id], onDelete: Restrict)
+  medicine  Medicine? @relation(fields: [medicineId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, patientId])
   @@index([encounterId])
+  @@index([medicineId])
+}
+
+/// The clinic's own medicine catalog ("Dori bazasi"): written by its doctors and
+/// pharmacist, searched when prescribing. Reference data only - no patient data.
+/// ITop Med ships no medicines, doses or interactions of its own.
+model Medicine {
+  id               String    @id @db.Uuid
+  tenantId         String    @db.Uuid
+  /// Trade name as on the box, e.g. "Konkor".
+  name             String
+  /// International non-proprietary name (active substance), e.g. "bisoprolol".
+  inn              String?
+  /// Strength, e.g. "5 mg".
+  strength         String?
+  /// Form key from src/lib/medicines.ts (tablet, capsule, syrup…).
+  form             String
+  manufacturer     String?
+  /// Pharmacological group as the clinic names it, e.g. "Beta-blokator".
+  drugGroup        String?
+  /// Defaults copied into a new prescription (the doctor changes them freely).
+  defaultDose      String?
+  defaultFrequency String?
+  defaultRoute     String?
+  defaultTimes     String?
+  defaultDays      Int?
+  instructions     String?
+  /// Lower-case Latin search text (Cyrillic transliterated) of name, INN and group.
+  searchKey        String
+  /// How many prescriptions used it (most used first in search).
+  usageCount       Int       @default(0)
+  /// Picture of the box or the tablet (JPEG / PNG / WebP, at most 2 MB).
+  photo            Bytes?
+  photoMime        String?
+  photoUpdatedAt   DateTime?
+  createdById      String    @db.Uuid
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  archivedAt       DateTime?
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  prescriptions Prescription[]
+
+  @@index([tenantId, usageCount])
 }
 
 // ───────────────────────────── Telegram ─────────────────────────────────────
@@ -2227,14 +2279,14 @@ model TelegramBot {
 
 /// A patient's Telegram chat, linked by the patient themself (portal → bot deep link).
 model TelegramLink {
-  id        String    @id @db.Uuid
-  tenantId  String    @db.Uuid
-  patientId String    @db.Uuid
-  chatId    BigInt
-  linkedAt  DateTime  @default(now())
-  revokedAt DateTime?
+  id              String    @id @db.Uuid
+  tenantId        String    @db.Uuid
+  patientId       String    @db.Uuid
+  chatId          BigInt
+  linkedAt        DateTime  @default(now())
+  revokedAt       DateTime?
   /// The patient pressed "stop" under a medicine reminder in this chat.
-  medRemindersOff Boolean @default(false)
+  medRemindersOff Boolean   @default(false)
 
   tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   patient Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
@@ -2278,6 +2330,9 @@ model ClinicTemplate {
   name        String
   /// Optional: show only to doctors of this specialty (key from specialties.ts).
   specialty   String?
+  /// Optional: the service this template belongs to (e.g. the echo form for "EhoKG"):
+  /// offered first in visits with that service and to the doctors who provide it.
+  serviceId   String?      @db.Uuid
   /// NOTE: JSON object of note sections. DOCUMENT: text with {{placeholders}}.
   content     String
   createdById String       @db.Uuid
@@ -2285,9 +2340,11 @@ model ClinicTemplate {
   updatedAt   DateTime     @updatedAt
   archivedAt  DateTime?
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  service Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, kind])
+  @@index([serviceId])
 }
 
 /// Phone number Telegram verified for a Telegram user (shared with the central

@@ -251,6 +251,8 @@ export async function prescriptionAction(_: FormState, fd: FormData): Promise<Fo
         times: str(fd, "times"),
         instructions: str(fd, "instructions"),
         allergyOverride: fd.get("allergyOverride") === "on",
+        medicineId: str(fd, "medicineId"),
+        saveToCatalog: fd.get("saveToCatalog") === "on",
       },
       await requestMeta(),
     );

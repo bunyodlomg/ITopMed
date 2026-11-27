@@ -4,7 +4,8 @@ import type { RequestMeta } from "../auth/platform-auth";
 import { auditClinic, inClinic } from "../clinic/context";
 import { getTemplate, parseNoteContent } from "../clinic/templates";
 import { DomainError } from "../errors";
-import { NOTE_SECTIONS, getEncounter, loadEncounter, saveDraft } from "./record";
+import { NOTE_SECTIONS, getEncounter, getMedicalRecord, loadEncounter, saveDraft } from "./record";
+import { printOnlyAtDesk as printOnlyAtDeskFor } from "../clinic/policy";
 import { addDays, instantToLocalDate, localToInstant } from "../scheduling/time";
 import type { Tx } from "../db";
 import { type DeskPrintGate, paidGate, printsAtDesk } from "./print-rules";
@@ -32,7 +33,10 @@ export async function applyNoteTemplate(ctx: ClinicContext, encounterId: string,
  * Everything a printed document may show for one visit. Access follows the
  * medical-record rules (care relationship, audited); printing is audited too.
  */
-export async function documentForVisit(ctx: ClinicContext, encounterId: string, templateId: string, meta: RequestMeta) {
+/** How a paper leaves the clinic: printed, or sent as a file to the patient's Telegram (audited apart). */
+export type PaperVia = { via?: "print" | "telegram" };
+
+export async function documentForVisit(ctx: ClinicContext, encounterId: string, templateId: string, meta: RequestMeta, opts?: PaperVia) {
   const template = await getTemplate(ctx, templateId);
   if (template.kind !== "DOCUMENT") throw new DomainError("errors.notFound");
   const desk = await printsAtDesk(ctx, ctx.permissions.has("emr.read"));
@@ -44,11 +48,41 @@ export async function documentForVisit(ctx: ClinicContext, encounterId: string, 
       : null;
     // Lab tests ordered in this visit and not yet taken: printed highlighted so the patient does not skip them.
     const labsToTake = await labsToTakeIn(tx, e.id);
-    await auditClinic(tx, ctx, meta, { action: desk ? "document.printed_at_desk" : "document.printed", entityType: "Encounter", entityId: e.id, metadata: { templateId } });
+    await auditClinic(tx, ctx, meta, { action: opts?.via === "telegram" ? "document.sent_telegram" : desk ? "document.printed_at_desk" : "document.printed", entityType: "Encounter", entityId: e.id, metadata: { templateId } });
     return { tenant, doctor, labsToTake };
   });
   const note = [...e.notes].reverse().find((n) => n.status === "SIGNED") ?? e.notes[e.notes.length - 1] ?? null;
   return { template, encounter: e, note, ...extra };
+}
+
+/**
+ * The built-in visit conclusion for the patient ("Qabul xulosasi"): complaints,
+ * examination, measurements, diagnoses, the day's study conclusions, medicines
+ * with their hours, tests still to take, advice and the next visit - laid out
+ * like a Word document. No prices and no internal record data (audit,
+ * amendments, other visits). Same rules as any visit paper; audited.
+ */
+export async function visitSummaryForPrint(ctx: ClinicContext, encounterId: string, meta: RequestMeta, opts?: PaperVia) {
+  if (!ctx.permissions.has("emr.read") && !ctx.permissions.has("documents.print")) throw new DomainError("errors.forbidden");
+  const desk = await printsAtDesk(ctx, ctx.permissions.has("emr.read"));
+  const e = desk ? await deskEncounter(ctx, encounterId) : (await getEncounter(ctx, encounterId, meta)).encounter;
+  const tz = ctx.tenant.timezone;
+  const day = instantToLocalDate(e.startedAt, tz);
+  const extra = await inClinic(ctx, async (tx) => {
+    const doctor = e.doctorProfileId
+      ? await tx.doctorProfile.findUnique({ where: { id: e.doctorProfileId }, select: { specialty: true, licenseNumber: true, contactPhone: true, contactTelegram: true, membership: { select: { user: { select: { fullName: true } } } } } })
+      : null;
+    const labsToTake = await labsToTakeIn(tx, e.id);
+    const studies = await tx.diagnosticResult.findMany({
+      where: { patientId: e.patientId, enteredInErrorAt: null, OR: [{ encounterId: e.id }, { performedAt: { gte: localToInstant(day, 0, tz), lt: localToInstant(addDays(day, 1), 0, tz) } }] },
+      select: { id: true, title: true, conclusion: true, performedAt: true },
+      orderBy: { performedAt: "asc" },
+    });
+    await auditClinic(tx, ctx, meta, { action: opts?.via === "telegram" ? "document.sent_telegram" : desk ? "document.printed_at_desk" : "document.printed", entityType: "Encounter", entityId: e.id, metadata: { paper: "visit_summary" } });
+    return { doctor, labsToTake, studies };
+  });
+  const note = [...e.notes].reverse().find((n) => n.status === "SIGNED") ?? e.notes[e.notes.length - 1] ?? null;
+  return { encounter: e, note, ...extra };
 }
 
 /**
@@ -77,7 +111,7 @@ async function labsToTakeIn(tx: Tx, encounterId: string): Promise<string[]> {
  * rules; the desk (or everyone, when the clinic prints only at the desk) once
  * the visit is finished and the bill settled. Printing at the desk is audited.
  */
-export async function prescriptionForPrint(ctx: ClinicContext, encounterId: string, meta: RequestMeta) {
+export async function prescriptionForPrint(ctx: ClinicContext, encounterId: string, meta: RequestMeta, opts?: PaperVia) {
   if (!ctx.permissions.has("emr.read") && !ctx.permissions.has("documents.print")) throw new DomainError("errors.forbidden");
   if (!(await printsAtDesk(ctx, ctx.permissions.has("emr.read")))) {
     const data = await getEncounter(ctx, encounterId, meta);
@@ -85,7 +119,7 @@ export async function prescriptionForPrint(ctx: ClinicContext, encounterId: stri
   }
   const encounter = await deskEncounter(ctx, encounterId);
   const labsToTake = await inClinic(ctx, async (tx) => {
-    await auditClinic(tx, ctx, meta, { action: "prescription.printed_at_desk", entityType: "Encounter", entityId: encounter.id });
+    await auditClinic(tx, ctx, meta, { action: opts?.via === "telegram" ? "prescription.sent_telegram" : "prescription.printed_at_desk", entityType: "Encounter", entityId: encounter.id });
     return labsToTakeIn(tx, encounter.id);
   });
   return { encounter, labsToTake };
@@ -108,7 +142,7 @@ export async function deskPrintables(ctx: ClinicContext, appointmentId: string) 
   return inClinic(ctx, async (tx) => {
     const appt = await tx.appointment.findUnique({
       where: { id: appointmentId },
-      select: { id: true, patientId: true, branchId: true, startsAt: true, status: true, patient: { select: { mrn: true, lastName: true, firstName: true, middleName: true } } },
+      select: { id: true, patientId: true, branchId: true, doctorProfileId: true, serviceId: true, startsAt: true, status: true, patient: { select: { mrn: true, lastName: true, firstName: true, middleName: true } } },
     });
     if (!appt || (ctx.branchIds && !ctx.branchIds.includes(appt.branchId))) throw new DomainError("errors.notFound");
     const enc = await tx.encounter.findFirst({ where: { appointmentId }, select: { id: true, status: true, startedAt: true, _count: { select: { prescriptions: { where: { status: "ACTIVE" } } } } } });
@@ -150,4 +184,22 @@ async function deskEncounter(ctx: ClinicContext, encounterId: string) {
     encounter.vitals = [...encounter.vitals, ...deskVitals].sort((a, b) => +b.measuredAt - +a.measuredAt);
     return encounter;
   });
+}
+
+/**
+ * A printed extract of the patient's record ("ko'chirma"): only for people with
+ * a care relationship (or oversight); never at the desk, and not when the
+ * clinic prints only at the desk unless the person has documents.print. Audited.
+ */
+export async function recordExtractForPrint(ctx: ClinicContext, patientId: string, meta: RequestMeta) {
+  if (!ctx.permissions.has("emr.read")) throw new DomainError("errors.forbidden");
+  if ((await printOnlyAtDeskFor(ctx)) && !ctx.permissions.has("documents.print")) throw new DomainError("errors.deskPrint.atDesk");
+  const record = await getMedicalRecord(ctx, patientId, meta);
+  if (record.access.mode !== "care" && record.access.mode !== "oversight") throw new DomainError("errors.forbidden");
+  const doctor = await inClinic(ctx, async (tx) => {
+    await auditClinic(tx, ctx, meta, { action: "record.extract_printed", entityType: "Patient", entityId: patientId });
+    const me = await tx.doctorProfile.findUnique({ where: { membershipId: ctx.membershipId }, select: { specialty: true } });
+    return { fullName: ctx.principal.user.fullName, specialty: me?.specialty ?? null };
+  });
+  return { ...record, printedBy: doctor };
 }

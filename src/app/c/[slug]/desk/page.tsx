@@ -23,6 +23,7 @@ import { listTemplates } from "@/server/clinic/templates";
 import { todayIn } from "@/server/scheduling/time";
 import { deskCheckInAction, payDebtAction } from "../../../desk-actions";
 import { PAYMENT_METHODS } from "@/server/billing/billing";
+import { queueEta, roundUp5 } from "@/lib/queue-eta";
 
 /**
  * Qabulxona - the reception desk on one screen: find or register the patient,
@@ -81,6 +82,7 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
   const encounters = canPrint && finished.length ? new Map((await withAppContext(db, (tx) => tx.encounter.findMany({ where: { appointmentId: { in: finished } }, select: { id: true, appointmentId: true } }))).map((e) => [e.appointmentId!, e.id])) : new Map<string, string>();
   // Header figures: today's queue, who is still waiting (checked in, not yet called), money.
   const waiting = queue.filter((a) => a.status === "CHECKED_IN" && !a.calledAt);
+  const eta = queueEta(queue, new Date());
   const next = waiting[0];
   let paidSum = 0n;
   for (const m of paidToday.values()) if (m.currency === ctx.tenant.currency) paidSum += m.paidMinor;
@@ -101,7 +103,7 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
         <Stat label={t("clinic.desk.statDebt")} value={money(debtSum, ctx.tenant.currency)} />
       </section>
 
-      {sp.paid && /^[d ]{1,20}$/.test(sp.paid) ? <Alert tone="success">{t("clinic.desk.debtPaid", { paid: sp.paid })}</Alert> : null}
+      {sp.paid && /^[\d ]{1,20}$/.test(sp.paid) ? <Alert tone="success">{t("clinic.desk.debtPaid", { paid: sp.paid })}</Alert> : null}
 
       {done ? (
         <Card className="border-2 border-accent-solid">
@@ -266,6 +268,7 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
             <>
               <p className="mt-2 text-[56px] font-extrabold leading-none tracking-[-0.04em] tabular-nums">{next.queueNumber ?? "—"}</p>
               <p className="mt-3 truncate text-[16px] font-bold">{patientName(next.patient)}</p>
+              {waiting.length > 1 ? <p className="text-[13px] opacity-80">{t("clinic.queue.waitingMore", { count: waiting.length - 1 })}</p> : null}
               <p className="truncate text-[13px] opacity-80">
                 {next.doctor.membership.user.fullName}
                 {next.room ? ` · ${next.room.name}` : ""}
@@ -296,8 +299,18 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
                       <div className="mt-1 flex flex-wrap items-center gap-1.5">
                         <Badge tone={STATUS_TONE[a.status]}>{t(`status.${a.status}`)}</Badge>
                         {a.calledAt && a.status === "CHECKED_IN" ? <Badge tone="accent">{t("clinic.call.calledBadge")}</Badge> : null}
+                        {eta.get(a.id) && !a.calledAt ? (
+                          <span className="text-[12.5px] font-medium text-text-2">
+                            {t("clinic.queue.etaShort", { time: format.dateTime(roundUp5(eta.get(a.id)!.at), { timeStyle: "short", timeZone: tz }), ahead: eta.get(a.id)!.ahead })}
+                          </span>
+                        ) : null}
                         {m ? <Badge tone={m.paidMinor >= m.totalMinor ? "success" : m.paidMinor === 0n ? "danger" : "warning"}>{money(m.paidMinor, m.currency)} / {money(m.totalMinor, m.currency)}</Badge> : null}
                         {owes > 0n ? <Badge tone="danger">{t("clinic.desk.debtShort", { amount: money(owes, ctx.tenant.currency) })}</Badge> : null}
+                        {owes > 0n && canPay && ctx.permissions.has("billing.read") ? (
+                          <Link href={`${base}/checkout?patient=${a.patientId}`} className="text-[13px] font-semibold text-accent hover:underline">
+                            {t("clinic.checkout.openCheckout")}
+                          </Link>
+                        ) : null}
                       </div>
                       {owes > 0n && canPay ? (
                         <details className="mt-2">
@@ -305,7 +318,7 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
                           <Form action={payDebtAction} className="mt-2 space-y-2">
                             <input type="hidden" name="$slug" value={ctx.tenant.slug} />
                             <input type="hidden" name="patientId" value={a.patientId} />
-                            <TextField name="amount" label={t("clinic.desk.debtAmount")} hint={t("clinic.desk.debtAmountHint")} inputMode="decimal" placeholder={minorToDecimalString(owes, ctx.tenant.currency).replace(/.00$/, "")} />
+                            <TextField name="amount" label={t("clinic.desk.debtAmount")} hint={t("clinic.desk.debtAmountHint")} inputMode="decimal" placeholder={minorToDecimalString(owes, ctx.tenant.currency).replace(/\.00$/, "")} />
                             <SelectField name="method" label={t("clinic.desk.method")} defaultValue="CASH" options={PAYMENT_METHODS.map((pm) => ({ value: pm, label: t(`paymentMethod.${pm}` as never) }))} />
                             <SubmitButton variant="secondary">{t("clinic.desk.takeDebtSubmit")}</SubmitButton>
                           </Form>

@@ -4,7 +4,7 @@ import type { InvoiceStatus } from "@/generated/prisma/client";
 import { minorToDecimalString, parseMoney } from "@/lib/money";
 import type { ClinicContext } from "../auth/clinic-auth";
 import type { RequestMeta } from "../auth/platform-auth";
-import { addInvoiceLine, createInvoice, issueInvoice, PAYMENT_METHODS, recordPayment } from "../billing/billing";
+import { addInvoiceLine, approveDebt, createInvoice, issueInvoice, PAYMENT_METHODS, recordPayment } from "../billing/billing";
 import { openShift } from "../billing/cash";
 import { applyPriceRules } from "../billing/rules";
 import { inClinic, requirePermission } from "../clinic/context";
@@ -191,64 +191,283 @@ export const extraServicesSchema = billingSchema.extend({ patientId: uuid, branc
  * Extra services during or after the visit (e.g. the doctor decides on an echo
  * or ECG): a separate invoice, paid now or left as the patient's debt. If the
  * visit has no invoice yet, this one is attached to it.
+ *
+ * Without billing.invoice, billing.charge (doctors, nurses, lab) may only put
+ * services on the bill as unpaid, at the catalogue price: the patient pays all
+ * of it at the cashier before leaving (see patientAccount / payPatientDebt).
  */
 export async function addExtraServices(ctx: ClinicContext, raw: Record<string, unknown>, meta: RequestMeta): Promise<string> {
-  requirePermission(ctx, "billing.invoice");
-  const input = extraServicesSchema.parse(raw);
+  requirePermission(ctx, "billing.invoice", "billing.charge");
+  const parsed = extraServicesSchema.parse(raw);
+  const chargeOnly = !ctx.permissions.has("billing.invoice");
+  const input = chargeOnly ? { ...parsed, payMode: "debt" as const, freeVisit: false } : parsed;
   if (input.payMode !== "debt") requirePermission(ctx, "billing.payment");
   const services = await loadPricedServices(ctx, input.serviceIds);
   if (!services.length) throw new DomainError("errors.noServicesChosen");
+  await assertActivePatient(ctx, input.patientId);
   const attach = input.appointmentId
     ? await inClinic(ctx, (tx) => tx.invoice.findUnique({ where: { appointmentId: input.appointmentId! }, select: { id: true } })).then((x) => (x ? undefined : input.appointmentId))
     : undefined;
   return (await billServices(ctx, { patientId: input.patientId, branchId: input.branchId, appointmentId: attach, billing: input, services }, meta))!;
 }
 
+async function assertActivePatient(ctx: ClinicContext, patientId: string) {
+  const p = await inClinic(ctx, (tx) => tx.patient.findUnique({ where: { id: patientId }, select: { status: true } }));
+  if (!p || p.status !== "ACTIVE") throw new DomainError("errors.notFound");
+}
+
+/**
+ * Services the patient already has on a bill today (any open or paid invoice),
+ * so an order does not charge twice what the desk billed at check-in.
+ */
+export async function servicesBilledToday(ctx: ClinicContext, patientId: string): Promise<Set<string>> {
+  requirePermission(ctx, "billing.invoice", "billing.charge", "billing.read");
+  const day = todayIn(ctx.tenant.timezone);
+  const lines = await inClinic(ctx, (tx) =>
+    tx.invoiceLine.findMany({
+      where: { invoice: { patientId, status: { in: ["DRAFT", "ISSUED", "PARTIALLY_PAID", "PAID"] }, createdAt: { gte: localToInstant(day, 0, ctx.tenant.timezone) } }, serviceId: { not: null } },
+      select: { serviceId: true },
+    }),
+  );
+  return new Set(lines.map((l) => l.serviceId!));
+}
+
+/**
+ * Puts ordered services (e.g. the lab tests a doctor orders) on the patient's
+ * bill as unpaid: skips services without a price and those already billed
+ * today. Returns the invoice id, or null when nothing was left to charge.
+ */
+export async function chargeOrderedServices(ctx: ClinicContext, a: { patientId: string; branchId: string; serviceIds: string[] }, meta: RequestMeta): Promise<string | null> {
+  if (!ctx.permissions.has("billing.charge") && !ctx.permissions.has("billing.invoice")) return null;
+  const billed = await servicesBilledToday(ctx, a.patientId);
+  const ids = [...new Set(a.serviceIds)].filter((id) => !billed.has(id));
+  if (!ids.length) return null;
+  const priced = await inClinic(ctx, (tx) => tx.service.findMany({ where: { id: { in: ids }, archivedAt: null, priceMinor: { gt: 0n } }, select: { id: true } }));
+  if (!priced.length) return null;
+  const keep = new Set(priced.map((p) => p.id));
+  return addExtraServices(ctx, { patientId: a.patientId, branchId: a.branchId, serviceIds: ids.filter((id) => keep.has(id)), payMode: "debt" }, meta);
+}
+
 export const payDebtSchema = z.object({
   patientId: uuid,
+  /** "all" (default) / "partial" (amount) / "split" (several methods at once, e.g. cash + card). */
+  payMode: z.enum(["all", "partial", "split"]).default("all"),
   amount: z.string().trim().default(""),
   method: z.enum(PAYMENT_METHODS).default("CASH"),
+  split: z.partialRecord(z.enum(PAYMENT_METHODS), z.string().trim().max(30)).default({}),
 });
 
 /**
- * Takes the patient's debt in one step at the desk: the amount (default: all of
- * it) is spread over the open invoices, oldest first, as ordinary payments -
- * so receipts, cash shift and audit work as for any payment. Cash opens the
- * cashier's shift if needed. Returns what was paid and what is still owed.
+ * Takes the patient's debt in one step at the cashier: the amount (default: all
+ * of it) is spread over the open invoices, oldest first, as ordinary payments -
+ * so receipts, cash shift and audit work as for any payment. A split payment
+ * (e.g. 200 000 cash + 100 000 card) is spread method by method. Cash opens
+ * the cashier's shift if needed. Returns what was paid and what is still owed.
  */
 export async function payPatientDebt(ctx: ClinicContext, raw: Record<string, unknown>, meta: RequestMeta): Promise<{ paidMinor: bigint; leftMinor: bigint; invoiceIds: string[] }> {
   requirePermission(ctx, "billing.payment");
   const input = payDebtSchema.parse(raw);
-  const open = await inClinic(ctx, (tx) =>
-    tx.invoice.findMany({
-      where: { patientId: input.patientId, status: { in: ["ISSUED", "PARTIALLY_PAID"] }, ...(ctx.branchIds ? { branchId: { in: ctx.branchIds } } : {}) },
-      select: { id: true, branchId: true, totalMinor: true, paidMinor: true, currency: true },
-      orderBy: { issuedAt: "asc" },
-    }),
-  );
+  const payMode = input.payMode === "all" && input.amount ? "partial" : input.payMode;
+  const open = await openInvoices(ctx, input.patientId);
   if (!open.length) throw new DomainError("errors.noDebt");
   const currency = open[0]!.currency;
   if (open.some((i) => i.currency !== currency)) throw new DomainError("errors.currencyMismatch");
   const owed = open.reduce((s, i) => s + (i.totalMinor - i.paidMinor), 0n);
-  const amount = input.amount ? parseMoney(input.amount, currency) : owed;
-  if (amount === null || amount <= 0n) throw new DomainError("errors.invalidAmount");
+
+  let parts: { method: PaymentMethodKey; minor: bigint }[];
+  if (payMode === "split") parts = splitParts(billingSchema.parse({ split: input.split }), currency);
+  else {
+    const amount = payMode === "partial" ? parseMoney(input.amount, currency) : owed;
+    if (amount === null || amount <= 0n) throw new DomainError("errors.invalidAmount");
+    parts = [{ method: input.method, minor: amount }];
+  }
+  const amount = parts.reduce((s, p) => s + p.minor, 0n);
   if (amount > owed) throw new DomainError("errors.overpayment");
 
-  let left = amount;
-  const paidOn: string[] = [];
-  for (const inv of open) {
-    if (left === 0n) break;
-    const part = inv.totalMinor - inv.paidMinor < left ? inv.totalMinor - inv.paidMinor : left;
-    if (part <= 0n) continue;
-    if (input.method === "CASH" && ctx.permissions.has("cash.shift")) {
-      const shift = await inClinic(ctx, (tx) => tx.cashShift.findFirst({ where: { branchId: inv.branchId, cashierId: ctx.principal.user.id, status: "OPEN" }, select: { id: true } }));
-      if (!shift) await openShift(ctx, { branchId: inv.branchId, openingFloat: "0", currency }, meta);
+  const rest = new Map(open.map((i) => [i.id, i.totalMinor - i.paidMinor]));
+  const paidOn = new Set<string>();
+  for (const p of parts) {
+    let left = p.minor;
+    for (const inv of open) {
+      if (left === 0n) break;
+      const part = minBig(rest.get(inv.id)!, left);
+      if (part <= 0n) continue;
+      if (p.method === "CASH" && ctx.permissions.has("cash.shift")) {
+        const shift = await inClinic(ctx, (tx) => tx.cashShift.findFirst({ where: { branchId: inv.branchId, cashierId: ctx.principal.user.id, status: "OPEN" }, select: { id: true } }));
+        if (!shift) await openShift(ctx, { branchId: inv.branchId, openingFloat: "0", currency }, meta);
+      }
+      await recordPayment(ctx, inv.id, { amount: minorToDecimalString(part, currency), method: p.method, idempotencyKey: uuidv7() }, meta);
+      rest.set(inv.id, rest.get(inv.id)! - part);
+      paidOn.add(inv.id);
+      left -= part;
     }
-    await recordPayment(ctx, inv.id, { amount: minorToDecimalString(part, currency), method: input.method, idempotencyKey: uuidv7() }, meta);
-    paidOn.push(inv.id);
-    left -= part;
   }
-  return { paidMinor: amount, leftMinor: owed - amount, invoiceIds: paidOn };
+  return { paidMinor: amount, leftMinor: owed - amount, invoiceIds: [...paidOn] };
+}
+
+function openInvoices(ctx: ClinicContext, patientId: string) {
+  return inClinic(ctx, (tx) =>
+    tx.invoice.findMany({
+      where: { patientId, status: { in: ["ISSUED", "PARTIALLY_PAID"] }, ...(ctx.branchIds ? { branchId: { in: ctx.branchIds } } : {}) },
+      select: { id: true, branchId: true, totalMinor: true, paidMinor: true, currency: true, debtApprovedAt: true },
+      orderBy: [{ issuedAt: "asc" }, { id: "asc" }],
+    }),
+  );
+}
+
+/**
+ * The cashier lets the patient leave owing the rest: every open invoice is
+ * marked "debt approved" (audited per invoice), which also opens the desk's
+ * printing of the visit papers. Returns how many invoices were newly approved.
+ */
+export async function approvePatientDebt(ctx: ClinicContext, patientId: string, meta: RequestMeta): Promise<number> {
+  requirePermission(ctx, "billing.payment");
+  if (!uuid.safeParse(patientId).success) throw new DomainError("errors.notFound");
+  const open = await openInvoices(ctx, patientId);
+  if (!open.length) throw new DomainError("errors.noDebt");
+  const fresh = open.filter((i) => !i.debtApprovedAt);
+  for (const inv of fresh) await approveDebt(ctx, inv.id, meta);
+  return fresh.length;
+}
+
+export interface AccountLine {
+  invoiceId: string;
+  invoiceNumber: string | null;
+  description: string;
+  quantity: number;
+  totalMinor: bigint;
+  discountMinor: bigint;
+  /** Who put it on the bill (desk, doctor, lab…), null if unknown. */
+  addedBy: string | null;
+  addedAt: Date;
+}
+
+export interface PatientAccount {
+  patient: { id: string; mrn: string; lastName: string; firstName: string; middleName: string | null; phone: string | null };
+  currency: string;
+  /** Unpaid invoices, oldest first, with their lines. */
+  open: { id: string; number: string | null; issuedAt: Date | null; totalMinor: bigint; paidMinor: bigint; debtApproved: boolean; lines: AccountLine[] }[];
+  owedMinor: bigint;
+  /** Today's payments of this patient (for the combined receipt). */
+  paidToday: { invoiceId: string; invoiceNumber: string | null; method: string; amountMinor: bigint; receivedAt: Date }[];
+  /** The services of the invoices paid on today. */
+  paidTodayLines: AccountLine[];
+}
+
+/**
+ * The cashier's view of one patient: every unpaid service, whoever added it
+ * (desk, doctor, nurse, lab), the total owed, and what was paid today.
+ * Money and service names only - no clinical content.
+ */
+export async function patientAccount(ctx: ClinicContext, patientId: string): Promise<PatientAccount | null> {
+  requirePermission(ctx, "billing.read");
+  if (!uuid.safeParse(patientId).success) return null;
+  const tz = ctx.tenant.timezone;
+  const from = localToInstant(todayIn(tz), 0, tz);
+  const branch = ctx.branchIds ? { branchId: { in: ctx.branchIds } } : {};
+  return inClinic(ctx, async (tx) => {
+    const patient = await tx.patient.findUnique({ where: { id: patientId }, select: { id: true, mrn: true, lastName: true, firstName: true, middleName: true, phone: true, status: true } });
+    if (!patient || patient.status !== "ACTIVE") return null;
+    const lineSelect = { id: true, description: true, quantity: true, totalMinor: true, discountMinor: true, createdById: true, createdAt: true } as const;
+    const open = await tx.invoice.findMany({
+      where: { patientId, status: { in: ["ISSUED", "PARTIALLY_PAID"] }, ...branch },
+      select: { id: true, number: true, issuedAt: true, totalMinor: true, paidMinor: true, currency: true, createdById: true, debtApprovedAt: true, lines: { select: lineSelect, orderBy: { createdAt: "asc" } } },
+      orderBy: [{ issuedAt: "asc" }, { id: "asc" }],
+    });
+    const pays = await tx.payment.findMany({
+      where: { invoice: { patientId, ...branch }, receivedAt: { gte: from } },
+      select: { invoiceId: true, method: true, amountMinor: true, refundedMinor: true, receivedAt: true, invoice: { select: { number: true } } },
+      orderBy: { receivedAt: "asc" },
+    });
+    const paidIds = [...new Set(pays.map((p) => p.invoiceId))];
+    const paidInvoices = paidIds.length
+      ? await tx.invoice.findMany({ where: { id: { in: paidIds } }, select: { id: true, number: true, createdById: true, lines: { select: lineSelect, orderBy: { createdAt: "asc" } } }, orderBy: [{ issuedAt: "asc" }, { id: "asc" }] })
+      : [];
+    const userIds = [...new Set([...open, ...paidInvoices].flatMap((i) => [i.createdById, ...i.lines.map((l) => l.createdById)]).filter((x): x is string => Boolean(x)))];
+    // Co-members only (RLS on User): the names of the staff who added the services.
+    const users = userIds.length ? await tx.user.findMany({ where: { id: { in: userIds } }, select: { id: true, fullName: true } }) : [];
+    const name = new Map(users.map((u) => [u.id, u.fullName]));
+    const toLine = (inv: { id: string; number: string | null; createdById: string }, l: { description: string; quantity: number; totalMinor: bigint; discountMinor: bigint; createdById: string | null; createdAt: Date }): AccountLine => ({
+      invoiceId: inv.id,
+      invoiceNumber: inv.number,
+      description: l.description,
+      quantity: l.quantity,
+      totalMinor: l.totalMinor,
+      discountMinor: l.discountMinor,
+      addedBy: name.get(l.createdById ?? inv.createdById) ?? null,
+      addedAt: l.createdAt,
+    });
+    return {
+      patient: { id: patient.id, mrn: patient.mrn, lastName: patient.lastName, firstName: patient.firstName, middleName: patient.middleName, phone: patient.phone },
+      currency: open[0]?.currency ?? ctx.tenant.currency,
+      open: open.map((i) => ({ id: i.id, number: i.number, issuedAt: i.issuedAt, totalMinor: i.totalMinor, paidMinor: i.paidMinor, debtApproved: Boolean(i.debtApprovedAt), lines: i.lines.map((l) => toLine(i, l)) })),
+      owedMinor: open.reduce((s, i) => s + (i.totalMinor - i.paidMinor), 0n),
+      paidToday: pays.map((p) => ({ invoiceId: p.invoiceId, invoiceNumber: p.invoice.number, method: p.method, amountMinor: p.amountMinor - p.refundedMinor, receivedAt: p.receivedAt })),
+      paidTodayLines: paidInvoices.flatMap((i) => i.lines.map((l) => toLine(i, l))),
+    };
+  });
+}
+
+export interface Debtor {
+  patient: { id: string; mrn: string; lastName: string; firstName: string; middleName: string | null };
+  owedMinor: bigint;
+  currency: string;
+  /** Number of unpaid services. */
+  lines: number;
+  /** Newest unpaid bill. */
+  lastAt: Date;
+  /** Billed today: the patient is probably still in the building. */
+  today: boolean;
+  /** The cashier already let the patient leave owing (every open bill approved). */
+  approved: boolean;
+}
+
+/**
+ * Patients who owe money, for the cashier: today's first (they are still in
+ * the building), then older debts. `q` filters by name, card number or phone.
+ */
+export async function listDebtors(ctx: ClinicContext, opts: { q?: string; take?: number } = {}): Promise<Debtor[]> {
+  requirePermission(ctx, "billing.read");
+  const tz = ctx.tenant.timezone;
+  const from = localToInstant(todayIn(tz), 0, tz);
+  const q = opts.q?.trim().slice(0, 100);
+  const like = { contains: q, mode: "insensitive" as const };
+  const rows = await inClinic(ctx, (tx) =>
+    tx.invoice.findMany({
+      where: {
+        status: { in: ["ISSUED", "PARTIALLY_PAID"] },
+        ...(ctx.branchIds ? { branchId: { in: ctx.branchIds } } : {}),
+        ...(q ? { patient: { OR: [{ lastName: like }, { firstName: like }, { mrn: like }, { phone: like }] } } : {}),
+      },
+      select: {
+        totalMinor: true,
+        paidMinor: true,
+        currency: true,
+        issuedAt: true,
+        createdAt: true,
+        debtApprovedAt: true,
+        _count: { select: { lines: true } },
+        patient: { select: { id: true, mrn: true, lastName: true, firstName: true, middleName: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 2000,
+    }),
+  );
+  const by = new Map<string, Debtor>();
+  for (const r of rows) {
+    const at = r.issuedAt ?? r.createdAt;
+    const d = by.get(r.patient.id) ?? { patient: r.patient, owedMinor: 0n, currency: r.currency, lines: 0, lastAt: at, today: false, approved: true };
+    d.owedMinor += r.totalMinor - r.paidMinor;
+    d.lines += r._count.lines;
+    if (at > d.lastAt) d.lastAt = at;
+    d.today ||= at >= from;
+    d.approved &&= Boolean(r.debtApprovedAt);
+    by.set(r.patient.id, d);
+  }
+  return [...by.values()]
+    .filter((d) => d.owedMinor > 0n)
+    .sort((a, b) => Number(b.today) - Number(a.today) || Number(a.approved) - Number(b.approved) || +b.lastAt - +a.lastAt)
+    .slice(0, opts.take ?? 200);
 }
 
 export interface MoneyStatus {
@@ -267,7 +486,8 @@ const OPEN: InvoiceStatus[] = ["ISSUED", "PARTIALLY_PAID", "PAID"];
 export async function todayMoney(ctx: ClinicContext, patientIds: string[]): Promise<{ today: Map<string, MoneyStatus>; debt: Map<string, bigint> }> {
   const today = new Map<string, MoneyStatus>();
   const debt = new Map<string, bigint>();
-  if (!ctx.permissions.has("billing.read") || !patientIds.length) return { today, debt };
+  // billing.charge: the doctor who adds services sees what is on today's bill and what is owed.
+  if ((!ctx.permissions.has("billing.read") && !ctx.permissions.has("billing.charge")) || !patientIds.length) return { today, debt };
   const day = todayIn(ctx.tenant.timezone);
   const from = localToInstant(day, 0, ctx.tenant.timezone);
   const to = localToInstant(addDays(day, 1), 0, ctx.tenant.timezone);

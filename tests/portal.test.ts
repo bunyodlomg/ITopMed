@@ -193,13 +193,15 @@ describe("patient portal: what the patient sees and may do", () => {
     await expect(c.query(`UPDATE "LabOrder" SET "releasedAt" = NULL WHERE id = $1`, [orderId])).rejects.toThrow(/final/);
     await c.end();
 
+    // The ordered blood test went on the patient's bill (ordered = owed).
+    expect((await listMyInvoices(p)).map((i) => [i.status, i.totalMinor, i.lines[0]!.description])).toEqual([["ISSUED", 5_000_000n, "Synthetic blood test"]]);
     // Draft invoices are invisible; issued ones are shown with their lines.
     const draft = await createInvoice(s.cashier.ctx, { patientId: pid, branchId: s.branch.id }, META);
-    expect(await listMyInvoices(p)).toEqual([]);
+    expect(await listMyInvoices(p)).toHaveLength(1);
     const svc = await createService(s.a.ctx, { code: `PX${n}`, name: "Synthetic service", kind: "OTHER", durationMinutes: 10, price: "70000", currency: "UZS" }, META);
     await addInvoiceLine(s.cashier.ctx, draft, { serviceId: svc, quantity: 1 }, META);
     await issueInvoice(s.cashier.ctx, draft, META);
-    const invoices = await listMyInvoices(p);
+    const invoices = (await listMyInvoices(p)).filter((i) => i.id === draft);
     expect(invoices.map((i) => [i.status, i.totalMinor, i.lines.length])).toEqual([["ISSUED", 7_000_000n, 1]]);
 
     // Appointments: cancel allowed only for own BOOKED visits more than 2 hours ahead.

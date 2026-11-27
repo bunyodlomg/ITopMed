@@ -1,5 +1,5 @@
 import { requireClinic } from "@/server/auth/guards";
-import { addDiagnosticFile } from "@/server/emr/diagnostics";
+import { addDiagnosticFile, canRecordStudies } from "@/server/emr/diagnostics";
 import { env } from "@/server/env";
 import { DomainError } from "@/server/errors";
 import { isSameOriginRequest, requestMeta } from "@/server/http";
@@ -12,7 +12,8 @@ import { isSameOriginRequest, requestMeta } from "@/server/http";
 export async function POST(request: Request, { params }: { params: Promise<{ slug: string; id: string }> }) {
   if (!isSameOriginRequest(request, env().APP_URL)) return new Response("Forbidden", { status: 403 });
   const { slug, id } = await params;
-  const ctx = await requireClinic(slug, "emr.write");
+  const ctx = await requireClinic(slug);
+  if (!canRecordStudies(ctx)) return new Response("Not found", { status: 404 });
   const form = await request.formData();
   const back = String(form.get("$back") ?? "");
   const target = back.startsWith(`/c/${ctx.tenant.slug}/`) ? back : `/c/${ctx.tenant.slug}`;
