@@ -113,7 +113,9 @@ async function main() {
   } else if (task === "clinic-admin") {
     const [slug, opsFile] = process.argv.slice(3);
     if (!slug || !opsFile) throw new Error("Usage: tasks.mjs clinic-admin <slug> <ops.json>");
-    for (const r of await runClinicAdmin(slug, JSON.parse(fs.readFileSync(opsFile, "utf8")))) {
+    // "-": the list comes on stdin (the root-only file is opened by the wrapper, not by this user).
+    const text = opsFile === "-" ? fs.readFileSync(0, "utf8") : fs.readFileSync(opsFile, "utf8");
+    for (const r of await runClinicAdmin(slug, JSON.parse(text))) {
       console.log(`✓ ${r.op}: ${r.detail}${r.password ? `  — birinchi parol / first password: ${r.password}` : ""}`);
     }
   } else if (task === "check-db") {

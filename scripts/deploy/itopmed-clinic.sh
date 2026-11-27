@@ -14,7 +14,7 @@ if [ "${2:-}" = "--admin" ]; then
   OPS="${3:?ops.json}"
   [ -f "$OPS" ] || { echo "No such file: $OPS" >&2; exit 1; }
   # Read here (root may keep the file private); the task reads it from stdin.
-  exec runuser -p -u itopmed -- /opt/itopmed/node/bin/node tasks.mjs clinic-admin "$SPEC" /dev/stdin < "$OPS"
+  exec runuser -p -u itopmed -- /opt/itopmed/node/bin/node tasks.mjs clinic-admin "$SPEC" - < "$OPS"
 fi
 # Existing clinic: add new templates / empty letterhead fields from the spec (nothing is overwritten).
 if [ "${2:-}" = "--update" ]; then
