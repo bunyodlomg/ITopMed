@@ -14,6 +14,7 @@ import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import pg from "pg";
 import { chromium, type Browser, type Page } from "playwright-core";
 
 const args = process.argv.slice(2);
@@ -414,6 +415,72 @@ async function main() {
   });
 
   // ---------- Test-patient removal (last: it empties the demo) ----------
+  // ---------- Next week: a returning patient ----------
+  // LOCAL demo database only: today's visits are moved one week back, as if a week had passed.
+  await step(owner, "a week later", async () => {
+    const db = new pg.Client({ connectionString: process.env.MIGRATION_DATABASE_URL });
+    await db.connect();
+    await db.query(
+      `UPDATE "Appointment" SET "startsAt" = "startsAt" - interval '7 days', "endsAt" = "endsAt" - interval '7 days', "queueNumber" = NULL
+        WHERE "tenantId" = (SELECT id FROM "Tenant" WHERE slug = $1)`,
+      [SLUG],
+    );
+    await db.end();
+  });
+  await step(desk, "returning patient: search by surname + year", async () => {
+    await desk.goto(`${C}/desk?q=${encodeURIComponent("Aliyev 1962")}`);
+    await shot(desk, "40-desk-search-year");
+    await desk.locator("main a").filter({ hasText: /Tanlash|Tanla/ }).first().click();
+    await desk.waitForURL(/patient=/);
+    await shot(desk, "41-desk-returning");
+    for (const sv of [/^\s*EKG/]) await desk.locator("label").filter({ hasText: sv }).locator('input[name="serviceIds"]').first().check();
+    for (const [n, v] of [["SYSTOLIC_BP", "140"], ["DIASTOLIC_BP", "90"], ["HEART_RATE", "78"]] as const) {
+      const fld = desk.locator(`input[name="${n}"]`);
+      if (await fld.count()) await fld.fill(v);
+    }
+    await desk.locator('form:has(input[name="patientId"]) button[type="submit"]').last().click();
+    await desk.waitForURL(/done=/, { timeout: 30_000 });
+  });
+  await step(desk, "returning patient: new patient for comparison", async () => {
+    await register({ last: "Tursunova", first: "Malika", year: "1988", sex: "FEMALE", address: "Qo'rg'ontepa (namuna)", services: [/Kardiolog ko'ruvi/], pay: "debt", bp: ["120", "80"], pulse: "72", w: "64", h: "160" });
+  });
+  await step(owner, "doctor: first visit vs returning", async () => {
+    await owner.goto(`${C}/my-queue`);
+    await shot(owner, "42-my-queue-returning");
+  });
+  await step(desk, "patients list and quick filters", async () => {
+    await desk.goto(`${C}/patients`);
+    await shot(desk, "43-patients");
+    await desk.goto(`${C}/patients?f=today`);
+    await shot(desk, "44-patients-today");
+  });
+  await step(desk, "patient card with visits", async () => {
+    await desk.goto(`${C}/patients?q=${encodeURIComponent("Aliyev")}`);
+    await settle(desk);
+    await desk.locator("main a").filter({ hasText: "Aliyev" }).first().click();
+    await desk.waitForURL(/\/patients\/[0-9a-f-]{36}/);
+    await shot(desk, "45-patient-card-desk", { full: true });
+  });
+
+  // ---------- Every section, one picture each (owner) ----------
+  await step(owner, "tour of every section", async () => {
+    await owner.goto(C);
+    await settle(owner);
+    const links = [...new Set(await owner.locator("nav a[href^='/c/'], aside a[href^='/c/'], header a[href^='/c/']").evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).getAttribute("href")!)))]
+      .filter((h) => !h.includes("?"));
+    for (const href of links) {
+      const name = href.replace(`/c/${SLUG}`, "").replace(/^\//, "") || "home";
+      await owner.goto(`${BASE}${href}`);
+      await shot(owner, `t-${name.replace(/\//g, "-")}`);
+    }
+  });
+  await step(cash, "tour: cashier pages", async () => {
+    for (const p of ["checkout", "cash"]) {
+      await cash.goto(`${C}/${p}`);
+      await shot(cash, `t-${p}`);
+    }
+  });
+
   await step(owner, "purge card", async () => {
     await owner.goto(`${C}/settings`);
     await settle(owner);

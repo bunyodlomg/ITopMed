@@ -211,11 +211,25 @@ export async function searchPatients(ctx: ClinicContext, qRaw: string) {
   const q = qRaw.trim().slice(0, 100);
   if (q.length < 2) return [];
   return inClinic(ctx, async (tx) => {
-    const select = { id: true, mrn: true, lastName: true, firstName: true, middleName: true, birthDate: true, sex: true, phone: true, status: true } as const;
+    const select = { id: true, mrn: true, lastName: true, firstName: true, middleName: true, birthDate: true, birthYearOnly: true, sex: true, phone: true, status: true } as const;
     const base = { status: { not: "MERGED" as const } };
     if (/^p-?\d+$/i.test(q)) {
       const n = q.replace(/\D/g, "");
       return tx.patient.findMany({ where: { ...base, mrn: `P-${n.padStart(6, "0")}` }, select });
+    }
+    // Year of birth alone ("1958"), or a name with it ("Rahimov 1958") to tell namesakes apart.
+    const yearOnly = /^(19|20)\d{2}$/.test(q) ? Number(q) : null;
+    if (yearOnly) return tx.patient.findMany({ where: { ...base, birthDate: yearRange(yearOnly) }, select, take: 50, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] });
+    const nameYear = /^(.{2,}?)\s+((?:19|20)\d{2})$/.exec(q);
+    if (nameYear) {
+      const n = nameYear[1]!.toLowerCase();
+      const ids = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Patient"
+        WHERE status <> 'MERGED' AND extract(year FROM "birthDate") = ${Number(nameYear[2])}
+          AND (lower("lastName" || ' ' || "firstName" || ' ' || coalesce("middleName", '')) LIKE ${"%" + n.replace(/[%_\\]/g, "\\$&") + "%"}
+            OR similarity(lower("lastName" || ' ' || "firstName" || ' ' || coalesce("middleName", '')), ${n}) > 0.3)
+        LIMIT 20`;
+      return ids.length ? tx.patient.findMany({ where: { id: { in: ids.map((r) => r.id) } }, select, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }) : [];
     }
     const dmy = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(q);
     const iso = dmy ? `${dmy[3]}-${dmy[2]}-${dmy[1]}` : q;
@@ -355,4 +369,9 @@ export async function withdrawConsent(ctx: ClinicContext, consentId: string, met
 /** True when the patient currently consents to a purpose (e.g. before sending an SMS reminder). */
 export async function hasActiveConsent(tx: Tx, patientId: string, purpose: ConsentPurpose) {
   return Boolean(await tx.patientConsent.findFirst({ where: { patientId, purpose, withdrawnAt: null } }));
+}
+
+/** Birth dates within one calendar year (stored as dates at UTC midnight). */
+function yearRange(year: number) {
+  return { gte: new Date(Date.UTC(year, 0, 1)), lt: new Date(Date.UTC(year + 1, 0, 1)) };
 }

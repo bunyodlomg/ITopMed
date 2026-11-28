@@ -713,7 +713,37 @@
       "resultsTitle": "Found: {count}",
       "recentTitle": "Recently added patients",
       "noneYet": "No patients yet.",
-      "colRegistered": "Added"
+      "colRegistered": "Added",
+      "filter": {
+        "recent": "Recent",
+        "today": "Today",
+        "debt": "With debt",
+        "new": "New this month"
+      },
+      "filterLabel": "Patient list",
+      "filterTitle": {
+        "recent": "Recently added patients",
+        "today": "Today's patients",
+        "debt": "Patients with an unpaid bill",
+        "new": "Registered this month"
+      },
+      "searchTips": "Search: surname or name, phone, card number (P-000123), birth year (1958), surname + year (Rahimov 1958), date (14.03.1962), PINFL.",
+      "colVisits": "Visits",
+      "visitsCount": "{count, plural, one {# visit} other {# visits}}",
+      "lastVisitShort": "Last: {date} · {doctor}",
+      "noVisits": "No visits yet",
+      "nextVisit": "Next appointment: {date}",
+      "todayBadge": "In today's queue",
+      "toQueue": "To queue",
+      "toQueueLong": "Add to the queue",
+      "recordShort": "Record",
+      "visitsTitle": "Visits",
+      "lastVisit": "Last visit",
+      "nextBooking": "Next appointment",
+      "registeredOn": "Registered",
+      "returning": "Returning: {count} visits, last {date} · {doctor}",
+      "firstVisit": "First visit",
+      "alreadyToday": "Note: this patient is already in today's queue — do not add them twice."
     },
     "booking": {
       "title": "Book an appointment",

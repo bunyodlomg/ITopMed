@@ -70,13 +70,19 @@ export async function PatientPicker({
   q,
   keep,
   baseHref,
+  visits,
+  timeZone = "UTC",
 }: {
-  results: { id: string; mrn: string; lastName: string; firstName: string; middleName: string | null; birthDate: Date }[] | null;
+  results: { id: string; mrn: string; lastName: string; firstName: string; middleName: string | null; birthDate: Date; birthYearOnly?: boolean; phone?: string | null }[] | null;
   q: string;
   keep: Record<string, string | undefined>;
   baseHref: string;
+  /** Visit counts and the last visit (optional), shown under each match. */
+  visits?: Map<string, { visits: number; last: { at: Date; doctor: string } | null; today: boolean }>;
+  timeZone?: string;
 }) {
   const t = await getTranslations();
+  const format = await getFormatter();
   const params = (extra: Record<string, string>) => {
     const sp = new URLSearchParams();
     for (const [k, v] of Object.entries({ ...keep, ...extra })) if (v) sp.set(k, v);
@@ -102,8 +108,17 @@ export async function PatientPicker({
                 <div className="min-w-0">
                   <p className="truncate text-[14px] font-medium">{patientName(p)}</p>
                   <p className="text-[12.5px] text-text-3">
-                    {p.mrn} · {await formatBirthDate(p.birthDate)}
+                    {p.mrn} · {await formatBirthDate(p.birthDate, p.birthYearOnly)}
+                    {p.phone ? ` · ${p.phone}` : ""}
                   </p>
+                  {visits?.get(p.id) ? (
+                    <p className="text-[12.5px] text-text-2">
+                      {visits.get(p.id)!.last
+                        ? t("clinic.patients.lastVisitShort", { date: format.dateTime(visits.get(p.id)!.last!.at, { dateStyle: "medium", timeZone }), doctor: visits.get(p.id)!.last!.doctor }) + ` · ${t("clinic.patients.visitsCount", { count: visits.get(p.id)!.visits })}`
+                        : t("clinic.patients.noVisits")}
+                      {visits.get(p.id)!.today ? ` · ${t("clinic.patients.todayBadge")}` : ""}
+                    </p>
+                  ) : null}
                 </div>
                 <Link href={params({ patient: p.id, q: "" })} className={buttonClass("secondary", "sm")}>
                   {t("clinic.booking.choosePatient")}

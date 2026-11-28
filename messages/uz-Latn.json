@@ -713,7 +713,37 @@
       "resultsTitle": "Topildi: {count}",
       "recentTitle": "Oxirgi qoʻshilgan bemorlar",
       "noneYet": "Hali bemorlar yoʻq.",
-      "colRegistered": "Qoʻshilgan"
+      "colRegistered": "Qoʻshilgan",
+      "filter": {
+        "recent": "Oxirgi qoʻshilganlar",
+        "today": "Bugungi",
+        "debt": "Qarzi borlar",
+        "new": "Shu oy yangi"
+      },
+      "filterLabel": "Bemorlar roʻyxati",
+      "filterTitle": {
+        "recent": "Oxirgi qoʻshilgan bemorlar",
+        "today": "Bugun kelgan va kelayotgan bemorlar",
+        "debt": "Toʻlanmagan hisobi bor bemorlar",
+        "new": "Shu oy roʻyxatga olinganlar"
+      },
+      "searchTips": "Qidirish: familiya yoki ism, telefon, karta raqami (P-000123), tugʻilgan yil (1958), familiya + yil (Rahimov 1958), sana (14.03.1962), JShShIR.",
+      "colVisits": "Tashriflar",
+      "visitsCount": "{count, plural, one {# ta tashrif} other {# ta tashrif}}",
+      "lastVisitShort": "Oxirgisi: {date} · {doctor}",
+      "noVisits": "Hali tashrif yoʻq",
+      "nextVisit": "Keyingi qabul: {date}",
+      "todayBadge": "Bugun navbatda",
+      "toQueue": "Navbatga",
+      "toQueueLong": "Navbatga qoʻshish",
+      "recordShort": "Tibbiy karta",
+      "visitsTitle": "Tashriflar",
+      "lastVisit": "Oxirgi tashrif",
+      "nextBooking": "Keyingi qabul",
+      "registeredOn": "Roʻyxatga olingan",
+      "returning": "Qayta kelgan: {count} ta tashrif, oxirgisi {date} · {doctor}",
+      "firstVisit": "Birinchi marta kelmoqda",
+      "alreadyToday": "Diqqat: bu bemor bugun navbatda bor — ikkinchi marta qoʻshmang."
     },
     "booking": {
       "title": "Qabulga yozish",

@@ -4,6 +4,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { moneyFormatter } from "@/components/money";
 import { patientName } from "@/components/patients";
 import { todayMoney, todayVitals } from "@/server/reception/desk";
+import { patientVisitSummaries } from "@/server/patients/overview";
 import { Form, SubmitButton, TextField } from "@/components/ui/form";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { cabinetAction, callNextAction } from "../../../queue-actions";
@@ -25,7 +26,7 @@ export default async function MyQueuePage({ params, searchParams }: { params: Pr
   const all = profileId ? await listDay(ctx, todayIn(tz), { doctorProfileId: profileId }) : [];
   const mine = all.filter((a) => a.doctorProfileId === profileId).sort((a, b) => ORDER[a.status]! - ORDER[b.status]! || (a.queueNumber ?? 999) - (b.queueNumber ?? 999) || +a.startsAt - +b.startsAt);
   const ids = [...new Set(mine.map((a) => a.patientId))];
-  const [{ today: paid, debt }, vitals, money] = await Promise.all([todayMoney(ctx, ids), todayVitals(ctx, ids), moneyFormatter()]);
+  const [{ today: paid, debt }, vitals, money, history] = await Promise.all([todayMoney(ctx, ids), todayVitals(ctx, ids), moneyFormatter(), patientVisitSummaries(ctx, ids)]);
   const year = Number(todayIn(tz).slice(0, 4));
   const cabinet = profileId ? (await withAppContext({ tenantId: ctx.tenant.id, userId: ctx.principal.user.id }, (tx) => tx.doctorProfile.findUnique({ where: { id: profileId }, select: { cabinet: true } })))?.cabinet : null;
   const encounters = new Map(
@@ -81,6 +82,11 @@ export default async function MyQueuePage({ params, searchParams }: { params: Pr
                         {t("clinic.desk.age", { age: year - a.patient.birthDate.getUTCFullYear() })} ({a.patient.birthDate.getUTCFullYear()}) · {t(`sex.${a.patient.sex}` as never)}
                         {a.patient.address ? ` · ${a.patient.address}` : ""}
                         {a.room ? ` · ${a.room.name}` : ""}
+                      </p>
+                      <p className="text-[13px] text-text-2">
+                        {history.get(a.patientId)?.lastEarlier
+                          ? t("clinic.patients.returning", { count: history.get(a.patientId)!.earlier, date: format.dateTime(history.get(a.patientId)!.lastEarlier!.at, { dateStyle: "medium", timeZone: ctx.tenant.timezone }), doctor: history.get(a.patientId)!.lastEarlier!.doctor })
+                          : <span className="font-semibold text-accent">{t("clinic.patients.firstVisit")}</span>}
                       </p>
                       {paid.get(a.patientId)?.services.length ? <p className="text-[13px] text-text-2">{paid.get(a.patientId)!.services.join(", ")}</p> : a.service ? <p className="text-[13px] text-text-2">{a.service.name}</p> : null}
                       {vitals.get(a.patientId) ? (

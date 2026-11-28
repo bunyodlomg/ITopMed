@@ -1,4 +1,4 @@
-import { CalendarPlus, FileHeart, Pencil } from "lucide-react";
+import { CalendarPlus, ConciergeBell, FileHeart, Pencil } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { formatBirthDate, patientName } from "@/components/patients";
@@ -13,6 +13,8 @@ import { PortalAccessCard } from "@/components/portal-staff";
 import { getPortalAccount } from "@/server/portal/staff";
 import { todayMoney } from "@/server/reception/desk";
 import { moneyFormatter } from "@/components/money";
+import { ageOn, patientVisitSummaries } from "@/server/patients/overview";
+import { todayIn } from "@/server/scheduling/time";
 
 export default async function PatientPage({ params, searchParams }: { params: Promise<{ slug: string; id: string }>; searchParams: Promise<{ registered?: string; saved?: string; booked?: string }> }) {
   const { slug, id } = await params;
@@ -29,15 +31,22 @@ export default async function PatientPage({ params, searchParams }: { params: Pr
   const owes = (await todayMoney(ctx, [p.id])).debt.get(p.id) ?? 0n;
   const money = owes > 0n ? await moneyFormatter() : null;
   const ident = (type: string) => p.identifiers.find((i) => i.type === type)?.value ?? "—";
+  const visit = (await patientVisitSummaries(ctx, [p.id])).get(p.id)!;
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
       <PageHeader
         eyebrow={`${t("clinic.patients.title")} · ${p.mrn}`}
         title={patientName(p)}
-        description={`${await formatBirthDate(p.birthDate)} · ${t(`sex.${p.sex}`)}`}
+        description={`${t("clinic.desk.age", { age: ageOn(p.birthDate, todayIn(tz)) })} · ${await formatBirthDate(p.birthDate, p.birthYearOnly)} · ${t(`sex.${p.sex}`)}`}
         action={
           <>
+            {ctx.permissions.has("queue.manage") ? (
+              <ButtonLink href={`${base}/desk?patient=${p.id}`}>
+                <ConciergeBell aria-hidden className="size-4" />
+                {t("clinic.patients.toQueueLong")}
+              </ButtonLink>
+            ) : null}
             {ctx.permissions.has("appointments.manage") ? (
               <ButtonLink href={`${base}/appointments?patient=${p.id}`}>
                 <CalendarPlus aria-hidden className="size-4" />
@@ -64,6 +73,24 @@ export default async function PatientPage({ params, searchParams }: { params: Pr
           ) : null}
         </div>
       ) : null}
+
+      <Card>
+        <CardHeader title={t("clinic.patients.visitsTitle")} />
+        <CardBody>
+          <DescriptionList
+            items={[
+              { label: t("clinic.patients.colVisits"), value: visit.visits > 0 ? t("clinic.patients.visitsCount", { count: visit.visits }) : t("clinic.patients.noVisits") },
+              {
+                label: t("clinic.patients.lastVisit"),
+                value: visit.last ? `${format.dateTime(visit.last.at, { dateStyle: "medium", timeStyle: "short", timeZone: tz })} · ${visit.last.doctor}${visit.last.service ? ` · ${visit.last.service}` : ""}` : "—",
+              },
+              { label: t("clinic.patients.nextBooking"), value: visit.next ? `${format.dateTime(visit.next.at, { dateStyle: "medium", timeStyle: "short", timeZone: tz })} · ${visit.next.doctor}` : "—" },
+              { label: t("clinic.patients.registeredOn"), value: format.dateTime(p.createdAt, { dateStyle: "medium", timeZone: tz }) },
+            ]}
+          />
+          {visit.today ? <p className="mt-3"><Badge tone="accent">{t("clinic.patients.todayBadge")}</Badge></p> : null}
+        </CardBody>
+      </Card>
 
       <Card>
         <CardHeader title={t("clinic.patients.identity")} action={canUpdate ? <ButtonLink href={`${base}/patients/${p.id}/edit`} variant="ghost" size="sm"><Pencil aria-hidden className="size-4" />{t("clinic.patients.edit")}</ButtonLink> : null} />

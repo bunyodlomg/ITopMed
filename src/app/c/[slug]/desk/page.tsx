@@ -5,6 +5,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { moneyFormatter } from "@/components/money";
 import { minorToDecimalString } from "@/lib/money";
 import { PatientPicker, formatBirthDate, patientName } from "@/components/patients";
+import { ageOn, patientVisitSummaries } from "@/server/patients/overview";
 import { ServicePicker } from "@/components/service-picker";
 import { DoctorCodeInput } from "@/components/doctor-code";
 import { Form, SelectField, SubmitButton, TextField } from "@/components/ui/form";
@@ -77,6 +78,8 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
     ? await withAppContext(db, (tx) => tx.patient.findFirst({ where: { id: sp.patient, status: "ACTIVE" }, select: { id: true, mrn: true, lastName: true, firstName: true, middleName: true, birthDate: true, birthYearOnly: true, phone: true, address: true } })).catch(() => null)
     : null;
   const results = !chosen && sp.q ? await searchPatients(ctx, sp.q) : null;
+  const visitInfo = await patientVisitSummaries(ctx, [...(results ?? []).map((r) => r.id), ...(chosen ? [chosen.id] : [])]);
+  const chosenVisits = chosen ? visitInfo.get(chosen.id) : undefined;
 
   const queue = day.filter((a) => a.queueNumber !== null || a.status !== "CANCELLED").sort((a, b) => (a.queueNumber ?? 999) - (b.queueNumber ?? 999) || +a.startsAt - +b.startsAt);
   const { today: paidToday, debt } = await todayMoney(ctx, [...new Set([...queue.map((a) => a.patientId), ...(chosen ? [chosen.id] : [])])]);
@@ -151,7 +154,7 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
           <Card>
             <CardHeader title={t("clinic.desk.step1")} description={t("clinic.desk.searchHint")} />
             <CardBody>
-              <PatientPicker results={results} q={sp.q ?? ""} keep={{}} baseHref={`${base}/desk`} />
+              <PatientPicker results={results} q={sp.q ?? ""} keep={{}} baseHref={`${base}/desk`} visits={visitInfo} timeZone={tz} />
             </CardBody>
           </Card>
         ) : null}
@@ -167,10 +170,16 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
                   <div className="min-w-0">
                     <p className="font-semibold">{patientName(chosen)}</p>
                     <p className="text-[13px] text-text-2">
-                      {chosen.mrn} · {await formatBirthDate(chosen.birthDate, chosen.birthYearOnly)}
+                      {chosen.mrn} · {t("clinic.desk.age", { age: ageOn(chosen.birthDate, today) })} ({await formatBirthDate(chosen.birthDate, chosen.birthYearOnly)})
                       {chosen.phone ? ` · ${chosen.phone}` : ""}
                       {chosen.address ? ` · ${chosen.address}` : ""}
                     </p>
+                    <p className="mt-1 text-[13px] text-text-2">
+                      {chosenVisits?.lastEarlier
+                        ? t("clinic.patients.returning", { count: chosenVisits.earlier, date: format.dateTime(chosenVisits.lastEarlier.at, { dateStyle: "medium", timeZone: tz }), doctor: chosenVisits.lastEarlier.doctor })
+                        : t("clinic.patients.firstVisit")}
+                    </p>
+                    {chosenVisits?.today ? <p className="mt-1 text-[13px] font-semibold text-warning">{t("clinic.patients.alreadyToday")}</p> : null}
                     {(debt.get(chosen.id) ?? 0n) > 0n ? <p className="mt-1 text-[13px] font-semibold text-danger">{t("clinic.desk.hasDebt", { amount: money(debt.get(chosen.id)!, ctx.tenant.currency) })}</p> : null}
                   </div>
                   <Link href={`${base}/desk`} className={buttonClass("ghost", "sm")}>

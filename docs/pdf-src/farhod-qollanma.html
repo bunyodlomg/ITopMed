@@ -13,6 +13,12 @@
   .role.doc { background: #fdf3e2; color: #8a5300; }
   .role.cash { background: #f3e8fd; color: #6b2fa8; }
   h2, h3 { break-after: avoid; }
+  .tour { display: grid; grid-template-columns: 1fr; gap: 5mm; }
+  .tour .item { break-inside: avoid; border: 1px solid var(--border); border-radius: 3mm; padding: 3mm 4mm; }
+  .tour .item h3 { margin: 0 0 1.5mm; }
+  .tour .item p { margin: 0 0 2mm; font-size: 9.8pt; }
+  .tour .item img { max-height: 78mm; }
+  .tour .who { font-size: 8.5pt; color: var(--muted); }
   .flow { display: flex; gap: 2mm; align-items: stretch; margin: 3mm 0 5mm; }
   .flow div { flex: 1; border: 1px solid var(--border); border-radius: 2.5mm; padding: 2.5mm; font-size: 9pt; text-align: center; background: #fafbfc; }
   .flow div b { display: block; font-size: 10pt; margin-bottom: 1mm; }
@@ -47,16 +53,17 @@
     <li><span>3. Bosh sahifa</span><span>5</span></li>
     <li><span>4. Birinchi sozlash (klinika egasi)</span><span>6</span></li>
     <li><span>5. Qabulxona: bemorni yozish</span><span>11</span></li>
-    <li><span>6. Kassa: to'lov, chek, qarz, smena</span><span>16</span></li>
-    <li><span>7. Shifokor: qabul, yozuv, tashxis, retsept</span><span>20</span></li>
-    <li><span>8. UTT va EXO: shifokorning o'z blankalari</span><span>25</span></li>
-    <li><span>9. Hujjatlarni chop etish</span><span>27</span></li>
-    <li><span>10. Hisobotlar va nazorat (egasi)</span><span>28</span></li>
-    <li><span>11. Bemorning tibbiy kartasi va Excel</span><span>29</span></li>
-    <li><span>12. Sinov bemorlarini tozalash</span><span>30</span></li>
-    <li><span>13. Har kungi qisqa tartib</span><span>31</span></li>
-    <li><span>14. Muammolar va yechimlar</span><span>31</span></li>
-    <li><span>15. Video ssenariysi (jadval)</span><span>33</span></li>
+    <li><span>6. Kassa: to'lov, chek, qarz, smena</span><span>17</span></li>
+    <li><span>7. Shifokor: qabul, yozuv, tashxis, retsept</span><span>21</span></li>
+    <li><span>8. UTT va EXO: shifokorning o'z blankalari</span><span>26</span></li>
+    <li><span>9. Hujjatlarni chop etish</span><span>28</span></li>
+    <li><span>10. Hisobotlar va nazorat (egasi)</span><span>29</span></li>
+    <li><span>11. Bemorlar, bemor kartasi va Excel</span><span>30</span></li>
+    <li><span>12. Sinov bemorlarini tozalash</span><span>32</span></li>
+    <li><span>13. Har kungi qisqa tartib</span><span>33</span></li>
+    <li><span>14. Muammolar va yechimlar</span><span>33</span></li>
+    <li><span>15. Barcha bo'limlar birma-bir</span><span>35</span></li>
+    <li><span>16. Video ssenariysi (jadval)</span><span>50</span></li>
   </ol>
 </section>
 
@@ -202,7 +209,23 @@
 </section>
 
 <section class="page">
-  <h3>5.4. Navbat sahifasi va telefon</h3>
+  <h3>5.4. Qayta kelgan bemor — tez va xatosiz</h3>
+  <div class="grid2">
+    <figure><img src="img/f-40-desk-search-year.png"><figcaption>Qidiruv: "Aliyev 1962" — familiya + tug'ilgan yil (adashlar bir-biridan ajraladi)</figcaption></figure>
+    <figure><img src="img/f-41-desk-returning.png"><figcaption>Tanlangan bemor: yoshi, "Qayta kelgan: 1 ta tashrif, oxirgisi …", eski qarzi</figcaption></figure>
+  </div>
+  <ol class="tight">
+    <li><strong>Har doim avval qidiring.</strong> Qidiruvga yozish mumkin: familiya yoki ism, telefon, karta raqami (<code>P-000123</code>), <strong>tug'ilgan yil</strong> (<code>1962</code>), <strong>familiya + yil</strong> (<code>Aliyev 1962</code>), to'liq sana (<code>14.03.1962</code>), JShShIR.</li>
+    <li>Natijada har bir bemorning yoshi, telefoni, oxirgi tashrifi va nechta tashrifi ko'rinadi — to'g'ri odamni tanlash oson.</li>
+    <li><strong>Tanlash</strong> → bemor ma'lumoti o'zi to'ladi: "Qayta kelgan: N ta tashrif, oxirgisi sana · shifokor" yoki "Birinchi marta kelmoqda". Eski qarzi bo'lsa — qizil yozuv.</li>
+    <li>Bemor bugun allaqachon navbatda bo'lsa, dastur ogohlantiradi — ikkinchi marta qo'shmang.</li>
+    <li>Xizmatlar, o'lchovlar → <strong>Navbatga qo'shish</strong>. Yangi karta ochilmaydi — butun tarix bitta kartada qoladi.</li>
+  </ol>
+  <p class="small muted"><strong>Bemorlar</strong> sahifasidan ham boshlash mumkin: bemor qatoridagi <strong>Navbatga</strong> tugmasi Qabulxonani shu bemor bilan ochadi (11-bo'lim).</p>
+</section>
+
+<section class="page">
+  <h3>5.5. Navbat sahifasi va telefon</h3>
   <figure><img src="img/f-15-queue.png"><figcaption>Navbat: bugungi qabullar va navbatsiz kelgan bemorlar; "Bo'sh vaqtlarni ko'rsatish" — oldindan yozish uchun</figcaption></figure>
   <div class="grid2">
     <div>
@@ -255,7 +278,9 @@
   <h2>7. Shifokor: qabul, yozuv, tashxis, retsept</h2>
   <p><span class="role doc">Shifokor</span> Chap ustunda <strong>stetoskop</strong> belgisi → <strong>Bugungi bemorlarim</strong>.</p>
   <figure><img src="img/f-16-my-queue.png"><figcaption>Bugungi bemorlarim: navbat raqami, yoshi, xizmatlari, qabulxonada o'lchangan bosim, puls, vazn, bo'y va to'lov holati — bemor kirmasdan oldin</figcaption></figure>
+  <figure class="small"><img src="img/f-42-my-queue-returning.png"><figcaption>"Qayta kelgan: 1 ta tashrif, oxirgisi 21-noy" va "Birinchi marta kelmoqda" — shifokor bemor kirmasdan biladi</figcaption></figure>
   <ul class="tight">
+    <li>Har bir bemor tagida: <strong>Birinchi marta kelmoqda</strong> yoki <strong>Qayta kelgan: N ta tashrif, oxirgisi sana · shifokor</strong>. Qayta kelganda <strong>Tibbiy karta</strong> va ko'rikda <strong>Oldingi ko'rikdan nusxalash</strong> ishni tezlashtiradi.</li>
     <li><strong>Keyingi bemor</strong> — navbatdagi bemorni chaqiradi (kutish zalidagi ekranda raqam chiqadi va ovoz bilan aytiladi, agar ekran ulangan bo'lsa). <strong>Qayta chaqirish</strong> — yana bir bor.</li>
     <li><strong>Kabinetim</strong> — xona raqami (masalan "3-xona"), chaqiruvda aytiladi.</li>
     <li><strong>Qabulni boshlash</strong> — ko'rik bayonnomasi ochiladi.</li>
@@ -340,7 +365,18 @@
 </section>
 
 <section class="page">
-  <h2>11. Bemorning tibbiy kartasi va Excel</h2>
+  <h2>11. Bemorlar, bemor kartasi va Excel</h2>
+  <figure><img src="img/f-43-patients.png"><figcaption>Bemorlar: qidiruv, tezkor ro'yxatlar, yoshi, tashriflar, oxirgi tashrif, bugun navbatda / qarz belgilari, "Navbatga" tugmasi</figcaption></figure>
+  <ul class="tight">
+    <li><strong>Tezkor ro'yxatlar:</strong> <em>Oxirgi qo'shilganlar</em>, <em>Bugungi</em> (bugun kelgan va kelayotganlar), <em>Qarzi borlar</em>, <em>Shu oy yangi</em>.</li>
+    <li>Har qatorda: yoshi va tug'ilgan sanasi, telefon, tashriflar soni, oxirgi tashrif (sana · shifokor), keyingi yozilgan qabul; <strong>Bugun navbatda</strong> va <strong>Qarz</strong> belgilari.</li>
+    <li><strong>Navbatga</strong> — Qabulxona shu bemor bilan ochiladi; <strong>Tibbiy karta</strong> — faqat shifokorga.</li>
+  </ul>
+  <div class="grid2">
+    <figure><img src="img/f-44-patients-today.png"><figcaption>"Bugungi" ro'yxat</figcaption></figure>
+    <figure><img src="img/f-45-patient-card-desk.png"><figcaption>Bemor kartasi: yoshi, Tashriflar (soni, oxirgi, keyingi qabul), shaxsiy ma'lumotlar, "Navbatga qo'shish"</figcaption></figure>
+  </div>
+  <h3>Shifokor uchun: tibbiy karta</h3>
   <figure><img src="img/f-24-patient-card.png"><figcaption>Bemor kartasi: barcha qabullar, tashxislar, retseptlar, UTT/EXO natijalari, bosim tarixi</figcaption></figure>
   <ul class="tight">
     <li><strong>Bemorlar</strong> → qidiring (familiya, telefon, karta raqami) → bemorni oching.</li>
@@ -416,7 +452,188 @@
 </section>
 
 <section class="page">
-  <h2>15. Video ssenariysi</h2>
+  <h2>15. Barcha bo'limlar birma-bir</h2>
+  <p>Dasturdagi har bir bo'lim: nima uchun kerak, kim ishlatadi va qanday ko'rinadi. Chap ustundagi belgilar bo'limlar guruhini almashtiradi (Bosh sahifa, Shifokor, Pul, Klinika, Sozlamalar), yuqoridagi menyu — guruh ichidagi sahifalarni. Har kim faqat o'z huquqidagi bo'limlarni ko'radi.</p>
+  <div class="tour">
+    <div class="item">
+      <h3>Bosh sahifa</h3>
+      <p class="who">Kim uchun: Hamma</p>
+      <p>Bugungi qabullar, tushum, qarz, 14 kunlik grafik va bugungi ish vaqti. Ishni shu yerdan boshlaysiz.</p>
+      <figure><img src="img/f-t-home.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Qabulxona</h3>
+      <p class="who">Kim uchun: Qabulxona, egasi</p>
+      <p>Bemorni topish yoki yozish, xizmatlar, o'lchovlar, shifokor va navbat raqami — bitta sahifada (5-bo'lim).</p>
+      <figure><img src="img/f-t-desk.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Bemorlar</h3>
+      <p class="who">Kim uchun: Hamma</p>
+      <p>Bemorlar bazasi: qidiruv, tezkor ro'yxatlar (bugungi, qarzi borlar, yangi), tashriflar va qarz belgilari (11-bo'lim).</p>
+      <figure><img src="img/f-t-patients.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Navbat</h3>
+      <p class="who">Kim uchun: Qabulxona, egasi</p>
+      <p>Bugungi barcha qabullar: kim keldi, kim kutyapti, kim qabulda. Oldindan yozilgan bemor kelganda shu yerda «Keldi» deb belgilanadi.</p>
+      <figure><img src="img/f-t-queue.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Qabulga yozish</h3>
+      <p class="who">Kim uchun: Qabulxona, egasi</p>
+      <p>Bemorni boshqa kun va soatga yozish: shifokor jadvalidagi bo'sh vaqtlar ko'rsatiladi.</p>
+      <figure><img src="img/f-t-appointments.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Bugungi bemorlarim</h3>
+      <p class="who">Kim uchun: Shifokor</p>
+      <p>Shifokorning navbati: bosim, to'lov, birinchi marta yoki qayta kelgani; «Keyingi bemor», «Qabulni boshlash» (7-bo'lim).</p>
+      <figure><img src="img/f-t-my-queue.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Dori bazasi</h3>
+      <p class="who">Kim uchun: Shifokor</p>
+      <p>Klinikaning o'z dorilari: savdo va xalqaro nomi, shakli, odatiy dozasi. Retsept yozishda dori shu bazadan qidiriladi — tez va xatosiz.</p>
+      <figure><img src="img/f-t-medicines.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Laboratoriya</h3>
+      <p class="who">Kim uchun: Shifokor, laborant</p>
+      <p>Tahlil buyurtmalari va natijalari. Shifokor qabulda tahlil buyuradi, natija kiritilgach bemor kartasida ko'rinadi.</p>
+      <figure><img src="img/f-t-lab.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Dispanser</h3>
+      <p class="who">Kim uchun: Shifokor</p>
+      <p>Doimiy kuzatuvdagi bemorlar: keyingi ko'rik muddati, muddati o'tganlar qizil. Qabuldan keyingi so'rov javoblari («yomonroq» birinchi).</p>
+      <figure><img src="img/f-t-dispensary.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Mening jadvalim</h3>
+      <p class="who">Kim uchun: Shifokor</p>
+      <p>Shifokorning o'z ish kunlari va soatlari, ta'til va dam olish kunlari.</p>
+      <figure><img src="img/f-t-my-schedule.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Daromadim</h3>
+      <p class="who">Kim uchun: Shifokor</p>
+      <p>Shifokor bemorlari uchun kassaga tushgan pul (bugun, hafta, oy) va klinika belgilagan ulush.</p>
+      <figure><img src="img/f-t-my-earnings.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Kassa: to'lov</h3>
+      <p class="who">Kim uchun: Kassa</p>
+      <p>Bemorning hamma to'lanmagan xizmatlari bir ro'yxatda: to'liq, aralash yoki bir qismi; chek (6-bo'lim).</p>
+      <figure><img src="img/f-t-checkout.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Kassa (smena)</h3>
+      <p class="who">Kim uchun: Kassa</p>
+      <p>Smenani ochish va yopish: boshlang'ich pul, naqd tushum, kassada bo'lishi kerak bo'lgan summa, kamomad yoki ortiqcha.</p>
+      <figure><img src="img/f-t-cash.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Hisob va to'lovlar</h3>
+      <p class="who">Kim uchun: Egasi, Kassa</p>
+      <p>Har bir hisob: xizmatlar, to'lovlar, qoldiq, holati; qaytarish va bekor qilish (sababi bilan).</p>
+      <figure><img src="img/f-t-billing.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Hisobotlar</h3>
+      <p class="who">Kim uchun: Egasi</p>
+      <p>Tanlangan davr bo'yicha tushum, to'lov usullari, ommabop xizmatlar, shifokorlar, qabullar, qarzdorlar (10-bo'lim).</p>
+      <figure><img src="img/f-t-reports.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Shifokorlar va jadval</h3>
+      <p class="who">Kim uchun: Egasi</p>
+      <p>Shifokor profili (mutaxassislik, kod), ish jadvali, ulush foizi.</p>
+      <figure><img src="img/f-t-doctors.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Xizmatlar va narxlar</h3>
+      <p class="who">Kim uchun: Egasi</p>
+      <p>Narxnoma: xizmat qo'shish, narxni o'zgartirish, arxivlash. Yangi narx darhol Qabulxonada chiqadi.</p>
+      <figure><img src="img/f-t-services.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Dorixona va ombor</h3>
+      <p class="who">Kim uchun: Egasi</p>
+      <p>Dori va materiallar: kirim, chiqim, qoldiq, yaroqlilik muddati.</p>
+      <figure><img src="img/f-t-inventory.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Kadrlar</h3>
+      <p class="who">Kim uchun: Egasi</p>
+      <p>Xodimlar haqida ma'lumot: lavozim, litsenziya va sertifikat muddatlari, ta'tillar.</p>
+      <figure><img src="img/f-t-hr.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Xodimlar</h3>
+      <p class="who">Kim uchun: Egasi</p>
+      <p>Xodim qo'shish (login va parol), rollar, yangi parol berish, kirishni to'xtatish (4.2-bo'lim).</p>
+      <figure><img src="img/f-t-staff.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Nazorat markazi</h3>
+      <p class="who">Kim uchun: Egasi</p>
+      <p>Bir qarashda: bugungi qabullar va tushum, qarzlar, ochiq kassalar, smena farqlari, chegirmalar, imzolanmagan yozuvlar, xavfsizlik.</p>
+      <figure><img src="img/f-t-control.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Klinika sozlamalari</h3>
+      <p class="who">Kim uchun: Egasi</p>
+      <p>Klinika ma'lumotlari, hujjat blanki va logotip, kutish zali ekrani (televizor), Excel'ga yuklab olish, nazorat qoidalari, bo'limlarni yoqish/o'chirish.</p>
+      <figure><img src="img/f-t-settings.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Shablonlar</h3>
+      <p class="who">Kim uchun: Egasi, shifokor</p>
+      <p>Ko'rik bayonnomasi shablonlari, chop etiladigan hujjatlar (Kardiolog ko'ruvi, ma'lumotnoma), UTT/EXO shablonlari, retsept sxemalari.</p>
+      <figure><img src="img/f-t-templates.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Bo'limlar va xonalar</h3>
+      <p class="who">Kim uchun: Egasi</p>
+      <p>Kabinetlar va xonalar: navbatda va televizor ekranida bemorga qaysi xonaga kirish aytiladi.</p>
+      <figure><img src="img/f-t-facilities.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Filiallar</h3>
+      <p class="who">Kim uchun: Egasi</p>
+      <p>Klinikaning manzillari. Farhod MedServis'da bitta filial.</p>
+      <figure><img src="img/f-t-branches.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Rollar va huquqlar</h3>
+      <p class="who">Kim uchun: Egasi</p>
+      <p>Har bir rol nimani ko'rishi va qilishi mumkin. Registratorga xizmatlar va o'lchovlar huquqi berilgan (4.2-bo'lim).</p>
+      <figure><img src="img/f-t-roles.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Integratsiyalar</h3>
+      <p class="who">Kim uchun: Egasi</p>
+      <p>Nima ulangan va nima hali yo'q: Telegram bot, SMS, Payme, Click, Uzum. Halol holat — rejalashtirilganlari shunday yozilgan.</p>
+      <figure><img src="img/f-t-integrations.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Qo'llab-quvvatlash kirishi</h3>
+      <p class="who">Kim uchun: Egasi</p>
+      <p>ITop Med yordamchisi faqat sizning ruxsatingiz bilan va vaqtinchalik kira oladi; har bir kirish jurnalga yoziladi.</p>
+      <figure><img src="img/f-t-support-access.png"></figure>
+    </div>
+    <div class="item">
+      <h3>Faoliyat jurnali</h3>
+      <p class="who">Kim uchun: Egasi</p>
+      <p>Kim, qachon, nima qildi: kirishlar, to'lovlar, o'zgarishlar. O'chirib yoki o'zgartirib bo'lmaydi.</p>
+      <figure><img src="img/f-t-audit.png"></figure>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <h2>16. Video ssenariysi</h2>
   <table>
     <tr><th>#</th><th>Qism</th><th>Kim nomidan</th><th>Nima ko'rsatiladi</th><th>Vaqt</th></tr>
     <tr><td>1</td><td>Tanishuv</td><td>—</td><td>Dastur nima, kim nima qiladi (1-bo'lim sxemasi)</td><td>1 daq</td></tr>
