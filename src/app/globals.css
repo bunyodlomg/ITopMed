@@ -479,3 +479,13 @@ dialog.drawer[open]::backdrop { animation: itm-fade-in var(--dur-panel) var(--ea
   to { opacity: 1; transform: none; }
 }
 .animate-tip { animation: itm-tip var(--dur-quick) var(--ease-out) both; }
+
+/* Step-by-step screens (DeskWizard): only the panels of the active step are shown.
+   Unlayered on purpose, so it wins over display utilities on the panels. */
+[data-wizard-active="0"] [data-step]:not([data-step="0"]),
+[data-wizard-active="1"] [data-step]:not([data-step="1"]),
+[data-wizard-active="2"] [data-step]:not([data-step="2"]),
+[data-wizard-active="3"] [data-step]:not([data-step="3"]),
+[data-wizard-active="4"] [data-step]:not([data-step="4"]) {
+  display: none;
+}

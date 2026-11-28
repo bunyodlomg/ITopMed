@@ -24,7 +24,7 @@ type PayMode = "full" | "partial" | "split" | "debt";
  * method with the surrounding form. Prices are display only - the server
  * recomputes everything from the service catalogue.
  */
-export function ServicePicker({ services, withPayment, initial = [] }: { services: PickerService[]; withPayment: boolean; initial?: string[] }) {
+export function ServicePicker({ services, withPayment, initial = [], dense = false }: { services: PickerService[]; withPayment: boolean; initial?: string[]; /** Tighter tiles (the desk's step fits on one screen). */ dense?: boolean }) {
   const t = useTranslations("clinic.desk");
   const tm = useTranslations("paymentMethod");
   const locale = useLocale();
@@ -32,6 +32,7 @@ export function ServicePicker({ services, withPayment, initial = [] }: { service
   const [q, setQ] = useState("");
   const [mode, setMode] = useState<PayMode>("full");
   const [split, setSplit] = useState<Record<string, string>>({});
+  const [epoch, setEpoch] = useState(0);
   // After a successful submit the same page stays open (e.g. extra services in a visit):
   // clear the choice so a second click cannot bill the same services twice.
   const result = useFormResult();
@@ -43,6 +44,10 @@ export function ServicePicker({ services, withPayment, initial = [] }: { service
       setMode("full");
       setSplit({});
       setQ("");
+    } else {
+      // React resets the form after every action (the ticks would clear while the choice stays):
+      // a new key re-mounts the controls from the remembered choice.
+      setEpoch((n) => n + 1);
     }
   }
   const currency = services[0]?.currency ?? "UZS";
@@ -62,7 +67,7 @@ export function ServicePicker({ services, withPayment, initial = [] }: { service
     });
 
   return (
-    <div className="space-y-4">
+    <div key={epoch} className="space-y-4">
       {services.length > 8 ? (
         <label className="block">
           <span className="sr-only">{t("searchServices")}</span>
@@ -83,7 +88,7 @@ export function ServicePicker({ services, withPayment, initial = [] }: { service
             return (
               <label
                 key={s.id}
-                className={`flex min-w-0 cursor-pointer items-center justify-between gap-3 rounded-[var(--radius-control)] border px-3 py-2.5 text-[14px] transition-colors ${on ? "border-accent bg-accent-soft" : "border-border bg-surface-2 hover:border-border-strong"}`}
+                className={`flex min-w-0 cursor-pointer items-center justify-between gap-3 rounded-[var(--radius-control)] border px-3 ${dense ? "py-1.5 text-[13.5px] leading-snug" : "py-2.5 text-[14px]"} transition-colors ${on ? "border-accent bg-accent-soft" : "border-border bg-surface-2 hover:border-border-strong"}`}
               >
                 <span className="flex min-w-0 items-center gap-2.5">
                   <input type="checkbox" name="serviceIds" value={s.id} checked={on} onChange={() => toggle(s.id)} className="size-4 shrink-0 accent-[var(--accent)]" />

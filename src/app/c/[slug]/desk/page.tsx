@@ -8,8 +8,9 @@ import { PatientPicker, formatBirthDate, patientName } from "@/components/patien
 import { ageOn, patientVisitSummaries } from "@/server/patients/overview";
 import { ServicePicker } from "@/components/service-picker";
 import { DoctorCodeInput } from "@/components/doctor-code";
+import { DeskWizard, type DeskWizardStep } from "@/components/desk-wizard";
 import { Form, SelectField, SubmitButton, TextField } from "@/components/ui/form";
-import { Alert, Badge, ButtonLink, Card, CardBody, CardHeader, EmptyState, PageHeader, STATUS_TONE, Stat, buttonClass } from "@/components/ui/primitives";
+import { Alert, Badge, ButtonLink, Card, CardBody, CardHeader, EmptyState, STATUS_TONE, buttonClass } from "@/components/ui/primitives";
 import { listDay } from "@/server/appointments/appointments";
 import { requireClinic } from "@/server/auth/guards";
 import { listOperationalBranches } from "@/server/clinic/context";
@@ -97,6 +98,13 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
   const followUp = chosen && canInvoice ? await followUpStatus(ctx, chosen.id) : null;
   const doneInvoice = done ? await withAppContext(db, (tx) => tx.invoice.findUnique({ where: { appointmentId: done.id }, select: { id: true, totalMinor: true, paidMinor: true, currency: true } })).catch(() => null) : null;
 
+  const wizardSteps: DeskWizardStep[] = [
+    { key: "patient", label: t("clinic.desk.wizard.patient") },
+    ...(canBill ? [{ key: "services" as const, label: t("clinic.desk.wizard.services") }] : []),
+    ...(canMeasure ? [{ key: "vitals" as const, label: t("clinic.desk.wizard.vitals") }] : []),
+    { key: "doctor", label: t("clinic.desk.wizard.doctor") },
+  ];
+
   // Today's queue in the order the desk works it: waiting (by number), in the doctor's room,
   // booked but not here yet, finished; no-shows and cancellations folded away.
   type Row = (typeof queue)[number];
@@ -176,14 +184,22 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
   return (
     <div className="space-y-6">
       <AutoRefresh seconds={20} />
-      <PageHeader title={t("clinic.desk.title")} description={t("clinic.desk.subtitle")} />
-
-      <section aria-label={t("clinic.desk.today")} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label={t("clinic.desk.statPatients")} value={queue.length} hint={t("clinic.desk.statDone", { count: finished.length })} />
-        <Stat label={t("clinic.desk.statWaiting")} value={waiting.length} />
-        <Stat label={t("clinic.desk.statPaid")} value={money(paidSum, ctx.tenant.currency)} />
-        <Stat label={t("clinic.desk.statDebt")} value={money(debtSum, ctx.tenant.currency)} />
-      </section>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-[28px] font-semibold leading-[1.1] tracking-[-0.035em] sm:text-[32px]">{t("clinic.desk.title")}</h1>
+        <dl aria-label={t("clinic.desk.today")} className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+          {[
+            [t("clinic.desk.statPatients"), `${queue.length}`, ""],
+            [t("clinic.desk.statWaiting"), `${waiting.length}`, ""],
+            [t("clinic.desk.statPaid"), money(paidSum, ctx.tenant.currency), "text-success"],
+            [t("clinic.desk.statDebt"), money(debtSum, ctx.tenant.currency), debtSum > 0n ? "text-danger" : ""],
+          ].map(([label, value, tone]) => (
+            <div key={label} className="flex min-w-0 flex-wrap items-baseline gap-x-2 rounded-[16px] bg-surface px-3 py-1.5 shadow-card sm:rounded-full sm:px-4 sm:py-2">
+              <dt className="text-[12.5px] text-text-2">{label}</dt>
+              <dd className={`text-[15px] font-bold tabular-nums ${tone}`}>{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </header>
 
       {done && sp.vitals === "lost" ? <Alert tone="warning">{t("clinic.desk.vitalsLost")}</Alert> : null}
       {sp.paid && /^[\d ]{1,20}$/.test(sp.paid) ? <Alert tone="success">{t("clinic.desk.debtPaid", { paid: sp.paid })}</Alert> : null}
@@ -225,19 +241,20 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
-        <div className="min-w-0 space-y-6">
+        <div className="min-w-0">
+        <DeskWizard key={done?.id ?? chosen?.id ?? "new"} steps={wizardSteps} initial={chosen ? 1 : 0} formId="desk-form" patientLabel={chosen ? patientName(chosen) : undefined} prices={Object.fromEntries(priced.map((p) => [p.id, p.priceMinor]))} currency={ctx.tenant.currency}>
         {!chosen ? (
-          <Card>
+          <Card data-step={0}>
             <CardHeader title={t("clinic.desk.step1")} description={t("clinic.desk.searchHint")} />
             <CardBody>
               <PatientPicker results={results} q={sp.q ?? ""} keep={{}} baseHref={`${base}/desk`} visits={visitInfo} timeZone={tz} />
             </CardBody>
           </Card>
         ) : null}
-        <Form action={deskCheckInAction} className="space-y-6">
+        <Form id="desk-form" action={deskCheckInAction} className="space-y-4">
           <input type="hidden" name="$slug" value={ctx.tenant.slug} />
 
-          <Card>
+          <Card data-step={0}>
             <CardHeader title={chosen ? t("clinic.desk.step1") : t("clinic.desk.newPatient")} />
             <CardBody className="space-y-4">
               {chosen ? (
@@ -265,12 +282,16 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
               ) : (
                 <>
                   <div className="grid gap-4 sm:grid-cols-3">
-                    <TextField name="lastName" label={t("clinic.patients.lastName")} autoComplete="off" />
-                    <TextField name="firstName" label={t("clinic.patients.firstName")} autoComplete="off" />
+                    <TextField name="lastName" label={t("clinic.patients.lastName")} autoComplete="off" required />
+                    <TextField name="firstName" label={t("clinic.patients.firstName")} autoComplete="off" required />
                     <TextField name="middleName" label={t("clinic.patients.middleName")} autoComplete="off" optionalLabel={t("common.optional")} />
-                    <TextField name="birthDate" label={t("clinic.desk.birth")} hint={t("clinic.desk.birthHint")} placeholder="1947" inputMode="numeric" autoComplete="off" />
+                    <TextField name="birthDate" label={t("clinic.desk.birth")} hint={t("clinic.desk.birthHint")} placeholder="1947" inputMode="numeric" autoComplete="off" required />
                     <SelectField name="sex" label={t("clinic.patients.sex")} defaultValue="UNKNOWN" options={(["FEMALE", "MALE", "UNKNOWN"] as const).map((s) => ({ value: s, label: t(`sex.${s}`) }))} />
                     <TextField name="phone" type="tel" label={t("clinic.patients.phone")} inputMode="tel" placeholder="+998" autoComplete="off" optionalLabel={t("common.optional")} />
+                  </div>
+                  <details className="group rounded-[var(--radius-control)] border border-border px-4 py-2">
+                    <summary className="flex min-h-9 cursor-pointer items-center text-[13.5px] font-medium text-text-2">{t("clinic.desk.wizard.more")}</summary>
+                  <div className="grid gap-4 pb-2 pt-3 sm:grid-cols-3">
                     <TextField name="address" label={t("clinic.patients.address")} autoComplete="off" optionalLabel={t("common.optional")} className="sm:col-span-3" />
                     <SelectField
                       name="referralSource"
@@ -283,6 +304,7 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
                       <SelectField name="benefitCategoryId" label={t("clinic.desk.benefit")} defaultValue="" options={[{ value: "", label: t("clinic.desk.noBenefit") }, ...benefits.map((b) => ({ value: b.id, label: `${b.name} (−${b.discountPercent}%)` }))]} />
                     ) : null}
                   </div>
+                  </details>
                   <label className="flex items-start gap-2 text-[13px] text-text-2">
                     <input type="checkbox" name="confirmNotDuplicate" className="mt-0.5 size-4 shrink-0 accent-[var(--accent)]" />
                     <span>{t("clinic.desk.confirmNew")}</span>
@@ -293,13 +315,13 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
           </Card>
 
           {canBill ? (
-            <Card>
+            <Card data-step={wizardSteps.findIndex((w) => w.key === "services")}>
               <CardHeader
                 title={t("clinic.desk.step2")}
                 action={ctx.permissions.has("services.manage") ? <ButtonLink href={`${base}/services`} variant="ghost" size="sm">{t("clinic.desk.editPrices")}</ButtonLink> : undefined}
               />
               <CardBody className="space-y-3">
-                {priced.length ? <ServicePicker services={priced} withPayment={canPay && canInvoice} /> : <Alert tone="warning">{t("clinic.desk.noPrices")}</Alert>}
+                {priced.length ? <ServicePicker services={priced} withPayment={canPay && canInvoice} dense /> : <Alert tone="warning">{t("clinic.desk.noPrices")}</Alert>}
                 {unpriced > 0 ? <p className="text-[12.5px] text-text-3">{t("clinic.desk.unpriced", { count: unpriced })}</p> : null}
                 {followUp?.freeUntil ? <Alert tone="success">{t("clinic.desk.followUpFree", { date: format.dateTime(followUp.freeUntil, { dateStyle: "medium", timeZone: tz }) })}</Alert> : null}
                 {canFreeVisit ? (
@@ -319,7 +341,7 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
           ) : null}
 
           {canMeasure ? (
-            <Card>
+            <Card data-step={wizardSteps.findIndex((w) => w.key === "vitals")}>
               <CardHeader title={t("clinic.desk.step3")} description={t("clinic.desk.step3Hint")} />
               <CardBody className="grid grid-cols-2 gap-4 sm:grid-cols-5">
                 <TextField name="HEIGHT" label={t("clinic.desk.height")} inputMode="decimal" placeholder="170" />
@@ -331,6 +353,7 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
             </Card>
           ) : null}
 
+          <div data-step={wizardSteps.length - 1} className="space-y-4">
           <Card>
             <CardHeader title={t("clinic.desk.step4")} />
             <CardBody className="grid gap-4 sm:grid-cols-2">
@@ -350,7 +373,9 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
           </Card>
 
           <SubmitButton full>{t("clinic.desk.submit")}</SubmitButton>
+          </div>
         </Form>
+        </DeskWizard>
         </div>
 
         <div className="h-fit min-w-0 space-y-4 xl:sticky xl:top-4">

@@ -24,11 +24,14 @@ export function Form({
   children,
   className,
   successMessage,
+  id,
 }: {
   action: Action;
   children: ReactNode;
   className?: string;
   successMessage?: string;
+  /** For controls that drive the form from outside (e.g. the desk's steps). */
+  id?: string;
 }) {
   const [state, formAction] = useActionState(action, {});
   const t = useTranslations();
@@ -36,7 +39,7 @@ export function Form({
     <Ctx.Provider value={state}>
       {/* A className with its own layout (space-y-*, flex, grid) replaces the default spacing:
           two space-y utilities in one list fight over CSS order (an inline Save button would drop 20px). */}
-      <form action={formAction} className={ownLayout(className) ? className : cx("space-y-5", className)} noValidate>
+      <form id={id} action={formAction} className={ownLayout(className) ? className : cx("space-y-5", className)} noValidate>
         {state.message ? (
           <Alert tone={state.ok ? "success" : "danger"} key={state.nonce}>
             {t(state.message as never, state.messageValues as never)}
@@ -143,6 +146,9 @@ export function SelectField({ options, defaultValue, ...field }: FieldProps & { 
   return (
     <FieldShell {...field} id={id} error={error}>
       <select
+        // React resets a form after its action; a select keeps its first default, so a returned
+        // value (a server error) remounts it with that choice instead of losing it.
+        key={value ?? defaultValue ?? ""}
         id={id}
         name={field.name}
         defaultValue={value ?? defaultValue}

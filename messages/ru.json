@@ -1578,7 +1578,24 @@
         "other": "Не пришли / отменены"
       },
       "payPaid": "Оплачено",
-      "payDue": "Не оплачено {amount}"
+      "payDue": "Не оплачено {amount}",
+      "wizard": {
+        "label": "Шаги приёма",
+        "patient": "Пациент",
+        "services": "Услуги",
+        "vitals": "Измерения",
+        "doctor": "Врач",
+        "pending": "Ещё не заполнено",
+        "stepOf": "Шаг {n} из {total}",
+        "back": "Назад",
+        "next": "Далее: {step}",
+        "servicesSummary": "{count} шт. · {total}",
+        "bpSummary": "Давление {bp}",
+        "filledSummary": "Измерений: {count}",
+        "more": "Дополнительно: адрес, кто направил, льгота",
+        "check": "Проверьте",
+        "empty": "—"
+      }
     },
     "data": {
       "title": "Где хранятся данные",

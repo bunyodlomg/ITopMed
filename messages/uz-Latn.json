@@ -1578,7 +1578,24 @@
         "other": "Kelmagan / bekor qilingan"
       },
       "payPaid": "Toʻlangan",
-      "payDue": "Toʻlanmagan {amount}"
+      "payDue": "Toʻlanmagan {amount}",
+      "wizard": {
+        "label": "Qabul qadamlari",
+        "patient": "Bemor",
+        "services": "Xizmatlar",
+        "vitals": "O'lchovlar",
+        "doctor": "Shifokor",
+        "pending": "Hali to'ldirilmagan",
+        "stepOf": "{n}-qadam / {total}",
+        "back": "Orqaga",
+        "next": "Keyingi: {step}",
+        "servicesSummary": "{count} ta · {total}",
+        "bpSummary": "Bosim {bp}",
+        "filledSummary": "{count} ta o'lchov",
+        "more": "Qo'shimcha: manzil, kim yubordi, imtiyoz",
+        "check": "Tekshiring",
+        "empty": "—"
+      }
     },
     "data": {
       "title": "Maʼlumotlar qayerda saqlanadi",

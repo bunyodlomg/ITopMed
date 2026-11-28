@@ -1578,7 +1578,24 @@
         "other": "No-show / cancelled"
       },
       "payPaid": "Paid",
-      "payDue": "Unpaid {amount}"
+      "payDue": "Unpaid {amount}",
+      "wizard": {
+        "label": "Check-in steps",
+        "patient": "Patient",
+        "services": "Services",
+        "vitals": "Measurements",
+        "doctor": "Doctor",
+        "pending": "Not filled yet",
+        "stepOf": "Step {n} of {total}",
+        "back": "Back",
+        "next": "Next: {step}",
+        "servicesSummary": "{count} · {total}",
+        "bpSummary": "BP {bp}",
+        "filledSummary": "{count} measured",
+        "more": "More: address, referral, benefit",
+        "check": "Check",
+        "empty": "—"
+      }
     },
     "data": {
       "title": "Where the data is kept",

@@ -1578,7 +1578,24 @@
         "other": "Келмаган / бекор қилинган"
       },
       "payPaid": "Тўланган",
-      "payDue": "Тўланмаган {amount}"
+      "payDue": "Тўланмаган {amount}",
+      "wizard": {
+        "label": "Қабул қадамлари",
+        "patient": "Бемор",
+        "services": "Хизматлар",
+        "vitals": "Ўлчовлар",
+        "doctor": "Шифокор",
+        "pending": "Ҳали тўлдирилмаган",
+        "stepOf": "{n}-қадам / {total}",
+        "back": "Орқага",
+        "next": "Кейинги: {step}",
+        "servicesSummary": "{count} та · {total}",
+        "bpSummary": "Босим {bp}",
+        "filledSummary": "{count} та ўлчов",
+        "more": "Қўшимча: манзил, ким юборди, имтиёз",
+        "check": "Текширинг",
+        "empty": "—"
+      }
     },
     "data": {
       "title": "Маълумотлар қаерда сақланади",
