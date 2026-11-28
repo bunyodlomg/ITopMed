@@ -97,6 +97,82 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
   const followUp = chosen && canInvoice ? await followUpStatus(ctx, chosen.id) : null;
   const doneInvoice = done ? await withAppContext(db, (tx) => tx.invoice.findUnique({ where: { appointmentId: done.id }, select: { id: true, totalMinor: true, paidMinor: true, currency: true } })).catch(() => null) : null;
 
+  // Today's queue in the order the desk works it: waiting (by number), in the doctor's room,
+  // booked but not here yet, finished; no-shows and cancellations folded away.
+  type Row = (typeof queue)[number];
+  const groupOf = (a: Row) =>
+    a.status === "IN_PROGRESS" || (a.status === "CHECKED_IN" && a.calledAt) ? "inRoom" : a.status === "CHECKED_IN" ? "waiting" : a.status === "BOOKED" ? "booked" : a.status === "COMPLETED" ? "done" : "other";
+  const groups = (["waiting", "inRoom", "booked", "done", "other"] as const).map((key) => ({ key, rows: queue.filter((a) => groupOf(a) === key) }));
+  const queueRow = (a: Row, group: string) => {
+    const m = paidToday.get(a.patientId);
+    const owes = debt.get(a.patientId) ?? 0n;
+    const tone = group === "inRoom" ? "border-l-accent-solid" : group === "waiting" ? "border-l-warning" : group === "done" ? "border-l-success" : "border-l-transparent";
+    return (
+      <li key={a.id} className={`flex items-start gap-3 border-l-4 px-4 py-3 ${tone} ${group === "done" || group === "other" ? "opacity-80" : ""}`}>
+        <span className={`grid size-11 shrink-0 place-items-center rounded-[14px] text-[17px] font-extrabold tabular-nums ${group === "inRoom" ? "bg-accent-solid text-on-accent" : "bg-sunken text-text"}`}>{a.queueNumber ?? "·"}</span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14.5px] font-semibold">{patientName(a.patient)}</p>
+          <p className="truncate text-[12.5px] text-text-2">
+            {a.doctor.membership.user.fullName}
+            {a.room ? ` · ${a.room.name}` : ""}
+            {group === "booked" ? ` · ${format.dateTime(a.startsAt, { timeStyle: "short", timeZone: tz })}` : ""}
+          </p>
+          {m?.services.length ? <p className="truncate text-[12.5px] text-text-3">{m.services.join(", ")}</p> : null}
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {group === "inRoom" ? <Badge tone="accent">{a.status === "IN_PROGRESS" ? t("status.IN_PROGRESS") : t("clinic.call.calledBadge")}</Badge> : null}
+            {group === "other" ? <Badge tone={STATUS_TONE[a.status]}>{t(`status.${a.status}`)}</Badge> : null}
+            {group === "waiting" && eta.get(a.id) ? (
+              <span className="text-[12.5px] font-medium text-text-2">
+                {t("clinic.queue.etaShort", { time: format.dateTime(roundUp5(eta.get(a.id)!.at), { timeStyle: "short", timeZone: tz }), ahead: eta.get(a.id)!.ahead })}
+              </span>
+            ) : null}
+            {m ? (
+              m.paidMinor >= m.totalMinor ? (
+                <Badge tone="success">{t("clinic.desk.payPaid")}</Badge>
+              ) : (
+                <Badge tone={m.paidMinor === 0n ? "danger" : "warning"}>{t("clinic.desk.payDue", { amount: money(m.totalMinor - m.paidMinor, m.currency) })}</Badge>
+              )
+            ) : null}
+            {owes > (m ? m.totalMinor - m.paidMinor : 0n) ? <Badge tone="danger">{t("clinic.desk.debtShort", { amount: money(owes, ctx.tenant.currency) })}</Badge> : null}
+            {owes > 0n && canPay && ctx.permissions.has("billing.read") ? (
+              <Link href={`${base}/checkout?patient=${a.patientId}`} className="text-[13px] font-semibold text-accent hover:underline">
+                {t("clinic.checkout.openCheckout")}
+              </Link>
+            ) : null}
+          </div>
+          {owes > 0n && canPay ? (
+            <details className="mt-2">
+              <summary className="cursor-pointer text-[13px] font-medium text-accent">{t("clinic.desk.takeDebt")}</summary>
+              <Form action={payDebtAction} className="mt-2 space-y-2">
+                <input type="hidden" name="$slug" value={ctx.tenant.slug} />
+                <input type="hidden" name="patientId" value={a.patientId} />
+                <TextField name="amount" label={t("clinic.desk.debtAmount")} hint={t("clinic.desk.debtAmountHint")} inputMode="decimal" placeholder={minorToDecimalString(owes, ctx.tenant.currency).replace(/\.00$/, "")} />
+                <SelectField name="method" label={t("clinic.desk.method")} defaultValue="CASH" options={PAYMENT_METHODS.map((pm) => ({ value: pm, label: t(`paymentMethod.${pm}` as never) }))} />
+                <SubmitButton variant="secondary">{t("clinic.desk.takeDebtSubmit")}</SubmitButton>
+              </Form>
+            </details>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 flex-col gap-1">
+          {deskPrints && a.status !== "CANCELLED" ? (
+            <Link href={`${base}/desk/print/${a.id}`} className={buttonClass("ghost", "sm")} aria-label={t("clinic.deskPrint.listFor", { number: a.queueNumber ?? "—" })} title={t("clinic.deskPrint.listTitle")}>
+              <FileText aria-hidden className="size-4" />
+            </Link>
+          ) : encounters.get(a.id) && docTemplates[0] ? (
+            <Link href={`${base}/encounters/${encounters.get(a.id)}/document/${docTemplates[0].id}?print=1`} target="_blank" className={buttonClass("ghost", "sm")} aria-label={t("clinic.desk.printDocument", { name: docTemplates[0].name })} title={docTemplates[0].name}>
+              <FileText aria-hidden className="size-4" />
+            </Link>
+          ) : null}
+          {group !== "other" ? (
+            <Link href={`${base}/desk/ticket/${a.id}?print=1`} target="_blank" className={buttonClass("ghost", "sm")} aria-label={t("clinic.desk.printTicket")} title={t("clinic.desk.printTicket")}>
+              <Printer aria-hidden className="size-4" />
+            </Link>
+          ) : null}
+        </div>
+      </li>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <AutoRefresh seconds={20} />
@@ -281,18 +357,21 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
         <section aria-label={t("clinic.desk.nextUp")} className="rounded-[var(--radius-card)] bg-accent-solid p-5 text-on-accent">
           <p className="text-[13px] font-semibold opacity-80">{t("clinic.desk.nextUp")}</p>
           {next ? (
-            <>
-              <p className="mt-2 text-[56px] font-extrabold leading-none tracking-[-0.04em] tabular-nums">{next.queueNumber ?? "—"}</p>
-              <p className="mt-3 truncate text-[16px] font-bold">{patientName(next.patient)}</p>
-              {waiting.length > 1 ? <p className="text-[13px] opacity-80">{t("clinic.queue.waitingMore", { count: waiting.length - 1 })}</p> : null}
-              <p className="truncate text-[13px] opacity-80">
-                {next.doctor.membership.user.fullName}
-                {next.room ? ` · ${next.room.name}` : ""}
-              </p>
-              <Link href={`${base}/desk/ticket/${next.id}?print=1`} target="_blank" className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-current px-4 text-[14px] font-semibold">
-                <Printer aria-hidden className="size-4" /> {t("clinic.desk.printTicket")}
+            // Compact: the number and the patient side by side, so today's queue below stays in view.
+            <div className="mt-2 flex items-center gap-4">
+              <p className="text-[44px] font-extrabold leading-none tracking-[-0.04em] tabular-nums">{next.queueNumber ?? "—"}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[16px] font-bold">{patientName(next.patient)}</p>
+                <p className="truncate text-[13px] opacity-80">
+                  {next.doctor.membership.user.fullName}
+                  {next.room ? ` · ${next.room.name}` : ""}
+                </p>
+                {waiting.length > 1 ? <p className="text-[13px] opacity-80">{t("clinic.queue.waitingMore", { count: waiting.length - 1 })}</p> : null}
+              </div>
+              <Link href={`${base}/desk/ticket/${next.id}?print=1`} target="_blank" className="grid size-11 shrink-0 place-items-center rounded-full border border-current" aria-label={t("clinic.desk.printTicket")} title={t("clinic.desk.printTicket")}>
+                <Printer aria-hidden className="size-4" />
               </Link>
-            </>
+            </div>
           ) : (
             <p className="mt-2 text-pretty text-[14px] opacity-80">{t("clinic.desk.nextNone")}</p>
           )}
@@ -302,61 +381,35 @@ export default async function DeskPage({ params, searchParams }: { params: Promi
           {queue.length === 0 ? (
             <EmptyState icon={<ConciergeBell className="size-6" />} title={t("clinic.desk.emptyToday")} />
           ) : (
-            <ul className="max-h-[70vh] divide-y divide-border overflow-y-auto" tabIndex={0} aria-label={t("clinic.desk.today")}>
-              {queue.map((a) => {
-                const m = paidToday.get(a.patientId);
-                const owes = debt.get(a.patientId) ?? 0n;
-                return (
-                  <li key={a.id} className="flex items-start gap-3 px-4 py-3">
-                    <span className={`grid size-10 shrink-0 place-items-center rounded-full text-[14px] font-extrabold tabular-nums ${a.status === "IN_PROGRESS" || (a.calledAt && a.status === "CHECKED_IN") ? "bg-accent-solid text-on-accent" : "bg-sunken"}`}>{a.queueNumber ?? "·"}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[14px] font-medium">{patientName(a.patient)}</p>
-                      <p className="truncate text-[12.5px] text-text-2">{a.doctor.membership.user.fullName}</p>
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                        <Badge tone={STATUS_TONE[a.status]}>{t(`status.${a.status}`)}</Badge>
-                        {a.calledAt && a.status === "CHECKED_IN" ? <Badge tone="accent">{t("clinic.call.calledBadge")}</Badge> : null}
-                        {eta.get(a.id) && !a.calledAt ? (
-                          <span className="text-[12.5px] font-medium text-text-2">
-                            {t("clinic.queue.etaShort", { time: format.dateTime(roundUp5(eta.get(a.id)!.at), { timeStyle: "short", timeZone: tz }), ahead: eta.get(a.id)!.ahead })}
-                          </span>
-                        ) : null}
-                        {m ? <Badge tone={m.paidMinor >= m.totalMinor ? "success" : m.paidMinor === 0n ? "danger" : "warning"}>{money(m.paidMinor, m.currency)} / {money(m.totalMinor, m.currency)}</Badge> : null}
-                        {owes > 0n ? <Badge tone="danger">{t("clinic.desk.debtShort", { amount: money(owes, ctx.tenant.currency) })}</Badge> : null}
-                        {owes > 0n && canPay && ctx.permissions.has("billing.read") ? (
-                          <Link href={`${base}/checkout?patient=${a.patientId}`} className="text-[13px] font-semibold text-accent hover:underline">
-                            {t("clinic.checkout.openCheckout")}
-                          </Link>
-                        ) : null}
-                      </div>
-                      {owes > 0n && canPay ? (
-                        <details className="mt-2">
-                          <summary className="cursor-pointer text-[13px] font-medium text-accent">{t("clinic.desk.takeDebt")}</summary>
-                          <Form action={payDebtAction} className="mt-2 space-y-2">
-                            <input type="hidden" name="$slug" value={ctx.tenant.slug} />
-                            <input type="hidden" name="patientId" value={a.patientId} />
-                            <TextField name="amount" label={t("clinic.desk.debtAmount")} hint={t("clinic.desk.debtAmountHint")} inputMode="decimal" placeholder={minorToDecimalString(owes, ctx.tenant.currency).replace(/\.00$/, "")} />
-                            <SelectField name="method" label={t("clinic.desk.method")} defaultValue="CASH" options={PAYMENT_METHODS.map((pm) => ({ value: pm, label: t(`paymentMethod.${pm}` as never) }))} />
-                            <SubmitButton variant="secondary">{t("clinic.desk.takeDebtSubmit")}</SubmitButton>
-                          </Form>
-                        </details>
-                      ) : null}
-                    </div>
-                    {deskPrints && a.status !== "CANCELLED" ? (
-                      <Link href={`${base}/desk/print/${a.id}`} className={buttonClass("ghost", "sm")} aria-label={t("clinic.deskPrint.listFor", { number: a.queueNumber ?? "—" })} title={t("clinic.deskPrint.listTitle")}>
-                        <FileText aria-hidden className="size-4" />
-                      </Link>
-                    ) : encounters.get(a.id) && docTemplates[0] ? (
-                      <Link href={`${base}/encounters/${encounters.get(a.id)}/document/${docTemplates[0].id}?print=1`} target="_blank" className={buttonClass("ghost", "sm")} aria-label={t("clinic.desk.printDocument", { name: docTemplates[0].name })} title={docTemplates[0].name}>
-                        <FileText aria-hidden className="size-4" />
-                      </Link>
-                    ) : null}
-                    <Link href={`${base}/desk/ticket/${a.id}?print=1`} target="_blank" className={buttonClass("ghost", "sm")} aria-label={t("clinic.desk.printTicket")}>
-                      <Printer aria-hidden className="size-4" />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="max-h-[75vh] overflow-y-auto" tabIndex={0} aria-label={t("clinic.desk.today")}>
+              <p className="flex flex-wrap gap-x-3 gap-y-1 border-b border-border px-4 pb-3 text-[13px] text-text-2">
+                {groups
+                  .filter((g) => g.rows.length && g.key !== "other")
+                  .map((g) => (
+                    <span key={g.key}>
+                      {t(`clinic.desk.group.${g.key}`)} <strong className="tabular-nums text-text">{g.rows.length}</strong>
+                    </span>
+                  ))}
+              </p>
+              {groups.map((g) =>
+                g.rows.length === 0 ? null : g.key === "other" ? (
+                  <details key={g.key} className="border-t border-border">
+                    <summary className="flex min-h-11 cursor-pointer items-center justify-between px-4 text-[12px] font-semibold uppercase tracking-[0.06em] text-text-3">
+                      {t(`clinic.desk.group.${g.key}`)} <span className="tabular-nums">{g.rows.length}</span>
+                    </summary>
+                    <ul className="divide-y divide-border">{g.rows.map((a) => queueRow(a, g.key))}</ul>
+                  </details>
+                ) : (
+                  <section key={g.key} className="border-t border-border first-of-type:border-t-0">
+                    <h3 className="flex items-center justify-between bg-sunken/60 px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-text-3">
+                      {t(`clinic.desk.group.${g.key}`)}
+                      <span className="grid min-w-6 place-items-center rounded-full bg-surface px-2 text-[12px] tabular-nums text-text">{g.rows.length}</span>
+                    </h3>
+                    <ul className="divide-y divide-border">{g.rows.map((a) => queueRow(a, g.key))}</ul>
+                  </section>
+                ),
+              )}
+            </div>
           )}
         </Card>
         </div>

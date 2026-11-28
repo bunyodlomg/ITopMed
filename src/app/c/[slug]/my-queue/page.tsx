@@ -1,4 +1,4 @@
-import { Stethoscope } from "lucide-react";
+import { Check, FileText, Stethoscope } from "lucide-react";
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { moneyFormatter } from "@/components/money";
@@ -14,11 +14,12 @@ import { requireClinic } from "@/server/auth/guards";
 import { getMyDoctorProfileId } from "@/server/clinic/doctors";
 import { withAppContext } from "@/server/db";
 import { todayIn } from "@/server/scheduling/time";
-import { startVisitAction } from "../../../care-actions";
+import { openTaskAction, startVisitAction } from "../../../care-actions";
+import { doctorQueueTasks } from "@/server/emr/visit-tasks";
 
 const ORDER: Record<string, number> = { IN_PROGRESS: 0, CHECKED_IN: 1, BOOKED: 2, COMPLETED: 3, NO_SHOW: 4, CANCELLED: 5 };
 
-export default async function MyQueuePage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ finished?: string }> }) {
+export default async function MyQueuePage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ finished?: string; ready?: string }> }) {
   const { slug } = await params;
   const ctx = await requireClinic(slug, "emr.write");
   const [t, format, sp, profileId] = await Promise.all([getTranslations(), getFormatter(), searchParams, getMyDoctorProfileId(ctx)]);
@@ -28,6 +29,8 @@ export default async function MyQueuePage({ params, searchParams }: { params: Pr
   const ids = [...new Set(mine.map((a) => a.patientId))];
   const [{ today: paid, debt }, vitals, money, history] = await Promise.all([todayMoney(ctx, ids), todayVitals(ctx, ids), moneyFormatter(), patientVisitSummaries(ctx, ids)]);
   const year = Number(todayIn(tz).slice(0, 4));
+  // What each patient came for, one button each: a study opens its own form, the consultation the visit.
+  const tasks = await doctorQueueTasks(ctx, mine.map((a) => ({ appointmentId: a.id, patientId: a.patientId, sex: a.patient.sex, serviceId: a.serviceId, status: a.status })));
   const cabinet = profileId ? (await withAppContext({ tenantId: ctx.tenant.id, userId: ctx.principal.user.id }, (tx) => tx.doctorProfile.findUnique({ where: { id: profileId }, select: { cabinet: true } })))?.cabinet : null;
   const encounters = new Map(
     (await withAppContext({ tenantId: ctx.tenant.id, userId: ctx.principal.user.id }, (tx) => tx.encounter.findMany({ where: { appointmentId: { in: mine.map((a) => a.id) } }, select: { id: true, appointmentId: true } }))).map((e) => [e.appointmentId!, e.id]),
@@ -37,6 +40,7 @@ export default async function MyQueuePage({ params, searchParams }: { params: Pr
     <div className="mx-auto w-full max-w-4xl space-y-6">
       <PageHeader title={t("clinic.visit.myQueue")} description={t("clinic.visit.myQueueSubtitle")} />
       {sp.finished ? <Alert tone="success">{t("clinic.visit.finished")}</Alert> : null}
+      {sp.ready ? <Alert tone="success">{t("clinic.visit.studyReady")}</Alert> : null}
       {!profileId ? <Alert tone="neutral">{t("clinic.mySchedule.noProfile")}</Alert> : null}
       {profileId ? (
         <Card>
@@ -88,7 +92,21 @@ export default async function MyQueuePage({ params, searchParams }: { params: Pr
                           ? t("clinic.patients.returning", { count: history.get(a.patientId)!.earlier, date: format.dateTime(history.get(a.patientId)!.lastEarlier!.at, { dateStyle: "medium", timeZone: ctx.tenant.timezone }), doctor: history.get(a.patientId)!.lastEarlier!.doctor })
                           : <span className="font-semibold text-accent">{t("clinic.patients.firstVisit")}</span>}
                       </p>
-                      {paid.get(a.patientId)?.services.length ? <p className="text-[13px] text-text-2">{paid.get(a.patientId)!.services.join(", ")}</p> : a.service ? <p className="text-[13px] text-text-2">{a.service.name}</p> : null}
+                      {(tasks.get(a.id) ?? []).length && a.status !== "CANCELLED" && a.status !== "NO_SHOW" ? (
+                        <div className="mt-2 flex flex-wrap gap-1.5" aria-label={t("clinic.visit.tasksLabel")}>
+                          {tasks.get(a.id)!.map((task) => (
+                            <Form key={`${task.serviceId}-${task.target}`} action={openTaskAction} className="space-y-0">
+                              <input type="hidden" name="$slug" value={ctx.tenant.slug} />
+                              <input type="hidden" name="appointmentId" value={a.id} />
+                              <input type="hidden" name="target" value={task.target} />
+                              <button className={buttonClass(task.done ? "secondary" : task.target === "visit" ? "primary" : "secondary", "sm", task.done ? "text-success" : "")}>
+                                {task.done ? <Check aria-hidden className="size-4" /> : task.target === "visit" ? <Stethoscope aria-hidden className="size-4" /> : <FileText aria-hidden className="size-4" />}
+                                {task.target === "visit" ? (task.name || t("clinic.visit.taskVisit")) : task.name}
+                              </button>
+                            </Form>
+                          ))}
+                        </div>
+                      ) : paid.get(a.patientId)?.services.length ? <p className="text-[13px] text-text-2">{paid.get(a.patientId)!.services.join(", ")}</p> : a.service ? <p className="text-[13px] text-text-2">{a.service.name}</p> : null}
                       {vitals.get(a.patientId) ? (
                         <p className="mt-1 flex flex-wrap gap-x-3 text-[13px] font-medium">
                           {vitals.get(a.patientId)!.systolic ? <span>{t("clinic.desk.bp")}: {vitals.get(a.patientId)!.systolic}/{vitals.get(a.patientId)!.diastolic ?? "—"}</span> : null}

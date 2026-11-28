@@ -1,5 +1,7 @@
 "use server";
 
+import { taskPath } from "@/server/emr/visit-tasks";
+import { DomainError } from "@/server/errors";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ConsentPurpose } from "@/generated/prisma/client";
@@ -8,14 +10,14 @@ import { toFormState } from "@/server/actions-util";
 import { bookAppointment, cancelAppointment, checkIn, markNoShow, registerWalkIn, rescheduleAppointment } from "@/server/appointments/appointments";
 import { isLocalDate, localToInstant } from "@/server/scheduling/time";
 import { requireClinic } from "@/server/auth/guards";
-import { addAllergy, addDiagnosis, amendNote, finishEncounter, recordVitals, saveDraft, setClinicalStatus, setNextVisit, signNote, startVisit } from "@/server/emr/record";
+import { NOTE_SECTIONS, addAllergy, addDiagnosis, amendNote, finishEncounter, getEncounter, recordVitals, saveDraft, setClinicalStatus, setNextVisit, signNote, startVisit } from "@/server/emr/record";
 import { addDiagnosticResult, markDiagnosticError } from "@/server/emr/diagnostics";
 import { requestMeta } from "@/server/http";
 import { addPrescription, applyPrescriptionScheme, cancelPrescription } from "@/server/emr/prescriptions";
 import { applyNoteTemplate } from "@/server/emr/documents";
 import { copyPreviousNote } from "@/server/emr/assist";
 import { closeDispensary, enrollDispensary, markFollowUpDone } from "@/server/emr/dispensary";
-import { addNursingRecord, savePatientHistory } from "@/server/emr/history";
+import { addNursingRecord, getPatientHistory, savePatientHistory } from "@/server/emr/history";
 import { cookies } from "next/headers";
 import { BREAK_GLASS_REASONS } from "@/server/emr/access";
 import { CONSENT_METHODS, CONSENT_PURPOSES, recordConsent, registerPatient, updatePatient, withdrawConsent } from "@/server/patients/patients";
@@ -141,6 +143,72 @@ export async function startVisitAction(_: FormState, fd: FormData): Promise<Form
     return toFormState(e);
   }
   redirect(`/c/${slug}/encounters/${encounterId}`);
+}
+
+/**
+ * A button of the doctor's queue (a paid service): starts the visit if needed and
+ * opens the service's form (or the visit). The target is re-checked on the server.
+ */
+export async function openTaskAction(_: FormState, fd: FormData): Promise<FormState> {
+  const { slug, ctx } = await clinicFrom(fd);
+  let encounterId: string;
+  try {
+    encounterId = await startVisit(ctx, str(fd, "appointmentId"), await requestMeta());
+  } catch (e) {
+    return toFormState(e);
+  }
+  redirect(taskPath(slug, encounterId, str(fd, "target")));
+}
+
+/**
+ * "Create the history": the generated complaints and history text go into the
+ * doctor's draft note (added after what is already written), the anamnesis
+ * flags into the patient's history (other fields kept), and each ticked
+ * diagnosis is recorded (the first as the main one). Then the visit sheet.
+ */
+export async function historyWizardAction(_: FormState, fd: FormData): Promise<FormState> {
+  const { slug, ctx } = await clinicFrom(fd);
+  const encounterId = str(fd, "encounterId");
+  try {
+    const meta = await requestMeta();
+    const { encounter: e } = await getEncounter(ctx, encounterId, meta);
+    const draft = e.notes.find((n) => n.status === "DRAFT" && n.authorId === ctx.principal.user.id);
+    if (!draft) throw new DomainError("errors.noteSigned");
+    const join = (a: string | null, b: string) => [a?.trim(), b.trim()].filter(Boolean).join("\n");
+    const sections = Object.fromEntries(NOTE_SECTIONS.map((k) => [k, (draft as Record<string, unknown>)[k] ?? ""])) as Record<(typeof NOTE_SECTIONS)[number], string>;
+    await saveDraft(ctx, draft.id, { ...sections, complaints: join(sections.complaints, str(fd, "complaintsText")), history: join(sections.history, str(fd, "historyText")) }, meta);
+
+    const h = await getPatientHistory(ctx, e.patient.id, meta);
+    const keep = (v: unknown) => (v === null || v === undefined ? "" : String(v));
+    const years = str(fd, "hypertensionYears");
+    const heredity = fd.get("heredity") === "1";
+    await savePatientHistory(
+      ctx,
+      e.patient.id,
+      {
+        pregnancy: keep(h?.pregnancy),
+        pregnancyWeeks: keep(h?.pregnancyWeeks),
+        priorMyocardialInfarction: str(fd, "priorMyocardialInfarction") === "yes" ? "yes" : h?.priorMyocardialInfarction === true ? "yes" : h?.priorMyocardialInfarction === false ? "no" : "",
+        diabetes: str(fd, "diabetes") || keep(h?.diabetes),
+        smoking: str(fd, "smoking") || keep(h?.smoking),
+        hypertensionYears: years || keep(h?.hypertensionYears),
+        hereditary: h?.hereditary || (heredity ? str(fd, "heredityText") || "+" : ""),
+        surgeries: keep(h?.surgeries),
+        otherNotes: keep(h?.otherNotes),
+      },
+      meta,
+    );
+
+    const ticked = fd.getAll("dx").map(String).slice(0, 12);
+    for (const [i, v] of ticked.entries()) {
+      const [code, ...rest] = v.split("|");
+      await addDiagnosis(ctx, encounterId, { icd10Code: code ?? "", description: rest.join("|") || code || "", kind: i === 0 ? "PRIMARY" : "SECONDARY" }, meta);
+    }
+  } catch (e) {
+    return toFormState(e, fd);
+  }
+  revalidatePath(`/c/${slug}/encounters/${encounterId}`);
+  redirect(`/c/${slug}/encounters/${encounterId}#diagnoses`);
 }
 
 export async function noteAction(_: FormState, fd: FormData): Promise<FormState> {
@@ -375,6 +443,9 @@ export async function diagnosticAction(_: FormState, fd: FormData): Promise<Form
   }
   const back = str(fd, "$back");
   if (back.startsWith(`/c/${slug}/`)) revalidatePath(back);
+  // "Tayyor" on a form opened from the queue: back to the queue (the result is ready to print at the desk).
+  const next = str(fd, "$next");
+  if (next.startsWith(`/c/${slug}/`) && !next.includes("//", 3)) redirect(next);
   return ok("diagnostics.saved");
 }
 

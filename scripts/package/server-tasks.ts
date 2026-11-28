@@ -108,7 +108,7 @@ async function main() {
     if (!specFile) throw new Error("Usage: tasks.mjs update-clinic <spec.json>");
     const r = await applyClinicExtras(clinicSpecSchema.parse(JSON.parse(fs.readFileSync(specFile, "utf8"))), path.dirname(specFile));
     const s = r.services;
-    console.log(`Klinika yangilandi: ${r.templatesAdded} ta yangi shablon; blankada to'ldirildi: ${r.letterhead.join(", ") || "-"}`);
+    console.log(`Klinika yangilandi: ${r.templatesAdded} ta yangi shablon, ${r.templatesBound} tasi xizmatiga ulandi, ${r.medicinesAdded} ta dori qo'shildi; blankada to'ldirildi: ${r.letterhead.join(", ") || "-"}`);
     console.log(`Xizmatlar: ${s.created} yangi, ${s.updated} narxi yangilandi, ${s.renamed} nomi o'zgardi, ${s.retired} arxivlandi`);
   } else if (task === "clinic-admin") {
     const [slug, opsFile] = process.argv.slice(3);

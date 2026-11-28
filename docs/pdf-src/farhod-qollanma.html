@@ -55,15 +55,15 @@
     <li><span>5. Qabulxona: bemorni yozish</span><span>11</span></li>
     <li><span>6. Kassa: to'lov, chek, qarz, smena</span><span>17</span></li>
     <li><span>7. Shifokor: qabul, yozuv, tashxis, retsept</span><span>21</span></li>
-    <li><span>8. UTT va EXO: shifokorning o'z blankalari</span><span>26</span></li>
-    <li><span>9. Hujjatlarni chop etish</span><span>28</span></li>
-    <li><span>10. Hisobotlar va nazorat (egasi)</span><span>29</span></li>
-    <li><span>11. Bemorlar, bemor kartasi va Excel</span><span>30</span></li>
-    <li><span>12. Sinov bemorlarini tozalash</span><span>32</span></li>
-    <li><span>13. Har kungi qisqa tartib</span><span>33</span></li>
-    <li><span>14. Muammolar va yechimlar</span><span>33</span></li>
-    <li><span>15. Barcha bo'limlar birma-bir</span><span>35</span></li>
-    <li><span>16. Video ssenariysi (jadval)</span><span>50</span></li>
+    <li><span>8. UTT va EXO: shifokorning o'z blankalari</span><span>29</span></li>
+    <li><span>9. Hujjatlarni chop etish</span><span>31</span></li>
+    <li><span>10. Hisobotlar va nazorat (egasi)</span><span>32</span></li>
+    <li><span>11. Bemorlar, bemor kartasi va Excel</span><span>33</span></li>
+    <li><span>12. Sinov bemorlarini tozalash</span><span>35</span></li>
+    <li><span>13. Har kungi qisqa tartib</span><span>36</span></li>
+    <li><span>14. Muammolar va yechimlar</span><span>36</span></li>
+    <li><span>15. Barcha bo'limlar birma-bir</span><span>38</span></li>
+    <li><span>16. Video ssenariysi (jadval)</span><span>53</span></li>
   </ol>
 </section>
 
@@ -203,8 +203,19 @@
 
 <section class="page">
   <h3>5.3. Bugungi navbat</h3>
-  <figure><img src="img/f-14-desk-queue.png"><figcaption>Uch bemor navbatda: holati (keldi / qabulda / yakunlandi)</figcaption></figure>
-  <p>O'ng tomonda bugungi navbat: kim keldi, kim qabulda, kim yakunladi; talonni qayta chop etish. Qabul yakunlangach va to'lov qilingach, bemorning hujjatlarini shu yerdan chop etib berasiz.</p>
+  <div class="row">
+    <figure class="narrow"><img src="img/f-14b-desk-queue-panel.png" style="max-height:150mm"><figcaption>Navbatda keyingi va bugungi navbat guruhlar bo'yicha</figcaption></figure>
+    <div>
+      <p>O'ng tomonda: tepada <strong>Navbatda keyingi</strong> (raqam, bemor, shifokor, talon tugmasi), ostida <strong>bugungi navbat guruhlar bo'yicha</strong>:</p>
+      <ul class="tight">
+        <li><strong>Kutmoqda</strong> — navbat raqami tartibida, taxminiy kirish vaqti bilan;</li>
+        <li><strong>Qabulda</strong> — shifokor chaqirgan yoki ko'rikda;</li>
+        <li><strong>Yozilgan, hali kelmagan</strong> — oldindan yozilganlar (vaqti bilan);</li>
+        <li><strong>Yakunlangan</strong>; <strong>Kelmagan / bekor</strong> — yig'ib qo'yilgan.</li>
+      </ul>
+      <p>Har qatorda: katta navbat raqami, bemor, shifokor va xona, xizmatlar, to'lov holati (<em>To'langan</em> yashil yoki <em>To'lanmagan 130 000</em> qizil), hujjatlar va talon tugmalari. Qabul yakunlangach va to'lov qilingach, hujjat tugmasidan bemorning qog'ozlarini chop etib berasiz.</p>
+    </div>
+  </div>
   <p class="small muted">Shunday bemor allaqachon bo'lsa, dastur ogohlantiradi — avval qidiring, bir bemorni ikki marta yozmang.</p>
 </section>
 
@@ -289,8 +300,51 @@
 </section>
 
 <section class="page">
-  <h3>7.1. Qabul — 6 qadam</h3>
-  <figure><img src="img/f-17-visit-top.png"><figcaption>Qabul ochildi: tepada 6 qadam — Shikoyat va anamnez, Ko'rsatkichlar, Tashxis, Tekshiruvlar, Davolash, Yakunlash</figcaption></figure>
+  <h3>7.0. Tezkor ish: bemor to'lagan xizmat — bitta tugma</h3>
+  <p>Har bir bemor tagida u <strong>to'lagan xizmatlar tugma bo'lib</strong> turadi: «Kardiolog ko'ruvi», «EhoKG (transtorakal)», «Qalqonsimon bez UTT»… Ortiqcha narsa yo'q — kerakli blanka bir bosishda ochiladi.</p>
+  <figure><img src="img/f-50-queue-tasks.png"><figcaption>Bemor to'lagan uchta xizmat: EhoKG, Kardiolog ko'ruvi, Umumiy qorin UTT — har biri bitta tugma</figcaption></figure>
+  <ol class="tight">
+    <li><strong>EhoKG</strong> (yoki istalgan UTT) tugmasini bosing → shu xizmatning <strong>o'z blankasi tayyor holda ochiladi</strong> (EXO blankasi, qalqonsimon bez blankasi…). «Umumiy qorin UTT»da bemorning jinsiga qarab erkak yoki ayol blankasi ochiladi.</li>
+    <li>Blankani to'ldiring (<strong>Me'yorni to'ldirish</strong> odatiy qiymatlarni qo'yadi) → <strong>Tayyor</strong>.</li>
+    <li>Natija saqlanadi, <strong>qabulxonada chop etishga tayyor</strong> bo'ladi va navbatga qaytasiz — tugmada <strong>✓</strong> chiqadi.</li>
+  </ol>
+  <div class="grid2">
+    <figure><img src="img/f-51-echo-form.png"><figcaption>EhoKG bosildi: EXO blankasi tayyor ochildi</figcaption></figure>
+    <figure><img src="img/f-52-queue-done.png"><figcaption>«Tayyor»dan keyin: EhoKG ✓, natija qabulxonada chop etishga tayyor</figcaption></figure>
+  </div>
+</section>
+
+<section class="page">
+  <h3>7.0.1. Ko'rik: avval ko'rik varaqasi</h3>
+  <p><strong>Kardiolog ko'ruvi</strong> tugmasi ko'rikni ochadi. Birinchi bo'lib <strong>Ko'rik varaqasi</strong> chiqadi: bemorning ismi, <strong>tashxis</strong> va <strong>davolash rejasi</strong> — bitta ekranda. Shikoyat va anamnez endi alohida va ixtiyoriy: kerak bo'lgan bemorda to'ldiriladi.</p>
+  <figure><img src="img/f-53-visit-sheet.png"><figcaption>Ko'rik varaqasi: tashxis va davolash; burchakda «Kasallik tarixi yaratish»</figcaption></figure>
+  <h3>7.0.2. «Kasallik tarixi yaratish»</h3>
+  <p>Burchakdagi <strong>Kasallik tarixi yaratish</strong> tugmasi → savollarga javob belgilanadi:</p>
+  <ol class="tight">
+    <li><strong>Shikoyatlar</strong> — tugmachalar (zo'riqishda ko'krakda og'riq, hansirash, yurak urib ketishi, bosh og'rig'i, shishlar…) va <strong>qachondan beri</strong>.</li>
+    <li><strong>Arterial bosim</strong> — ko'tariladimi, necha yildan beri, eng yuqori qiymati; doimiy dorilari.</li>
+    <li><strong>Xavf omillari</strong> — qandli diabet, chekish, infarkt, insult, irsiyat.</li>
+    <li><strong>Matn o'zi yoziladi</strong> (shikoyatlar va anamnez) — xohlasangiz o'sha yerda tahrirlaysiz.</li>
+    <li><strong>Taxminiy tashxis</strong> (MKB-10) taklif qilinadi: javoblar va bugungi bosim, vaznga qarab. Faqat siz belgilaganingiz yoziladi; birinchisi — asosiy tashxis.</li>
+    <li><strong>Saqlash</strong> → ko'rik varaqasiga qaytasiz: tashxis tayyor, davolash rejasini yozasiz.</li>
+  </ol>
+</section>
+
+<section class="page">
+  <div class="grid2">
+    <figure><img src="img/f-54-history-wizard.png"><figcaption>Kasallik tarixi yaratish: shikoyatlar, bosim, xavf omillari, matn va taxminiy tashxis</figcaption></figure>
+    <figure><img src="img/f-55-sheet-after.png"><figcaption>Saqlangandan keyin: tashxislar ko'rik varaqasida</figcaption></figure>
+  </div>
+  <h3>7.0.3. Davolash rejasi: dori tez yoziladi</h3>
+  <p>Dori nomining birinchi harflarini yozing: <code>bis</code> → <strong>Bisoprolol</strong> (2,5 / 5 / 10 mg) va <strong>Konkor</strong> chiqadi. Tanlang — doza va qabul tartibi o'zi to'ladi, o'zgartirish mumkin → <strong>Retsept qo'shish</strong>.</p>
+  <figure class="small"><img src="img/f-56-bis-search.png"><figcaption>«bis» yozildi: Bisoprolol va Konkor</figcaption></figure>
+  <p class="small muted">Dastlab 40 ta kardiologik dori qo'shilgan (beta-blokatorlar, AAF ingibitorlari, sartanlar, diuretiklar, statinlar, antiagregantlar, antikoagulyantlar…). Yangi dorini <strong>Dori bazasi</strong> bo'limida qo'shasiz yoki retsept yozayotganda «Dori bazasiga saqlash» belgisini qoldirasiz — keyingi safar u ham qidiruvda chiqadi.</p>
+  <div class="video"><b>Videoda:</b> navbatda EhoKG → blanka → Tayyor ✓; Kardiolog ko'ruvi → Kasallik tarixi yaratish → tashxis → «bis» bilan Bisoprolol. Bemorga 5–6 daqiqa.</div>
+</section>
+
+<section class="page">
+  <h3>7.1. Qabul qadamlari</h3>
+  <figure><img src="img/f-53-visit-sheet.png"><figcaption>Qabul: Ko'rik varaqasi (tashxis + davolash), Ko'rsatkichlar, Tekshiruvlar, Shikoyat va anamnez (ixtiyoriy), Yakunlash</figcaption></figure>
   <p>Qadamlar orasida tepadagi raqamlarni bosib o'tasiz; tartib majburiy emas. Bajarilgan qadamda belgi chiqadi.</p>
   <ol class="tight">
     <li><strong>Shablondan to'ldirish</strong> → "Kardiolog ko'ruvi: ko'rik va tavsiyalar" → <strong>Qo'llash</strong>. Faqat bo'sh bo'limlar to'ldiriladi — siz yozgan matn o'zgarmaydi.</li>

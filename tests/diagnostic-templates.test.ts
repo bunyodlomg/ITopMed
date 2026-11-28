@@ -95,7 +95,7 @@ describe("clinic templates in use", () => {
     expect(testis.id).toBe(before.find((s) => s.name === "Moyaklar UZI")!.id);
     expect(Number(testis.priceMinor) / 100).toBe(80000);
     expect((await listServices(o.ctx)).some((s) => s.name === "Umumiy erkaklar UZI")).toBe(false);
-    expect(await applyClinicExtras(spec, "scripts/deploy/clinics")).toEqual({ templatesAdded: 0, letterhead: [], services: { created: 0, updated: 0, renamed: 0, retired: 0 } });
+    expect(await applyClinicExtras(spec, "scripts/deploy/clinics")).toEqual({ templatesAdded: 0, letterhead: [], services: { created: 0, updated: 0, renamed: 0, retired: 0 }, templatesBound: 0, medicinesAdded: 0 });
 
     const tpl = (await listTemplates(o.ctx, { kind: "DIAGNOSTIC" })).find((x) => x.name === TRIMESTER23)!;
     expect(parseTemplateContent(tpl.content)?.study).toBe("ULTRASOUND");

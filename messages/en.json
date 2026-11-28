@@ -923,7 +923,13 @@
       "stepDiagnosis": "Diagnosis",
       "stepStudies": "Studies",
       "stepTreatment": "Treatment",
-      "stepFinish": "Finish"
+      "stepFinish": "Finish",
+      "stepSheet": "Visit sheet",
+      "stepComplaintsOptional": "Complaints and history (optional)",
+      "historyWizard": "Create the history",
+      "taskVisit": "Visit",
+      "tasksLabel": "Services the patient paid for",
+      "studyReady": "Done: the result is saved and ready to print at the desk."
     },
     "record": {
       "title": "Medical record",
@@ -1563,7 +1569,16 @@
       "splitInvalid": "Enter the amount in digits",
       "doctorCode": "Doctor code",
       "doctorCodeHint": "Type the code and press Enter",
-      "doctorCodeUnknown": "No doctor with code “{code}”"
+      "doctorCodeUnknown": "No doctor with code “{code}”",
+      "group": {
+        "waiting": "Waiting",
+        "inRoom": "With the doctor",
+        "booked": "Booked, not here yet",
+        "done": "Finished",
+        "other": "No-show / cancelled"
+      },
+      "payPaid": "Paid",
+      "payDue": "Unpaid {amount}"
     },
     "data": {
       "title": "Where the data is kept",
@@ -3419,7 +3434,13 @@
     "computable": "calculated automatically",
     "draftConclusion": "Draft conclusion",
     "draftLine": "{label}: {value} — {flag} ({min}–{max})",
-    "draftAllNormal": "The measured values are within the normal ranges."
+    "draftAllNormal": "The measured values are within the normal ranges.",
+    "studyEyebrow": "Study form",
+    "backToQueue": "Back to the queue",
+    "openVisit": "Open the visit",
+    "doneToday": "Done today",
+    "studyHint": "Fill in the form and press Done — the result is then ready to print at the desk.",
+    "ready": "Done"
   },
   "bot": {
     "welcome": "Hello! This is ITop Med, the management system for clinics.\n\nTap the button below to open it.",
@@ -3629,6 +3650,118 @@
       "patch": "Patch",
       "solution": "Solution",
       "other": "Other"
+    }
+  },
+  "historyWizard": {
+    "eyebrow": "Create the history",
+    "backToVisit": "Back to the visit",
+    "noteSigned": "Nothing can be written in this visit: the note is signed or the visit is finished.",
+    "save": "Save and go to the visit sheet",
+    "complaintsTitle": "1. Complaints",
+    "duration": "For how long",
+    "durationUnit": "Unit",
+    "unit": {
+      "days": "days",
+      "weeks": "weeks",
+      "months": "months",
+      "years": "years"
+    },
+    "since": {
+      "days": "For {n} days.",
+      "weeks": "For {n} weeks.",
+      "months": "For {n} months.",
+      "years": "For {n} years."
+    },
+    "label": {
+      "chestPainExertion": "Chest pain on exertion",
+      "chestPainRest": "Chest pain at rest",
+      "dyspneaExertion": "Breathless on exertion",
+      "dyspneaRest": "Breathless at rest",
+      "palpitations": "Palpitations",
+      "irregular": "Irregular heartbeat",
+      "headache": "Headache",
+      "dizziness": "Dizziness",
+      "weakness": "Weakness",
+      "edema": "Leg swelling",
+      "syncope": "Fainting",
+      "priorMi": "Past heart attack",
+      "stroke": "Past stroke",
+      "heredity": "Heart disease in the family"
+    },
+    "c": {
+      "chestPainExertion": "chest pain on physical exertion",
+      "chestPainRest": "chest pain at rest",
+      "dyspneaExertion": "shortness of breath on exertion",
+      "dyspneaRest": "shortness of breath at rest",
+      "palpitations": "palpitations",
+      "irregular": "irregular heartbeat",
+      "headache": "headache",
+      "dizziness": "dizziness",
+      "weakness": "weakness",
+      "edema": "leg swelling",
+      "syncope": "fainting episodes"
+    },
+    "bpTitle": "2. Blood pressure and medicines",
+    "bp": {
+      "yes": "Blood pressure rises",
+      "no": "No raised blood pressure"
+    },
+    "bpYears": "For how many years",
+    "bpMax": "Highest blood pressure",
+    "meds": "Regular medicines",
+    "medsPlaceholder": "e.g. Amlodipine 5 mg",
+    "riskTitle": "3. History and risk factors",
+    "diabetes": "Diabetes",
+    "diabetesOpt": {
+      "NO": "No",
+      "TYPE2": "Type 2",
+      "TYPE1": "Type 1",
+      "OTHER": "Other"
+    },
+    "smoking": "Smoking",
+    "smokingOpt": {
+      "NEVER": "Never",
+      "FORMER": "Former smoker",
+      "CURRENT": "Smokes"
+    },
+    "extra": "More (optional)",
+    "previewTitle": "4. Goes into the note",
+    "previewHint": "Written from the answers; edit here if you like.",
+    "complaintsText": "Complaints",
+    "historyText": "History of the illness",
+    "h": {
+      "bp": "Raised blood pressure.",
+      "bpYears": "Raised blood pressure for {n} years.",
+      "bpMax": "Highest recorded blood pressure {bp} mmHg.",
+      "bpNo": "Denies raised blood pressure.",
+      "meds": "Regularly takes: {meds}.",
+      "diabetes2": "Type 2 diabetes.",
+      "diabetes1": "Type 1 diabetes.",
+      "diabetesNo": "No diabetes.",
+      "smokes": "Smokes.",
+      "smokedBefore": "Former smoker.",
+      "mi": "Past myocardial infarction.",
+      "stroke": "Past stroke.",
+      "heredity": "Cardiovascular disease in close relatives."
+    },
+    "dxTitle": "5. Working diagnosis",
+    "dxHint": "Suggested from the answers and today's blood pressure and weight. Only ticked ones are recorded; the first is the main diagnosis.",
+    "dxNone": "No suggestion yet — write the diagnosis on the visit sheet.",
+    "dxPrimary": "main",
+    "dx": {
+      "I10": "Essential (primary) hypertension",
+      "I11_9": "Hypertensive heart disease without heart failure",
+      "I20_8": "Other forms of angina pectoris (exertional angina)",
+      "I50_9": "Heart failure, unspecified",
+      "I49_9": "Cardiac arrhythmia, unspecified",
+      "R07_4": "Chest pain, unspecified",
+      "R55": "Syncope and collapse",
+      "I25_2": "Old myocardial infarction",
+      "I69_4": "Sequelae of stroke",
+      "E11": "Type 2 diabetes mellitus",
+      "E10": "Type 1 diabetes mellitus",
+      "E66": "Obesity",
+      "Z72_0": "Tobacco use"
     }
   }
 }

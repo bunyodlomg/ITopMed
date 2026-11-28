@@ -167,6 +167,9 @@ function data(input: MedicineInput) {
   return { ...input, searchKey: medicineSearchKey(input) };
 }
 
+/** A catalog row from checked input (also used by clinic set-up from a spec). */
+export const medicineRow = data;
+
 function duplicate(e: unknown): never {
   if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") throw new DomainError("errors.medicineExists");
   throw e;

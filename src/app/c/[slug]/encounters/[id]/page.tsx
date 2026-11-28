@@ -44,7 +44,7 @@ import { DiagnosticFields } from "@/components/diagnostic-fields";
 import { DIAGNOSTIC_FIELDS, unitKey, type DiagnosticKindKey } from "@/lib/diagnostics";
 import { listDiagnosticResults } from "@/server/emr/diagnostics";
 import { parseTemplateContent } from "@/lib/diagnostic-template";
-import { VisitStepper } from "@/components/visit-stepper";
+import { VisitStepper, type VisitStep } from "@/components/visit-stepper";
 import { MedicinePicker } from "@/components/medicine-picker";
 import { DiagnosisPicker } from "@/components/diagnosis-picker";
 
@@ -152,6 +152,11 @@ export default async function EncounterPage({ params, searchParams }: { params: 
         action={
           <>
             <Badge tone={STATUS_TONE[e.status]}>{t(`status.${e.status}`)}</Badge>
+            {canWrite ? (
+              <ButtonLink href={`/c/${s}/encounters/${e.id}/history`} size="sm">
+                {tv("historyWizard")}
+              </ButtonLink>
+            ) : null}
             <ButtonLink href={`/c/${s}/patients/${e.patient.id}/record`} variant="secondary" size="sm">{t("clinic.record.title")}</ButtonLink>
           </>
         }
@@ -161,7 +166,7 @@ export default async function EncounterPage({ params, searchParams }: { params: 
       <VisitStepper
         storageKey={`itm-visit-step:${e.id}`}
         labels={{ back: tv("stepBack"), next: tv("stepNext"), step: tv("stepWord"), nav: tv("stepsNav") }}
-        steps={[
+        steps={visitSheetFirst([
           {
             id: "complaints",
             title: tv("stepComplaints"),
@@ -301,7 +306,7 @@ export default async function EncounterPage({ params, searchParams }: { params: 
             done: e.diagnoses.length > 0,
             content: (
               <>
-              <Card>
+              <Card id="diagnoses">
                 <CardHeader title={t("clinic.visit.diagnoses")} />
                 <CardBody className="space-y-4">
                   <DiagnosisList diagnoses={e.diagnoses} statusAction={clinicalStatusAction} slug={s} canEdit={canWrite} />
@@ -685,8 +690,35 @@ export default async function EncounterPage({ params, searchParams }: { params: 
               </>
             ),
           },
-        ]}
+        ], tv("stepSheet"), tv("stepComplaintsOptional"))}
       />
     </div>
   );
+}
+
+/**
+ * The visit opens on the visit sheet: diagnosis and treatment plan together (the
+ * doctor's usual work, fastest first). Complaints and history are optional and
+ * come later — or are written for the doctor by "Create the history".
+ */
+function visitSheetFirst(steps: VisitStep[], sheetTitle: string, complaintsTitle: string): VisitStep[] {
+  const by = (id: string) => steps.find((x) => x.id === id);
+  const dx = by("diagnosis");
+  const rx = by("treatment");
+  if (!dx || !rx) return steps;
+  const sheet: VisitStep = {
+    id: "sheet",
+    title: sheetTitle,
+    done: Boolean(dx.done && rx.done),
+    content: (
+      <>
+        {dx.content}
+        {rx.content}
+      </>
+    ),
+  };
+  const rest = steps.filter((x) => x.id !== "diagnosis" && x.id !== "treatment" && x.id !== "complaints" && x.id !== "finish");
+  const complaints = by("complaints");
+  const finish = by("finish");
+  return [sheet, ...rest, ...(complaints ? [{ ...complaints, title: complaintsTitle }] : []), ...(finish ? [finish] : [])];
 }

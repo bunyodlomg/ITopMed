@@ -18,6 +18,7 @@ import { importPriceList, parsePriceLine, upsertPriceItems, type PriceLine } fro
 import { LOGO_MAX_BYTES } from "../../src/server/clinic/branding";
 import { PLACEHOLDERS } from "../../src/server/clinic/templates";
 import { NOTE_SECTIONS } from "../../src/server/emr/record";
+import { medicineRow, medicineSchema } from "../../src/server/emr/medicines";
 import { SPECIALTIES } from "../../src/server/scheduling/specialties";
 import { listServices, setServiceArchived } from "../../src/server/clinic/resources";
 import { recordAudit } from "../../src/server/audit";
@@ -46,8 +47,20 @@ export const clinicSpecSchema = z.object({
   licenseText: z.string().max(300).default(""),
   /** Diagnostic report templates from the clinic's own forms (fields one per line, see src/lib/diagnostic-template.ts). */
   diagnosticTemplates: z
-    .array(z.object({ name: z.string().min(2).max(120), study: z.enum(DIAGNOSTIC_KINDS), fields: z.string(), body: z.string().min(1), conclusion: z.string().default("") }))
+    .array(
+      z.object({
+        name: z.string().min(2).max(120),
+        study: z.enum(DIAGNOSTIC_KINDS),
+        fields: z.string(),
+        body: z.string().min(1),
+        conclusion: z.string().default(""),
+        /** The paid service this form belongs to (exact name on the price list): the doctor clicks it and the form opens. */
+        service: z.string().min(2).optional(),
+      }),
+    )
     .default([]),
+  /** Starter medicine catalog (prescription search); entries already in the clinic's catalog are left alone. */
+  medicines: z.array(z.record(z.string(), z.unknown())).default([]),
   /** Printable documents from the clinic's own forms; text with {{placeholders}} (PLACEHOLDERS in src/server/clinic/templates.ts). */
   documentTemplates: z.array(z.object({ name: z.string().min(2).max(120), specialty: z.enum(SPECIALTIES).optional(), body: z.string().min(1).max(20_000) })).default([]),
   /** Visit note templates: pre-filled note sections. */
@@ -152,6 +165,9 @@ export interface ExtrasResult {
   templatesAdded: number;
   letterhead: string[];
   services: { created: number; updated: number; renamed: number; retired: number };
+  /** Spec forms bound to their services; starter medicines added. */
+  templatesBound: number;
+  medicinesAdded: number;
 }
 
 type AuditEntry = { action: string; entityType: string; entityId: string; metadata?: Record<string, string> };
@@ -202,10 +218,29 @@ export async function applyClinicExtras(spec: ClinicSpec, specDir?: string): Pro
     }
 
     const services = await applyServices(tx, tenant, spec, prices, audit);
+
+    // Forms bound to their services, only while the clinic has not bound them itself.
+    let templatesBound = 0;
+    for (const t of spec.diagnosticTemplates.filter((x) => x.service)) {
+      const service = await tx.service.findFirst({ where: { tenantId: tenant.id, archivedAt: null, name: { equals: t.service!, mode: "insensitive" } }, select: { id: true } });
+      if (!service) continue;
+      const r = await tx.clinicTemplate.updateMany({ where: { tenantId: tenant.id, kind: "DIAGNOSTIC", name: t.name, archivedAt: null, serviceId: null }, data: { serviceId: service.id } });
+      templatesBound += r.count;
+    }
+    // Starter medicines: added by name + strength when missing.
+    let medicinesAdded = 0;
+    for (const raw of spec.medicines) {
+      const input = medicineSchema.parse(raw);
+      const exists = await tx.medicine.findFirst({ where: { tenantId: tenant.id, archivedAt: null, name: { equals: input.name, mode: "insensitive" }, strength: input.strength ? { equals: input.strength, mode: "insensitive" } : null }, select: { id: true } });
+      if (exists) continue;
+      await tx.medicine.create({ data: { id: uuidv7(), tenantId: tenant.id, ...medicineRow(input), createdById: owner.userId }, select: { id: true } });
+      medicinesAdded++;
+    }
+    if (templatesBound || medicinesAdded) await audit({ action: "clinic.spec_catalog", entityType: "Tenant", entityId: tenant.id, metadata: { templatesBound: String(templatesBound), medicinesAdded: String(medicinesAdded) } });
     if (templatesAdded || letterhead.length) {
       await recordAudit(tx, { tenantId: tenant.id, actorType: "SYSTEM", action: "clinic.spec_applied", entityType: "Tenant", entityId: tenant.id, metadata: { templatesAdded, letterhead } });
     }
-    return { templatesAdded, letterhead, services };
+    return { templatesAdded, letterhead, services, templatesBound, medicinesAdded };
   });
 }
 

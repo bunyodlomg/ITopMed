@@ -67,42 +67,48 @@
       "study": "ULTRASOUND",
       "fields": "lmp | Oxirgi hayzning birinchi kuni |  |  | \nedd | Taxminiy tug'ruq vaqti |  |  | \nuterusPosition | Bachadon holati |  |  | fleksio\nlocalThickening | Bachadonda mahalliy qalinlashuv |  |  | aniqlanmadi\nmyometrium | Miometriy exostrukturasi |  |  | bir xil, exogenligi saqlangan\nfetusCount | Homilalar soni | ta |  | 1\ngsd | Homila qopi diametri | mm |  | \ncrl | Bosh-dumg'aza uzunligi | mm |  | \nbpd | BPR | mm |  | \nfhr | Yurak urishi, 1 daqiqada | marta |  | \nmovements | Homila harakati |  |  | \nnt | Homila yoqa kengligi | mm |  | \ncorpusLuteum | Sariq tana diametri | mm |  | \nchorionFluid | Xorion (amniotik) suyuqligi |  |  | o'zgarishsiz, xorion exostrukturasi bir xil\nchorionSite | Xorion joylashuvi |  |  | \ncervix | Bachadon bo'yni |  |  | konturlari aniq, tekis, exostrukturasi bir xil, exogenligi me'yorda, servikal kanal kengaymagan\nextra | Qo'shimcha ma'lumotlar |  |  | ",
       "body": "Oxirgi hayzning birinchi kuni: {{lmp}}. Taxminiy tug'ruq vaqti: {{edd}}.\nBachadon homiladorlik hisobiga kattalashgan. Bachadon {{uterusPosition}} holatda.\nBachadon konturlari aniq, tekis, mahalliy qalinlashuv: {{localThickening}}.\nBachadon miometriysi exostrukturasi: {{myometrium}}.\nBachadon bo'shlig'ida {{fetusCount}} ta homila bor.\nHomila qopi diametri: {{gsd}} mm.\nBosh-dumg'aza uzunligi: {{crl}} mm.\nBPR: {{bpd}} mm.\nYurak urishi ritmik, bir daqiqada {{fhr}} marta, homila harakati: {{movements}}.\nHomila yoqa kengligi: {{nt}} mm. Sariq tana diametri: {{corpusLuteum}} mm.\nXorion (amniotik) suyuqligi: {{chorionFluid}}.\nXorion joylashuvi: {{chorionSite}}.\nBachadon bo'yni: {{cervix}}.\nQo'shimcha ma'lumotlar: {{extra}}",
-      "conclusion": "Tavsiya: ginekolog ko'rigi."
+      "conclusion": "Tavsiya: ginekolog ko'rigi.",
+      "service": "Homiladorlik 4–12 hafta UTT"
     },
     {
       "name": "UTT: homiladorlik II–III trimestri",
       "study": "ULTRASOUND",
       "fields": "lmp | Oxirgi hayzning birinchi kuni |  |  | \nedd | Taxminiy tug'ruq vaqti |  |  | \nuterusThickening | Bachadonda mahalliy qalinlashuv |  |  | aniqlanmadi\nfetusCount | Homilalar soni | ta |  | 1\npresentation | Homilaning joylashuvi |  |  | \nfhr | Yurak urishi, 1 daqiqada | marta | 115-160 | \nmovements | Homila harakati |  |  | me'yorda\nbpd | Boshning biparietal o'lchami (BPR) | mm |  | \nofd | Peshona-ensa o'lchami (LZR) | mm |  | \nhc | Bosh aylanasi (HC) | mm |  | \nfl | Son suyagining uzunligi (FL) | mm |  | \nac | Qorin aylanasi (AC) | mm |  | \nplacentaWall | Yo'ldosh joylashgan devor |  |  | \nplacentaToOs | Yo'ldosh pastki cheti - ichki bo'g'izgacha | mm | 50-70 | \nplacentaThickness | Yo'ldosh qalinligi | mm |  | \nplacentaMaturity | Yo'ldoshning yetilish darajasi |  |  | \nafi | Homila atrofi suvi (IAJ) | mm |  | \ncord | Kindik tizimchasi |  |  | homila kindik tizimchasiga o'ralmagan\nuaRi | Bachadon arteriyasi IR |  |  | \nuaPi | Bachadon arteriyasi PI |  |  | \numbRi | Kindik arteriyasi IR |  |  | \numbPi | Kindik arteriyasi PI |  |  | \nmcaRi | Miya o'rta arteriyasi IR |  |  | \nmcaPi | Miya o'rta arteriyasi PI |  |  | \nefw | Homilaning taxminiy vazni | g |  | \nefwError | Taxminiy vazn xatoligi (±) | g |  | \ncervixLength | Bachadon bo'yni uzunligi | mm |  | \nextra | Qo'shimcha ma'lumotlar |  |  | ",
       "body": "UTT diagnostika. Homiladorlik II–III trimestri\n\nOxirgi hayzning birinchi kuni: {{lmp}}. Taxminiy tug'ruq vaqti: {{edd}}.\nBachadon devori konturlari aniq, tekis, bir xil exostrukturali.\nBachadonda mahalliy qalinlashuv: {{uterusThickening}}.\n\nHomila:\nBachadonda {{fetusCount}} ta homila rivojlanmoqda. Joylashuvi: {{presentation}}.\nYurak urishi ritmik, 1 daqiqada {{fhr}} marta (me'yorda 115–160 marta), harakati {{movements}}.\n\nFetometriya:\nBoshning biparietal o'lchami (BPR): {{bpd}} mm. Peshona-ensa o'lchami (LZR): {{ofd}} mm.\nBosh aylanasi (HC): {{hc}} mm. Son suyagining uzunligi (FL): {{fl}} mm.\nQorin aylanasi (AC): {{ac}} mm.\n\nYo'ldosh va homila atrofi suvi:\nYo'ldosh bachadonning {{placentaWall}} devorida joylashgan, yo'ldoshning pastki cheti bo'yin kanalining ichki teshigidan {{placentaToOs}} mm (me'yorda 50–70 mm).\nYo'ldosh qalinligi: {{placentaThickness}} mm. Yo'ldosh strukturasi bir xil, yetilishi: {{placentaMaturity}} daraja.\nHomila atrofi suvi miqdori (IAJ): {{afi}} mm, mayda dispers.\nKindik tizimchasida ikkita arteriya va bitta vena aniqlanmoqda, {{cord}}.\n\nDoplerometriya:\nBachadon arteriyasi: IR {{uaRi}}, PI {{uaPi}}.\nKindik arteriyasi: IR {{umbRi}}, PI {{umbPi}}.\nMiya o'rta arteriyasi: IR {{mcaRi}}, PI {{mcaPi}}.\n\nHomilaning taxminiy vazni: {{efw}} ± {{efwError}} g.\nBachadon bo'yni: konturlari aniq, tekis, bir xil strukturali, servikal kanal kengaymagan, bachadon bo'yni uzunligi {{cervixLength}} mm.\n\nQo'shimcha ma'lumotlar: {{extra}}",
-      "conclusion": "Xulosa: \nTavsiya: akusher-ginekolog maslahati."
+      "conclusion": "Xulosa: \nTavsiya: akusher-ginekolog maslahati.",
+      "service": "Homiladorlik 12–40 hafta UTT"
     },
     {
       "name": "UTT: yorg'oq",
       "study": "ULTRASOUND",
       "fields": "rtLength | O'ng tuxum uzunligi | mm | 35-60 | \nrtThickness | O'ng tuxum qalinligi | mm | 15-30 | \nrtWidth | O'ng tuxum eni | mm | 15-30 | \nrtVolume | O'ng tuxum hajmi | sm³ | 10-20 | \nrtStructure | O'ng tuxum exostrukturasi |  |  | gomogen\nrtEcho | O'ng tuxum exogenligi |  |  | izoexogen\nrtTunica | O'ng tuxum qobig'i qalinligi | mm | 2-7 | \nrtTubules | O'ng: kengaygan urug' kanallari |  |  | yo'q\nrtFluid | O'ng tuxum qinidagi suyuqlik | mm | 1-3 | \nrtFluidMl | O'ng tuxum qinidagi suyuqlik, taxminan | ml |  | \nltLength | Chap tuxum uzunligi | mm | 35-60 | \nltThickness | Chap tuxum qalinligi | mm | 15-30 | \nltWidth | Chap tuxum eni | mm | 15-30 | \nltVolume | Chap tuxum hajmi | sm³ | 10-20 | \nltStructure | Chap tuxum exostrukturasi |  |  | gomogen\nltEcho | Chap tuxum exogenligi |  |  | izoexogen\nltTunica | Chap tuxum qobig'i qalinligi | mm | 2-7 | \nltTubules | Chap: kengaygan urug' kanallari |  |  | yo'q\nltFluid | Chap tuxum qinidagi suyuqlik | mm | 1-3 | \nltFluidMl | Chap tuxum qinidagi suyuqlik, taxminan | ml |  | \nreHead | O'ng ortiq qalinligi (boshcha sohasida) | mm | 10-15 | \nreStructure | O'ng ortiq exostrukturasi |  |  | bir xil, exogenligi o'rta\nleHead | Chap ortiq qalinligi (boshcha sohasida) | mm | 10-15 | \nleStructure | Chap ortiq exostrukturasi |  |  | bir xil, exogenligi o'rta\nextra | Qo'shimcha ma'lumotlar |  |  | Tekshiruv vertikal holatda o'tkazildi. Tomirlar tutami o'ngda va chapda kengaymagan. Valsalva sinamasi (−). CDK da qon oqimi o'zgarishsiz.",
       "body": "O'ng tuxum\nShakli: uzunasiga kesimda ovalsimon.\nKonturi aniq, tekis. Kapsula (tunica albuginea) to'laligicha qoplangan.\nO'lchamlari: uzunligi {{rtLength}} mm (35–60 mm), qalinligi {{rtThickness}} mm (15–30 mm), eni {{rtWidth}} mm (15–30 mm). Hajmi {{rtVolume}} sm³ (10–20 sm³).\nExostrukturasi: {{rtStructure}}. Exogenligi: {{rtEcho}}.\nQobig'i qalinligi {{rtTunica}} mm (2–7 mm). Kengaygan urug' kanallari: {{rtTubules}}.\nTuxum qinidagi suyuqlik miqdori {{rtFluid}} mm (1–3 mm), taxminan {{rtFluidMl}} ml.\nChap tuxum\nShakli: uzunasiga kesimda ovalsimon.\nKonturi aniq, tekis. Kapsula (tunica albuginea) to'laligicha qoplangan.\nO'lchamlari: uzunligi {{ltLength}} mm (35–60 mm), qalinligi {{ltThickness}} mm (15–30 mm), eni {{ltWidth}} mm (15–30 mm). Hajmi {{ltVolume}} sm³ (10–20 sm³).\nExostrukturasi: {{ltStructure}}. Exogenligi: {{ltEcho}}.\nQobig'i qalinligi {{ltTunica}} mm (2–7 mm). Kengaygan urug' kanallari: {{ltTubules}}.\nTuxum qinidagi suyuqlik miqdori {{ltFluid}} mm (1–3 mm), taxminan {{ltFluidMl}} ml.\nOrtiqlari\nO'ng: konturi aniq, tekis. Qalinligi {{reHead}} mm (boshcha sohasida 10–15 mm). Exostrukturasi: {{reStructure}}.\nChap: konturi aniq, tekis. Qalinligi {{leHead}} mm (boshcha sohasida 10–15 mm). Exostrukturasi: {{leStructure}}.\nQo'shimcha ma'lumotlar: {{extra}}",
-      "conclusion": "Tavsiya: urolog ko'rigi."
+      "conclusion": "Tavsiya: urolog ko'rigi.",
+      "service": "Yorg'oq UTT"
     },
     {
       "name": "UTT: bachadon va ortiqlari",
       "study": "ULTRASOUND",
       "fields": "bladderContent | Siydik qopi bo'shlig'i |  |  | suyuqlik anexogen, qo'shimchalarsiz\nbladderWall | Siydik qopi devori qalinligi | mm | 0-6 | \nbladderVolume | Siydik miqdori (to'ldirilganda) | ml | 150-200 | \nuterusPosition | Bachadon holati |  |  | fleksio\nuterusShape | Bachadon shakli va konturi |  |  | noksimon, konturi tekis, aniq\nuterusLength | Bachadon uzunligi | mm | 42-70 | \nuterusThickness | Bachadon qalinligi | mm | 33-46 | \nuterusWidth | Bachadon eni | mm | 42-60 | \nmyometrium | Miometriy exostrukturasi |  |  | gomogen, o'choqli o'zgarishlar aniqlanmadi\nendometrium | Endometriy qalinligi | mm |  | \nendoStructure | Endometriy exostrukturasi |  |  | gomogen\ncavity | Bachadon bo'shlig'i |  |  | kengaymagan\niud | Bachadon ichi spirali (BIS) |  |  | \ncervixLength | Bachadon bo'yni uzunligi | mm | 20-40 | \ncervixThickness | Bachadon bo'yni qalinligi | mm | 30-35 | \nendocervix | Endotserviks | mm | 0-5 | \ncervicalCanal | Endotservikal kanal |  |  | kengaymagan\nroStructure | O'ng tuxumdon exostrukturasi |  |  | bir xil\nroSize | O'ng tuxumdon o'lchami | mm |  | \nroFollicles | O'ng tuxumdon follikulalari o'lchami | mm |  | \nloStructure | Chap tuxumdon exostrukturasi |  |  | bir xil\nloSize | Chap tuxumdon o'lchami | mm |  | \nloFollicles | Chap tuxumdon follikulalari o'lchami | mm |  | \ntubeRight | Bachadon nayi qalinligi, o'ngda | mm |  | \ntubeLeft | Bachadon nayi qalinligi, chapda | mm |  | \nfreeFluid | Bachadon oldi-orqa bo'shlig'ida erkin suyuqlik |  |  | aniqlanmadi\nextra | Qo'shimcha ma'lumotlar |  |  | ",
       "body": "Siydik qopi: bo'shlig'ida {{bladderContent}}.\nDevori: tashqi va ichki konturlari aniq, tekis. Qalinligi (siydik to'ldirilgan holatda) {{bladderWall}} mm (N 6 mm gacha). Siydik miqdori (to'ldirilganda) {{bladderVolume}} ml (N 150–200 ml).\nBachadon: holati {{uterusPosition}}, shakli {{uterusShape}}.\nO'lchamlari: uzunligi {{uterusLength}} mm (N 42–70 mm), qalinligi {{uterusThickness}} mm (N 33–46 mm), eni {{uterusWidth}} mm (N 42–60 mm).\nMiometriy exostrukturasi: {{myometrium}}.\nEndometriy qalinligi {{endometrium}} mm, exostrukturasi: {{endoStructure}}.\nBachadon bo'shlig'i: {{cavity}}. BIS: {{iud}}.\nBachadon bo'yni: uzunligi {{cervixLength}} mm (N 20–40 mm), qalinligi {{cervixThickness}} mm (N 30–35 mm).\nExostrukturasi gomogen, endotserviks {{endocervix}} mm (N 5 mm gacha), endotservikal kanal: {{cervicalCanal}}.\nTuxumdonlar:\nO'ng tuxumdon: konturi aniq, tekis, exostrukturasi {{roStructure}} (bir xil yoki katakchasimon), o'lchami {{roSize}} mm.\nFollikulalar o'lchami: {{roFollicles}} mm.\nChap tuxumdon: konturi aniq, tekis, exostrukturasi {{loStructure}} (bir xil yoki katakchasimon), o'lchami {{loSize}} mm.\nFollikulalar o'lchami: {{loFollicles}} mm.\nBachadon naylari: qalinligi o'ngda {{tubeRight}} mm, chapda {{tubeLeft}} mm (N bachadon naylari ko'rinmaydi).\nBachadon oldi-orqa bo'shlig'ida erkin suyuqlik: {{freeFluid}}.\nQo'shimcha ma'lumotlar: {{extra}}",
-      "conclusion": "Tavsiya: ginekolog ko'rigi."
+      "conclusion": "Tavsiya: ginekolog ko'rigi.",
+      "service": "Bachadon va ortiqlari + siydik pufagi UTT"
     },
     {
       "name": "UTT: buyraklar, siydik pufagi va prostata",
       "study": "ULTRASOUND",
       "fields": "rkLength | O'ng buyrak uzunligi | mm | 80-130 | \nrkWidth | O'ng buyrak eni | mm | 45-65 | \nrkContour | O'ng buyrak konturlari |  |  | aniq, tekis\nrkParenchyma | O'ng buyrak parenximasi qalinligi | mm | 14-20 | \nrkEcho | O'ng buyrak exogenligi |  |  | me'yorda, 0 daraja\nrkStructure | O'ng buyrak exostrukturasi |  |  | bir xil, o'choqli o'zgarishlar aniqlanmadi\nrkSinus | O'ng buyrak sinusi |  |  | shakli buzilmagan, kosacha-jomcha tizimi kengaymagan\nrkStones | O'ng buyrak: tuzilma va konkrementlar |  |  | aniqlanmadi\nrkUreter | O'ng siydik nayi |  |  | kengaymagan\nlkLength | Chap buyrak uzunligi | mm | 80-130 | \nlkWidth | Chap buyrak eni | mm | 45-65 | \nlkContour | Chap buyrak konturlari |  |  | aniq, tekis\nlkParenchyma | Chap buyrak parenximasi qalinligi | mm | 14-20 | \nlkEcho | Chap buyrak exogenligi |  |  | me'yorda, 0 daraja\nlkStructure | Chap buyrak exostrukturasi |  |  | bir xil, o'choqli o'zgarishlar aniqlanmadi\nlkSinus | Chap buyrak sinusi |  |  | shakli buzilmagan, kosacha-jomcha tizimi kengaymagan\nlkStones | Chap buyrak: tuzilma va konkrementlar |  |  | aniqlanmadi\nlkUreter | Chap siydik nayi |  |  | kengaymagan\nbladderContent | Siydik qopi bo'shlig'i |  |  | suyuqlik anexogen, qo'shimchalarsiz\nbladderWall | Siydik qopi devori qalinligi | mm | 0-6 | \nbladderVolume | Siydik miqdori (to'ldirilganda) | ml | 150-200 | \nurinaryTract | Siydik chiqaruv yo'li |  |  | proksimal qismi kengaymagan, tuzilmalar aniqlanmadi\nprCapsule | Prostata kapsulasi qalinligi | mm |  | \nprEcho | Prostata parenximasi exogenligi |  |  | me'yorda\nprStructure | Prostata exostrukturasi |  |  | gomogen\nprLength | Prostata uzunligi | mm |  | \nprThickness | Prostata qalinligi | mm |  | \nprWidth | Prostata eni | mm |  | \nprVolume | Prostata hajmi | sm³ |  | \nprUrethra | Siydik chiqaruv yo'lining prostata qismi |  |  | kengaymagan\nseminal | Urug' pufakchalari |  |  | kengaymagan, simmetrik\nextra | Qo'shimcha ma'lumotlar |  |  | ",
       "body": "O'ng buyrak: o'lchamlari: uzunligi {{rkLength}} mm (N 80–130 mm), eni {{rkWidth}} mm (N 45–65 mm).\nKonturlari: {{rkContour}}. Parenximasi qalinligi {{rkParenchyma}} mm (N 14–20 mm). Exogenligi: {{rkEcho}} (N 0–I daraja). Exostrukturasi: {{rkStructure}}.\nKortiko-medullyar farqlanish saqlangan. Buyrak sinusi: {{rkSinus}}. Tuzilma va konkrementlar: {{rkStones}}. Siydik nayi: {{rkUreter}}.\nChap buyrak: o'lchamlari: uzunligi {{lkLength}} mm (N 80–130 mm), eni {{lkWidth}} mm (N 45–65 mm).\nKonturlari: {{lkContour}}. Parenximasi qalinligi {{lkParenchyma}} mm (N 14–20 mm). Exogenligi: {{lkEcho}} (N 0–I daraja). Exostrukturasi: {{lkStructure}}.\nKortiko-medullyar farqlanish saqlangan. Buyrak sinusi: {{lkSinus}}. Tuzilma va konkrementlar: {{lkStones}}. Siydik nayi: {{lkUreter}}.\nSiydik qopi: bo'shlig'ida {{bladderContent}}.\nDevori: tashqi va ichki konturlari aniq, tekis. Qalinligi (siydik to'ldirilgan holatda) {{bladderWall}} mm (N 6 mm gacha). Siydik miqdori (to'ldirilganda) {{bladderVolume}} ml (N 150–200 ml).\nSiydik chiqaruv yo'li: {{urinaryTract}}.\nProstata bezi: shakli odatiy. Bo'laklari simmetrik. Qirg'oqlari aniq, tekis. Kapsulasi qalinlashmagan, {{prCapsule}} mm. Parenxima exogenligi {{prEcho}}, exostrukturasi: {{prStructure}}, mikrokalsinatlar yo'q.\nO'lchamlari: uzunligi {{prLength}} mm, qalinligi {{prThickness}} mm, eni {{prWidth}} mm. Hajmi {{prVolume}} sm³.\nSiydik chiqaruv yo'lining prostata qismi: {{prUrethra}}.\nUrug' pufakchalari: {{seminal}}.\nQo'shimcha ma'lumotlar: {{extra}}",
-      "conclusion": "Tavsiya: urolog ko'rigi."
+      "conclusion": "Tavsiya: urolog ko'rigi.",
+      "service": "Buyrak, siydik chiqarish tizimi va siydik pufagi UTT"
     },
     {
       "name": "UTT: qalqonsimon bez",
       "study": "ULTRASOUND",
       "fields": "isthContour | Bo'yin qismi konturi |  |  | aniq, tekis\nisthThickness | Bo'yin qismi qalinligi | sm | 0.4-0.6 | \nisthStructure | Bo'yin qismi exostrukturasi |  |  | bir xil\nisthEcho | Bo'yin qismi exogenligi |  |  | o'rta\nrlContour | O'ng bo'lak konturi |  |  | aniq, tekis\nrlLength | O'ng bo'lak uzunligi | sm | 4-6 | \nrlThickness | O'ng bo'lak qalinligi | sm | 1.6-1.8 | \nrlWidth | O'ng bo'lak eni | sm | 1.3-1.8 | \nrlStructure | O'ng bo'lak exostrukturasi |  |  | bir xil\nrlEcho | O'ng bo'lak exogenligi |  |  | o'rta\nllContour | Chap bo'lak konturi |  |  | aniq, tekis\nllLength | Chap bo'lak uzunligi | sm | 4-6 | \nllThickness | Chap bo'lak qalinligi | sm | 1.6-1.8 | \nllWidth | Chap bo'lak eni | sm | 1.3-1.8 | \nllStructure | Chap bo'lak exostrukturasi |  |  | bir xil\nllEcho | Chap bo'lak exogenligi |  |  | o'rta\nvolume | Summar hajmi | sm³ |  | \nvolumeIndex | IN% (V bemor / V norma × 100%) | % | 95-105 | \nextra | Qo'shimcha ma'lumotlar |  |  | ",
       "body": "Bo'yin qismi\nTopografiyasi: odatiy joylashgan (me'yorda traxeyaning 1-tog'ayi ro'parasida). Konturi {{isthContour}} (me'yorda aniq, tekis). Elastikligi saqlangan (me'yorda saqlangan). Yutinganda harakati saqlangan (me'yorda saqlangan).\nQalinligi {{isthThickness}} sm (me'yorda 0,4–0,6 sm). Exostrukturasi {{isthStructure}} (me'yorda bir xil). Exogenligi {{isthEcho}} (me'yorda quloq oldi bezi bilan solishtiriladi).\nO'ng bo'lak\nKonturi {{rlContour}} (me'yorda aniq, tekis). Elastikligi saqlangan (me'yorda saqlangan). Yutinganda harakati saqlangan (me'yorda saqlangan).\nO'lchamlari: uzunligi {{rlLength}} sm (me'yorda 4,0–6,0 sm), qalinligi {{rlThickness}} sm (me'yorda 1,6–1,8 sm), eni {{rlWidth}} sm (me'yorda 1,3–1,8 sm). Shakli odatiy (me'yorda uchburchaksimon, konussimon). Exostrukturasi {{rlStructure}} (me'yorda bir xil). Exogenligi {{rlEcho}} (me'yorda o'rta).\nChap bo'lak\nKonturi {{llContour}} (me'yorda aniq, tekis). Elastikligi saqlangan (me'yorda saqlangan). Yutinganda harakati saqlangan (me'yorda saqlangan).\nO'lchamlari: uzunligi {{llLength}} sm (me'yorda 4,0–6,0 sm), qalinligi {{llThickness}} sm (me'yorda 1,6–1,8 sm), eni {{llWidth}} sm (me'yorda 1,3–1,8 sm). Shakli odatiy (me'yorda uchburchaksimon, konussimon). Exostrukturasi {{llStructure}} (me'yorda bir xil). Exogenligi {{llEcho}} (me'yorda o'rta).\nSummar hajmi: {{volume}} sm³ (me'yorda jadval bo'yicha: E = 0,17–0,21 sm³, A = 0,17–0,25 sm³).\nIN% = V bemor / V norma × 100% = {{volumeIndex}}% (me'yorda 95–105%).\nGiperplaziya: I daraja 105–150%, II daraja 151–225%, III daraja 226–400%, IV daraja 401–700%, V daraja 700% dan katta.\nGipoplaziya: I daraja 95–75%, II daraja 74–50%, III daraja 49–25%, IV daraja 25% dan kichik.\nQo'shimcha ma'lumotlar: {{extra}}",
-      "conclusion": "Tavsiya:"
+      "conclusion": "Tavsiya:",
+      "service": "Qalqonsimon bez UTT"
     },
     {
       "name": "UTT: oshqozon va 12 barmoqli ichak",
@@ -116,28 +122,32 @@
       "study": "ULTRASOUND",
       "fields": "liverSize | Jigar o'lchamlari |  |  | me'yorda\nliverRight | O'ng bo'lak KVR | mm | 0-160 | \nliverLeftCC | Chap bo'lak kranio-kaudal o'lchami (KKR) | mm | 65-110 | \nliverLeftAP | Chap bo'lak oldi-orqa o'lchami (PZR) | mm | 41-82 | \nliverContour | Jigar konturlari |  |  | aniq, tekis\nliverEcho | Jigar parenximasi exogenligi |  |  | me'yorda\nliverStructure | Jigar parenximasi exostrukturasi |  |  | gomogen, mayda donador\nliverVessels | Jigar tomirlari tasviri |  |  | odatiy\nportalVein | Darvoza venasi diametri | mm | 8-14 | \ngbShape | O't pufagi shakli |  |  | noksimon\ngbLength | O't pufagi bo'yi | mm | 0-100 | \ngbWidth | O't pufagi eni | mm | 0-40 | \ngbWall | O't pufagi devori qalinligi | mm | 0-3 | \ngbContent | O't pufagi bo'shlig'i |  |  | suyuqligi anexogen\ncbd | Umumiy o't yo'li (xoledox) diametri | mm | 0-8 | \nintraBile | Jigar ichi o't yo'llari |  |  | kengaymagan\npancHead | Oshqozon osti bezi boshchasi | mm | 11-32 | \npancBody | Oshqozon osti bezi tanasi | mm | 4-21 | \npancTail | Oshqozon osti bezi dumi | mm | 7-35 | \npancContour | Oshqozon osti bezi konturlari |  |  | aniq, tekis\npancEcho | Oshqozon osti bezi exogenligi |  |  | me'yorda, yoshiga xos\npancStructure | Oshqozon osti bezi exostrukturasi |  |  | bir xil, o'choqli o'zgarishlar aniqlanmadi\nwirsung | Virsung yo'li diametri | mm | 0-2 | \nspleenLength | Taloq bo'yi | mm | 90-130 | \nspleenWidth | Taloq eni | mm | 30-50 | \nspleenContour | Taloq konturlari |  |  | aniq, tekis, kapsula butunligi saqlangan\nspleenEcho | Taloq exogenligi |  |  | me'yorda\nspleenStructure | Taloq exostrukturasi |  |  | bir xil, o'choqli o'zgarishlar aniqlanmadi\nsplenicVein | Taloq venasi diametri | mm |  | \nrkLength | O'ng buyrak uzunligi | mm | 80-130 | \nrkWidth | O'ng buyrak eni | mm | 45-65 | \nrkContour | O'ng buyrak konturlari |  |  | aniq, tekis\nrkParenchyma | O'ng buyrak parenximasi qalinligi | mm | 14-20 | \nrkEcho | O'ng buyrak exogenligi |  |  | me'yorda, 0 daraja\nrkStructure | O'ng buyrak exostrukturasi |  |  | bir xil, o'choqli o'zgarishlar aniqlanmadi\nrkSinus | O'ng buyrak sinusi |  |  | shakli buzilmagan, kosacha-jomcha tizimi kengaymagan\nrkStones | O'ng buyrak: tuzilma va konkrementlar |  |  | aniqlanmadi\nrkUreter | O'ng siydik nayi |  |  | kengaymagan\nlkLength | Chap buyrak uzunligi | mm | 80-130 | \nlkWidth | Chap buyrak eni | mm | 45-65 | \nlkContour | Chap buyrak konturlari |  |  | aniq, tekis\nlkParenchyma | Chap buyrak parenximasi qalinligi | mm | 14-20 | \nlkEcho | Chap buyrak exogenligi |  |  | me'yorda, 0 daraja\nlkStructure | Chap buyrak exostrukturasi |  |  | bir xil, o'choqli o'zgarishlar aniqlanmadi\nlkSinus | Chap buyrak sinusi |  |  | shakli buzilmagan, kosacha-jomcha tizimi kengaymagan\nlkStones | Chap buyrak: tuzilma va konkrementlar |  |  | aniqlanmadi\nlkUreter | Chap siydik nayi |  |  | kengaymagan\nbladderContent | Siydik qopi bo'shlig'i |  |  | suyuqlik anexogen, qo'shimchalarsiz\nbladderWall | Siydik qopi devori qalinligi | mm | 0-6 | \nbladderVolume | Siydik miqdori (to'ldirilganda) | ml | 150-200 | \nuterusPosition | Bachadon holati |  |  | fleksio\nuterusShape | Bachadon shakli va konturi |  |  | noksimon, konturi tekis, aniq\nuterusLength | Bachadon uzunligi | mm | 42-70 | \nuterusThickness | Bachadon qalinligi | mm | 33-46 | \nuterusWidth | Bachadon eni | mm | 42-60 | \nmyometrium | Miometriy exostrukturasi |  |  | gomogen, o'choqli o'zgarishlar aniqlanmadi\nendometrium | Endometriy qalinligi | mm |  | \nendoStructure | Endometriy exostrukturasi |  |  | gomogen\ncavity | Bachadon bo'shlig'i |  |  | kengaymagan\niud | Bachadon ichi spirali (BIS) |  |  | \ncervixLength | Bachadon bo'yni uzunligi | mm | 20-40 | \ncervixThickness | Bachadon bo'yni qalinligi | mm | 30-35 | \nendocervix | Endotserviks | mm | 0-5 | \ncervicalCanal | Endotservikal kanal |  |  | kengaymagan\nroStructure | O'ng tuxumdon exostrukturasi |  |  | bir xil\nroSize | O'ng tuxumdon o'lchami | mm |  | \nroFollicles | O'ng tuxumdon follikulalari o'lchami | mm |  | \nloStructure | Chap tuxumdon exostrukturasi |  |  | bir xil\nloSize | Chap tuxumdon o'lchami | mm |  | \nloFollicles | Chap tuxumdon follikulalari o'lchami | mm |  | \ntubeRight | Bachadon nayi qalinligi, o'ngda | mm |  | \ntubeLeft | Bachadon nayi qalinligi, chapda | mm |  | \nfreeFluid | Bachadon oldi-orqa bo'shlig'ida erkin suyuqlik |  |  | aniqlanmadi\nextra | Qo'shimcha ma'lumotlar |  |  | ",
       "body": "Jigar: o'lchamlari {{liverSize}}.\nBo'laklar bo'ylama o'lchamlari: o'ng bo'lak KVR {{liverRight}} mm (N 150–160 mm gacha), chap bo'lak kranio-kaudal o'lchami (KKR) {{liverLeftCC}} mm (N 65–110 mm), oldi-orqa o'lchami (PZR) {{liverLeftAP}} mm (N 41–82 mm).\nJigar konturlari: {{liverContour}}. Parenxima exogenligi: {{liverEcho}}. Tovush o'tkazuvchanligi me'yorda.\nParenxima exostrukturasi: {{liverStructure}}. Tomirlar tasviri: {{liverVessels}}. Darvoza venasi diametri {{portalVein}} mm (N 8–14 mm).\nO't pufagi: shakli {{gbShape}}. O'lchamlari: bo'yi {{gbLength}} mm, eni {{gbWidth}} mm (N bo'yi 100 mm gacha, eni 40 mm gacha).\nDevori aniq, tekis, qalinligi {{gbWall}} mm (N 3 mm gacha). Bo'shlig'i: {{gbContent}}.\nUmumiy o't yo'li (xoledox): diametri {{cbd}} mm (N 4–8 mm gacha), devori qalinlashmagan, bo'shlig'ida qo'shimchalar yo'q. Jigar ichi o't yo'llari: {{intraBile}}.\nOshqozon osti bezi: o'lchamlari (qalinligi): boshchasi {{pancHead}} mm (N 11–32 mm), tanasi {{pancBody}} mm (N 4–21 mm), dumi {{pancTail}} mm (N 7–35 mm). Konturlari: {{pancContour}}.\nExogenligi: {{pancEcho}}. Exostrukturasi: {{pancStructure}}.\nVirsung yo'li: {{wirsung}} mm (N 2 mm gacha), bo'shlig'ida qo'shimchalar yo'q.\nTaloq: o'lchamlari: bo'yi {{spleenLength}} mm (N 90–130 mm), eni {{spleenWidth}} mm (N 30–50 mm).\nKonturlari: {{spleenContour}}. Exogenligi: {{spleenEcho}}. Exostrukturasi: {{spleenStructure}}.\nTaloq venasi diametri: {{splenicVein}} mm.\nO'ng buyrak: o'lchamlari: uzunligi {{rkLength}} mm (N 80–130 mm), eni {{rkWidth}} mm (N 45–65 mm).\nKonturlari: {{rkContour}}. Parenximasi qalinligi {{rkParenchyma}} mm (N 14–20 mm). Exogenligi: {{rkEcho}} (N 0–I daraja). Exostrukturasi: {{rkStructure}}.\nKortiko-medullyar farqlanish saqlangan. Buyrak sinusi: {{rkSinus}}. Tuzilma va konkrementlar: {{rkStones}}. Siydik nayi: {{rkUreter}}.\nChap buyrak: o'lchamlari: uzunligi {{lkLength}} mm (N 80–130 mm), eni {{lkWidth}} mm (N 45–65 mm).\nKonturlari: {{lkContour}}. Parenximasi qalinligi {{lkParenchyma}} mm (N 14–20 mm). Exogenligi: {{lkEcho}} (N 0–I daraja). Exostrukturasi: {{lkStructure}}.\nKortiko-medullyar farqlanish saqlangan. Buyrak sinusi: {{lkSinus}}. Tuzilma va konkrementlar: {{lkStones}}. Siydik nayi: {{lkUreter}}.\nSiydik qopi: bo'shlig'ida {{bladderContent}}.\nDevori: tashqi va ichki konturlari aniq, tekis. Qalinligi (siydik to'ldirilgan holatda) {{bladderWall}} mm (N 6 mm gacha). Siydik miqdori (to'ldirilganda) {{bladderVolume}} ml (N 150–200 ml).\nBachadon: holati {{uterusPosition}}, shakli {{uterusShape}}.\nO'lchamlari: uzunligi {{uterusLength}} mm (N 42–70 mm), qalinligi {{uterusThickness}} mm (N 33–46 mm), eni {{uterusWidth}} mm (N 42–60 mm).\nMiometriy exostrukturasi: {{myometrium}}.\nEndometriy qalinligi {{endometrium}} mm, exostrukturasi: {{endoStructure}}.\nBachadon bo'shlig'i: {{cavity}}. BIS: {{iud}}.\nBachadon bo'yni: uzunligi {{cervixLength}} mm (N 20–40 mm), qalinligi {{cervixThickness}} mm (N 30–35 mm).\nExostrukturasi gomogen, endotserviks {{endocervix}} mm (N 5 mm gacha), endotservikal kanal: {{cervicalCanal}}.\nTuxumdonlar:\nO'ng tuxumdon: konturi aniq, tekis, exostrukturasi {{roStructure}} (bir xil yoki katakchasimon), o'lchami {{roSize}} mm.\nFollikulalar o'lchami: {{roFollicles}} mm.\nChap tuxumdon: konturi aniq, tekis, exostrukturasi {{loStructure}} (bir xil yoki katakchasimon), o'lchami {{loSize}} mm.\nFollikulalar o'lchami: {{loFollicles}} mm.\nBachadon naylari: qalinligi o'ngda {{tubeRight}} mm, chapda {{tubeLeft}} mm (N bachadon naylari ko'rinmaydi).\nBachadon oldi-orqa bo'shlig'ida erkin suyuqlik: {{freeFluid}}.\nQo'shimcha ma'lumotlar: {{extra}}",
-      "conclusion": "Tavsiya:"
+      "conclusion": "Tavsiya:",
+      "service": "Umumiy qorin bo'shlig'i a'zolari UTT"
     },
     {
       "name": "UTT: qorin bo'shlig'i umumiy (erkaklar)",
       "study": "ULTRASOUND",
       "fields": "liverSize | Jigar o'lchamlari |  |  | me'yorda\nliverRight | O'ng bo'lak KVR | mm | 0-160 | \nliverLeftCC | Chap bo'lak kranio-kaudal o'lchami (KKR) | mm | 65-110 | \nliverLeftAP | Chap bo'lak oldi-orqa o'lchami (PZR) | mm | 41-82 | \nliverContour | Jigar konturlari |  |  | aniq, tekis\nliverEcho | Jigar parenximasi exogenligi |  |  | me'yorda\nliverStructure | Jigar parenximasi exostrukturasi |  |  | gomogen, mayda donador\nliverVessels | Jigar tomirlari tasviri |  |  | odatiy\nportalVein | Darvoza venasi diametri | mm | 8-14 | \ngbShape | O't pufagi shakli |  |  | noksimon\ngbLength | O't pufagi bo'yi | mm | 0-100 | \ngbWidth | O't pufagi eni | mm | 0-40 | \ngbWall | O't pufagi devori qalinligi | mm | 0-3 | \ngbContent | O't pufagi bo'shlig'i |  |  | suyuqligi anexogen\ncbd | Umumiy o't yo'li (xoledox) diametri | mm | 0-8 | \nintraBile | Jigar ichi o't yo'llari |  |  | kengaymagan\npancHead | Oshqozon osti bezi boshchasi | mm | 11-32 | \npancBody | Oshqozon osti bezi tanasi | mm | 4-21 | \npancTail | Oshqozon osti bezi dumi | mm | 7-35 | \npancContour | Oshqozon osti bezi konturlari |  |  | aniq, tekis\npancEcho | Oshqozon osti bezi exogenligi |  |  | me'yorda, yoshiga xos\npancStructure | Oshqozon osti bezi exostrukturasi |  |  | bir xil, o'choqli o'zgarishlar aniqlanmadi\nwirsung | Virsung yo'li diametri | mm | 0-2 | \nspleenLength | Taloq bo'yi | mm | 90-130 | \nspleenWidth | Taloq eni | mm | 30-50 | \nspleenContour | Taloq konturlari |  |  | aniq, tekis, kapsula butunligi saqlangan\nspleenEcho | Taloq exogenligi |  |  | me'yorda\nspleenStructure | Taloq exostrukturasi |  |  | bir xil, o'choqli o'zgarishlar aniqlanmadi\nsplenicVein | Taloq venasi diametri | mm |  | \nrkLength | O'ng buyrak uzunligi | mm | 80-130 | \nrkWidth | O'ng buyrak eni | mm | 45-65 | \nrkContour | O'ng buyrak konturlari |  |  | aniq, tekis\nrkParenchyma | O'ng buyrak parenximasi qalinligi | mm | 14-20 | \nrkEcho | O'ng buyrak exogenligi |  |  | me'yorda, 0 daraja\nrkStructure | O'ng buyrak exostrukturasi |  |  | bir xil, o'choqli o'zgarishlar aniqlanmadi\nrkSinus | O'ng buyrak sinusi |  |  | shakli buzilmagan, kosacha-jomcha tizimi kengaymagan\nrkStones | O'ng buyrak: tuzilma va konkrementlar |  |  | aniqlanmadi\nrkUreter | O'ng siydik nayi |  |  | kengaymagan\nlkLength | Chap buyrak uzunligi | mm | 80-130 | \nlkWidth | Chap buyrak eni | mm | 45-65 | \nlkContour | Chap buyrak konturlari |  |  | aniq, tekis\nlkParenchyma | Chap buyrak parenximasi qalinligi | mm | 14-20 | \nlkEcho | Chap buyrak exogenligi |  |  | me'yorda, 0 daraja\nlkStructure | Chap buyrak exostrukturasi |  |  | bir xil, o'choqli o'zgarishlar aniqlanmadi\nlkSinus | Chap buyrak sinusi |  |  | shakli buzilmagan, kosacha-jomcha tizimi kengaymagan\nlkStones | Chap buyrak: tuzilma va konkrementlar |  |  | aniqlanmadi\nlkUreter | Chap siydik nayi |  |  | kengaymagan\nbladderContent | Siydik qopi bo'shlig'i |  |  | suyuqlik anexogen, qo'shimchalarsiz\nbladderWall | Siydik qopi devori qalinligi | mm | 0-6 | \nbladderVolume | Siydik miqdori (to'ldirilganda) | ml | 150-200 | \nprCapsule | Prostata kapsulasi qalinligi | mm |  | \nprEcho | Prostata parenximasi exogenligi |  |  | me'yorda\nprStructure | Prostata exostrukturasi |  |  | gomogen\nprLength | Prostata uzunligi | mm |  | \nprThickness | Prostata qalinligi | mm |  | \nprWidth | Prostata eni | mm |  | \nprVolume | Prostata hajmi | sm³ |  | \nprUrethra | Siydik chiqaruv yo'lining prostata qismi |  |  | kengaymagan\nseminal | Urug' pufakchalari |  |  | kengaymagan, simmetrik\nextra | Qo'shimcha ma'lumotlar |  |  | ",
       "body": "Jigar: o'lchamlari {{liverSize}}.\nBo'laklar bo'ylama o'lchamlari: o'ng bo'lak KVR {{liverRight}} mm (N 150–160 mm gacha), chap bo'lak kranio-kaudal o'lchami (KKR) {{liverLeftCC}} mm (N 65–110 mm), oldi-orqa o'lchami (PZR) {{liverLeftAP}} mm (N 41–82 mm).\nJigar konturlari: {{liverContour}}. Parenxima exogenligi: {{liverEcho}}. Tovush o'tkazuvchanligi me'yorda.\nParenxima exostrukturasi: {{liverStructure}}. Tomirlar tasviri: {{liverVessels}}. Darvoza venasi diametri {{portalVein}} mm (N 8–14 mm).\nO't pufagi: shakli {{gbShape}}. O'lchamlari: bo'yi {{gbLength}} mm, eni {{gbWidth}} mm (N bo'yi 100 mm gacha, eni 40 mm gacha).\nDevori aniq, tekis, qalinligi {{gbWall}} mm (N 3 mm gacha). Bo'shlig'i: {{gbContent}}.\nUmumiy o't yo'li (xoledox): diametri {{cbd}} mm (N 4–8 mm gacha), devori qalinlashmagan, bo'shlig'ida qo'shimchalar yo'q. Jigar ichi o't yo'llari: {{intraBile}}.\nOshqozon osti bezi: o'lchamlari (qalinligi): boshchasi {{pancHead}} mm (N 11–32 mm), tanasi {{pancBody}} mm (N 4–21 mm), dumi {{pancTail}} mm (N 7–35 mm). Konturlari: {{pancContour}}.\nExogenligi: {{pancEcho}}. Exostrukturasi: {{pancStructure}}.\nVirsung yo'li: {{wirsung}} mm (N 2 mm gacha), bo'shlig'ida qo'shimchalar yo'q.\nTaloq: o'lchamlari: bo'yi {{spleenLength}} mm (N 90–130 mm), eni {{spleenWidth}} mm (N 30–50 mm).\nKonturlari: {{spleenContour}}. Exogenligi: {{spleenEcho}}. Exostrukturasi: {{spleenStructure}}.\nTaloq venasi diametri: {{splenicVein}} mm.\nO'ng buyrak: o'lchamlari: uzunligi {{rkLength}} mm (N 80–130 mm), eni {{rkWidth}} mm (N 45–65 mm).\nKonturlari: {{rkContour}}. Parenximasi qalinligi {{rkParenchyma}} mm (N 14–20 mm). Exogenligi: {{rkEcho}} (N 0–I daraja). Exostrukturasi: {{rkStructure}}.\nKortiko-medullyar farqlanish saqlangan. Buyrak sinusi: {{rkSinus}}. Tuzilma va konkrementlar: {{rkStones}}. Siydik nayi: {{rkUreter}}.\nChap buyrak: o'lchamlari: uzunligi {{lkLength}} mm (N 80–130 mm), eni {{lkWidth}} mm (N 45–65 mm).\nKonturlari: {{lkContour}}. Parenximasi qalinligi {{lkParenchyma}} mm (N 14–20 mm). Exogenligi: {{lkEcho}} (N 0–I daraja). Exostrukturasi: {{lkStructure}}.\nKortiko-medullyar farqlanish saqlangan. Buyrak sinusi: {{lkSinus}}. Tuzilma va konkrementlar: {{lkStones}}. Siydik nayi: {{lkUreter}}.\nSiydik qopi: bo'shlig'ida {{bladderContent}}.\nDevori: tashqi va ichki konturlari aniq, tekis. Qalinligi (siydik to'ldirilgan holatda) {{bladderWall}} mm (N 6 mm gacha). Siydik miqdori (to'ldirilganda) {{bladderVolume}} ml (N 150–200 ml).\nProstata bezi: shakli odatiy. Bo'laklari simmetrik. Qirg'oqlari aniq, tekis. Kapsulasi qalinlashmagan, {{prCapsule}} mm. Parenxima exogenligi {{prEcho}}, exostrukturasi: {{prStructure}}, mikrokalsinatlar yo'q.\nO'lchamlari: uzunligi {{prLength}} mm, qalinligi {{prThickness}} mm, eni {{prWidth}} mm. Hajmi {{prVolume}} sm³.\nSiydik chiqaruv yo'lining prostata qismi: {{prUrethra}}.\nUrug' pufakchalari: {{seminal}}.\nQo'shimcha ma'lumotlar: {{extra}}",
-      "conclusion": "Tavsiya:"
+      "conclusion": "Tavsiya:",
+      "service": "Umumiy qorin bo'shlig'i a'zolari UTT"
     },
     {
       "name": "UTT: hazm tizimi",
       "study": "ULTRASOUND",
       "fields": "liverSize | Jigar o'lchamlari |  |  | me'yorda\nliverRight | O'ng bo'lak KVR | mm | 0-160 | \nliverLeftCC | Chap bo'lak kranio-kaudal o'lchami (KKR) | mm | 65-110 | \nliverLeftAP | Chap bo'lak oldi-orqa o'lchami (PZR) | mm | 41-82 | \nliverContour | Jigar konturlari |  |  | aniq, tekis\nliverEcho | Jigar parenximasi exogenligi |  |  | me'yorda\nliverStructure | Jigar parenximasi exostrukturasi |  |  | gomogen, mayda donador\nliverVessels | Jigar tomirlari tasviri |  |  | odatiy\nportalVein | Darvoza venasi diametri | mm | 8-14 | \ngbShape | O't pufagi shakli |  |  | noksimon\ngbLength | O't pufagi bo'yi | mm | 0-100 | \ngbWidth | O't pufagi eni | mm | 0-40 | \ngbWall | O't pufagi devori qalinligi | mm | 0-3 | \ngbContent | O't pufagi bo'shlig'i |  |  | suyuqligi anexogen\ncbd | Umumiy o't yo'li (xoledox) diametri | mm | 0-8 | \nintraBile | Jigar ichi o't yo'llari |  |  | kengaymagan\npancHead | Oshqozon osti bezi boshchasi | mm | 11-32 | \npancBody | Oshqozon osti bezi tanasi | mm | 4-21 | \npancTail | Oshqozon osti bezi dumi | mm | 7-35 | \npancContour | Oshqozon osti bezi konturlari |  |  | aniq, tekis\npancEcho | Oshqozon osti bezi exogenligi |  |  | me'yorda, yoshiga xos\npancStructure | Oshqozon osti bezi exostrukturasi |  |  | bir xil, o'choqli o'zgarishlar aniqlanmadi\nwirsung | Virsung yo'li diametri | mm | 0-2 | \nspleenLength | Taloq bo'yi | mm | 90-130 | \nspleenWidth | Taloq eni | mm | 30-50 | \nspleenContour | Taloq konturlari |  |  | aniq, tekis, kapsula butunligi saqlangan\nspleenEcho | Taloq exogenligi |  |  | me'yorda\nspleenStructure | Taloq exostrukturasi |  |  | bir xil, o'choqli o'zgarishlar aniqlanmadi\nsplenicVein | Taloq venasi diametri | mm |  | \nextra | Qo'shimcha ma'lumotlar |  |  | ",
       "body": "Jigar: o'lchamlari {{liverSize}}.\nBo'laklar bo'ylama o'lchamlari: o'ng bo'lak KVR {{liverRight}} mm (N 150–160 mm gacha), chap bo'lak kranio-kaudal o'lchami (KKR) {{liverLeftCC}} mm (N 65–110 mm), oldi-orqa o'lchami (PZR) {{liverLeftAP}} mm (N 41–82 mm).\nJigar konturlari: {{liverContour}}. Parenxima exogenligi: {{liverEcho}}. Tovush o'tkazuvchanligi me'yorda.\nParenxima exostrukturasi: {{liverStructure}}. Tomirlar tasviri: {{liverVessels}}. Darvoza venasi diametri {{portalVein}} mm (N 8–14 mm).\nO't pufagi: shakli {{gbShape}}. O'lchamlari: bo'yi {{gbLength}} mm, eni {{gbWidth}} mm (N bo'yi 100 mm gacha, eni 40 mm gacha).\nDevori aniq, tekis, qalinligi {{gbWall}} mm (N 3 mm gacha). Bo'shlig'i: {{gbContent}}.\nUmumiy o't yo'li (xoledox): diametri {{cbd}} mm (N 4–8 mm gacha), devori qalinlashmagan, bo'shlig'ida qo'shimchalar yo'q. Jigar ichi o't yo'llari: {{intraBile}}.\nOshqozon osti bezi: o'lchamlari (qalinligi): boshchasi {{pancHead}} mm (N 11–32 mm), tanasi {{pancBody}} mm (N 4–21 mm), dumi {{pancTail}} mm (N 7–35 mm). Konturlari: {{pancContour}}.\nExogenligi: {{pancEcho}}. Exostrukturasi: {{pancStructure}}.\nVirsung yo'li: {{wirsung}} mm (N 2 mm gacha), bo'shlig'ida qo'shimchalar yo'q.\nTaloq: o'lchamlari: bo'yi {{spleenLength}} mm (N 90–130 mm), eni {{spleenWidth}} mm (N 30–50 mm).\nKonturlari: {{spleenContour}}. Exogenligi: {{spleenEcho}}. Exostrukturasi: {{spleenStructure}}.\nTaloq venasi diametri: {{splenicVein}} mm.\nQo'shimcha ma'lumotlar: {{extra}}",
-      "conclusion": "Tavsiya:"
+      "conclusion": "Tavsiya:",
+      "service": "Hazm tizimi UTT (jigar, o't pufagi, oshqozon osti bezi, taloq)"
     },
     {
       "name": "Transtorakal exokardiografiya",
       "study": "ECHO",
       "fields": "rhythm | Ritm |  |  | ritmik\nhr | YuQS, 1 daqiqada | marta |  | \nbsa | BSA (tana yuzasi maydoni) | m² |  | \nrv | O'ng qorincha | sm | 0-3 | \nrvWall | O'ng qorincha oldingi devori qalinligi | sm | 0-0.5 | \naoRoot | Aorta ildizi diametri | sm | 1.8-3.7 | \naoNotes | Aorta: o'ziga xos belgilari |  |  | \navOpening | Aortal klapan ochilish amplitudasi | sm | 1.5-2.6 | \nla | Chap bo'lmacha (N 5,3×4,0 sm) | sm |  | \nlaVi | Chap bo'lmacha hajmi indeksi | ml/m² | 30-32 | \nra | O'ng bo'lmacha (N 5,3×4,4 sm) | sm |  | \nraVi | O'ng bo'lmacha hajmi indeksi | ml/m² | 30-32 | \nivs | Qorinchalararo to'siq | sm | 0.7-1.1 | \nivsMotion | Qorinchalararo to'siq harakati |  |  | \nlvpw | Chap qorincha orqa devori | sm | 0.7-1.1 | \nlvedd | KDR | sm | 3.8-5.6 | \nlvesd | KSR | sm | 2.5-3.8 | \nefTeich | FV (Teyxolts) | % | 55-70 | \nfs | FU (Fs) | % | 28-43 | \nsv | UO | ml | 60-100 | \nedv | KDO | ml | 110-147 | \nesv | KSO | ml | 46-75 | \nefSimpson | FV (Simpson, N > 50%) | % | 50-100 | \nvcf | Vcf |  | 0.8-1.2 | \nco | MO | l/min | 3.5-4.5 | \ncontractility | Miokardning qisqaruvchanlik faoliyati |  |  | \npaTrunk | O'pka arteriyasi stvoli diametri (N 2,8 sm) | sm |  | \npaat | PAAT (N > 130 ms; 100–120 ms yengil O'G) | ms |  | \nmvOpening | Mitral klapan ochilish amplitudasi (N 2,6 sm) | sm |  | \nlvMass | Chap qorincha massasi (M-rejim) | g |  | \nlvMassIndex | ChQ massasi indeksi (A < 110, E < 134 g/m²) | g/m² |  | \nmvE | Mitral: E cho'qqisi | m/s | 0.6-1.3 | \nmvA | Mitral: A cho'qqisi | m/s |  | \nmvEA | Mitral: E/A |  | 1-2 | \ndt | Oqimning sekinlashish vaqti (DT) | ms | 160-220 | \nmva | Mitral klapan maydoni | sm² | 4-6 | \ntvE | Trikuspidal: E cho'qqisi | m/s |  | \ntvA | Trikuspidal: A cho'qqisi | m/s |  | \ntvEA | Trikuspidal: E/A |  | 1-2 | \ntapse | TAPSE (N ≥ 17 mm) | mm |  | \naoVmax | Aorta Vmax | m/s | 0.9-1.7 | \nsao | Sao | sm² | 2.5-3.5 | \npaVmax | O'pka arteriyasi Vmax | m/s | 0.6-0.9 | \npap | O'pka arteriyasidagi bosim (Ro'a) | mm sim. ust. | 0-20 | \npr | PR | ms |  | \nextra | Qo'shimcha ma'lumotlar |  |  | Exobelgilar bo'yicha yurak levokardiya. Klapanlari o'zgarishsiz, intakt. Chap qorinchaning umumiy qisqaruvchanligi saqlangan, mahalliy qisqaruvchanlikda o'zgarishlar yo'q. Perikard varaqlari orasi o'zgarishsiz.\nivc | Pastki kovak vena diametri | mm |  | \nivcCollapse | Inspirator kollaps |  |  | ",
       "body": "1. Umumiy ma'lumotlar: ultratovush apparati PHILIPS ClearVue 550. Datchik turi sektoral, chastotasi 3–5 MHz.\n2. Asosiy holat. Tekshiruv turi: transtorakal exografik tekshiruv.\nRitm: {{rhythm}}. YuQS {{hr}} marta 1 daqiqada. BSA (tana yuzasi maydoni): {{bsa}} m².\n\nM-rejimdagi o'lchamlar (Teyxolts usulida)\nO'ng qorincha {{rv}} sm (< 3,0 sm). Oldingi devori qalinligi {{rvWall}} sm (< 0,5 sm).\nAorta ildizi diametri {{aoRoot}} sm (1,8–3,7 sm). O'ziga xos belgilari: {{aoNotes}}.\nAortal klapan: ochilish amplitudasi {{avOpening}} sm (1,5–2,6 sm).\nChap bo'lmacha {{la}} sm (5,3×4,0 sm), V = {{laVi}} ml/m² (30–32). O'ng bo'lmacha {{ra}} sm (5,3×4,4 sm), V = {{raVi}} ml/m² (30–32).\nQorinchalararo to'siq {{ivs}} sm (0,7–1,1 sm). Harakati: {{ivsMotion}}. To'liq shakllangan.\nChap qorincha orqa devori {{lvpw}} sm (0,7–1,1 sm).\n\nChap qorincha parametrlari va gemodinamik ko'rsatkichlari\nKDR {{lvedd}} sm (3,8–5,6 sm) · KDO {{edv}} ml (110–147 ml)\nKSR {{lvesd}} sm (2,5–3,8 sm) · KSO {{esv}} ml (46–75 ml)\nFV {{efTeich}}% (55–70%, Teyxolts) · FV {{efSimpson}}% (N > 50%, Simpson)\nFU (Fs) {{fs}}% (28–43%) · Vcf {{vcf}} (0,8–1,2)\nUO {{sv}} ml (60–100 ml) · MO {{co}} l/min (3,5–4,5 l/min)\nMiokardning qisqaruvchanlik faoliyati: {{contractility}}.\nO'pka arteriyasi: stvoli diametri {{paTrunk}} sm (2,8 sm). PAAT {{paat}} ms (> 130 ms; 100–120 ms yengil O'G).\nMitral klapan: ochilish amplitudasi {{mvOpening}} sm (2,6 sm).\nM-rejim tekshiruvida chap qorincha massasi {{lvMass}} g. ChQ massasi indeksi {{lvMassIndex}} g/m² (< 110 g/m² A, < 134 g/m² E).\n\nChap qorincha diastolik funksiyasi\nE cho'qqisi {{mvE}} m/s (0,6–1,3 m/s). A cho'qqisi {{mvA}} m/s. E/A {{mvEA}} (> 1 – < 2).\nOqimning sekinlashish vaqti {{dt}} ms (160–220 ms). Mitral klapan maydoni {{mva}} sm² (4–6 sm²).\nO'ng qorincha diastolik funksiyasi\nE cho'qqisi {{tvE}} m/s. A cho'qqisi {{tvA}} m/s. E/A {{tvEA}} (> 1 – < 2). TAPSE {{tapse}} mm (N ≥ 17 mm).\nAorta Vmax {{aoVmax}} m/s (0,9–1,7 m/s). Sao {{sao}} sm² (2,5–3,5 sm²).\nO'pka arteriyasi Vmax {{paVmax}} m/s (0,6–0,9 m/s). Ro'a {{pap}} mm sim. ust. (< 20 mm sim. ust.). PR {{pr}} ms.\n\nQo'shimcha ma'lumotlar: {{extra}}\nPastki kovak vena diametri {{ivc}} mm. Inspirator kollaps: {{ivcCollapse}}.",
-      "conclusion": "Tavsiya:"
+      "conclusion": "Tavsiya:",
+      "service": "EhoKG (transtorakal)"
     },
     {
       "name": "UTT: yuza a'zolar",
@@ -167,6 +177,368 @@
         "examination": "Umumiy ahvoli qoniqarli, hushida, terisi toza. Nafas ravon, o'pkalarida vezikulyar nafas. Yurak tonlari ritmik. A/B __/__ mm sim. ust. Tili nam, toza. Qorni yumshoq, og'riqsiz.",
         "plan": "Ertalabki va kechki sayr (5–7 ming qadam/sutka). Gimnastika, nafas mashqi. Sport.\nTo'g'ri ovqatlanish (ovqatlar tarkibi oqsilga boy bo'lishi, uglevodlar va yog'larni cheklash). Suv 2–3,5 litr/sutka."
       }
+    }
+  ],
+  "medicines": [
+    {
+      "name": "Bisoprolol",
+      "strength": "2,5 mg",
+      "inn": "bisoprolol",
+      "form": "tablet",
+      "drugGroup": "Beta-blokator",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Bisoprolol",
+      "strength": "5 mg",
+      "inn": "bisoprolol",
+      "form": "tablet",
+      "drugGroup": "Beta-blokator",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Bisoprolol",
+      "strength": "10 mg",
+      "inn": "bisoprolol",
+      "form": "tablet",
+      "drugGroup": "Beta-blokator",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Konkor",
+      "strength": "5 mg",
+      "inn": "bisoprolol",
+      "form": "tablet",
+      "drugGroup": "Beta-blokator",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Metoprolol",
+      "strength": "50 mg",
+      "inn": "metoprolol",
+      "form": "tablet",
+      "drugGroup": "Beta-blokator",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": ""
+    },
+    {
+      "name": "Nebivolol",
+      "strength": "5 mg",
+      "inn": "nebivolol",
+      "form": "tablet",
+      "drugGroup": "Beta-blokator",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Karvedilol",
+      "strength": "6,25 mg",
+      "inn": "carvedilol",
+      "form": "tablet",
+      "drugGroup": "Beta-blokator",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": ""
+    },
+    {
+      "name": "Amlodipin",
+      "strength": "5 mg",
+      "inn": "amlodipine",
+      "form": "tablet",
+      "drugGroup": "Kalsiy kanallari blokatori",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Amlodipin",
+      "strength": "10 mg",
+      "inn": "amlodipine",
+      "form": "tablet",
+      "drugGroup": "Kalsiy kanallari blokatori",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Lizinopril",
+      "strength": "10 mg",
+      "inn": "lisinopril",
+      "form": "tablet",
+      "drugGroup": "AAF ingibitori",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Enalapril",
+      "strength": "10 mg",
+      "inn": "enalapril",
+      "form": "tablet",
+      "drugGroup": "AAF ingibitori",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": ""
+    },
+    {
+      "name": "Perindopril",
+      "strength": "5 mg",
+      "inn": "perindopril",
+      "form": "tablet",
+      "drugGroup": "AAF ingibitori",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Ramipril",
+      "strength": "5 mg",
+      "inn": "ramipril",
+      "form": "tablet",
+      "drugGroup": "AAF ingibitori",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Kaptopril",
+      "strength": "25 mg",
+      "inn": "captopril",
+      "form": "tablet",
+      "drugGroup": "AAF ingibitori",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": ""
+    },
+    {
+      "name": "Losartan",
+      "strength": "50 mg",
+      "inn": "losartan",
+      "form": "tablet",
+      "drugGroup": "Angiotenzin retseptorlari blokatori",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Valsartan",
+      "strength": "80 mg",
+      "inn": "valsartan",
+      "form": "tablet",
+      "drugGroup": "Angiotenzin retseptorlari blokatori",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Telmisartan",
+      "strength": "40 mg",
+      "inn": "telmisartan",
+      "form": "tablet",
+      "drugGroup": "Angiotenzin retseptorlari blokatori",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Indapamid",
+      "strength": "1,5 mg",
+      "inn": "indapamide",
+      "form": "tablet",
+      "drugGroup": "Diuretik",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Gidroxlorotiazid",
+      "strength": "25 mg",
+      "inn": "hydrochlorothiazide",
+      "form": "tablet",
+      "drugGroup": "Diuretik",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Torasemid",
+      "strength": "10 mg",
+      "inn": "torasemide",
+      "form": "tablet",
+      "drugGroup": "Diuretik",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Furosemid",
+      "strength": "40 mg",
+      "inn": "furosemide",
+      "form": "tablet",
+      "drugGroup": "Diuretik",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": ""
+    },
+    {
+      "name": "Spironolakton",
+      "strength": "25 mg",
+      "inn": "spironolactone",
+      "form": "tablet",
+      "drugGroup": "Diuretik",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Atorvastatin",
+      "strength": "20 mg",
+      "inn": "atorvastatin",
+      "form": "tablet",
+      "drugGroup": "Statin",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Rosuvastatin",
+      "strength": "10 mg",
+      "inn": "rosuvastatin",
+      "form": "tablet",
+      "drugGroup": "Statin",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Atsetilsalitsil kislota",
+      "strength": "75 mg",
+      "inn": "acetylsalicylic acid",
+      "form": "tablet",
+      "drugGroup": "Antiagregant",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Klopidogrel",
+      "strength": "75 mg",
+      "inn": "clopidogrel",
+      "form": "tablet",
+      "drugGroup": "Antiagregant",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Rivaroksaban",
+      "strength": "20 mg",
+      "inn": "rivaroxaban",
+      "form": "tablet",
+      "drugGroup": "Antikoagulyant",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Apiksaban",
+      "strength": "5 mg",
+      "inn": "apixaban",
+      "form": "tablet",
+      "drugGroup": "Antikoagulyant",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": ""
+    },
+    {
+      "name": "Varfarin",
+      "strength": "2,5 mg",
+      "inn": "warfarin",
+      "form": "tablet",
+      "drugGroup": "Antikoagulyant",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": ""
+    },
+    {
+      "name": "Amiodaron",
+      "strength": "200 mg",
+      "inn": "amiodarone",
+      "form": "tablet",
+      "drugGroup": "Antiaritmik",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": ""
+    },
+    {
+      "name": "Digoksin",
+      "strength": "0,25 mg",
+      "inn": "digoxin",
+      "form": "tablet",
+      "drugGroup": "Yurak glikozidi",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": ""
+    },
+    {
+      "name": "Trimetazidin",
+      "strength": "35 mg",
+      "inn": "trimetazidine",
+      "form": "tablet",
+      "drugGroup": "Metabolik",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": ""
+    },
+    {
+      "name": "Ivabradin",
+      "strength": "5 mg",
+      "inn": "ivabradine",
+      "form": "tablet",
+      "drugGroup": "Yurak urishini sekinlatuvchi",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": ""
+    },
+    {
+      "name": "Nitrogliserin",
+      "strength": "0,5 mg",
+      "inn": "nitroglycerin",
+      "form": "tablet",
+      "drugGroup": "Nitrat",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": ""
+    },
+    {
+      "name": "Izosorbid mononitrat",
+      "strength": "20 mg",
+      "inn": "isosorbide mononitrate",
+      "form": "tablet",
+      "drugGroup": "Nitrat",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": ""
+    },
+    {
+      "name": "Moksonidin",
+      "strength": "0,4 mg",
+      "inn": "moxonidine",
+      "form": "tablet",
+      "drugGroup": "Markaziy ta'sirli gipotenziv",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Dapagliflozin",
+      "strength": "10 mg",
+      "inn": "dapagliflozin",
+      "form": "tablet",
+      "drugGroup": "SGLT2 ingibitori",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Empagliflozin",
+      "strength": "10 mg",
+      "inn": "empagliflozin",
+      "form": "tablet",
+      "drugGroup": "SGLT2 ingibitori",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
+    },
+    {
+      "name": "Sakubitril/valsartan",
+      "strength": "50 mg",
+      "inn": "sacubitril/valsartan",
+      "form": "tablet",
+      "drugGroup": "ARNI",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": ""
+    },
+    {
+      "name": "Pantoprazol",
+      "strength": "40 mg",
+      "inn": "pantoprazole",
+      "form": "tablet",
+      "drugGroup": "Proton pompasi ingibitori",
+      "defaultDose": "1 tabletka",
+      "defaultFrequency": "kuniga 1 mahal"
     }
   ]
 }

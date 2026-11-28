@@ -923,7 +923,13 @@
       "stepDiagnosis": "Tashxis",
       "stepStudies": "Tekshiruvlar",
       "stepTreatment": "Davolash",
-      "stepFinish": "Yakunlash"
+      "stepFinish": "Yakunlash",
+      "stepSheet": "Koʻrik varaqasi",
+      "stepComplaintsOptional": "Shikoyat va anamnez (ixtiyoriy)",
+      "historyWizard": "Kasallik tarixi yaratish",
+      "taskVisit": "Koʻrik",
+      "tasksLabel": "Bemor toʻlagan xizmatlar",
+      "studyReady": "Tayyor: natija saqlandi va qabulxonada chop etishga tayyor."
     },
     "record": {
       "title": "Tibbiy karta",
@@ -1563,7 +1569,16 @@
       "splitInvalid": "Summani raqam bilan yozing",
       "doctorCode": "Shifokor kodi",
       "doctorCodeHint": "Kodni yozib Enter bosing",
-      "doctorCodeUnknown": "«{code}» kodli shifokor yoʻq"
+      "doctorCodeUnknown": "«{code}» kodli shifokor yoʻq",
+      "group": {
+        "waiting": "Kutmoqda",
+        "inRoom": "Qabulda",
+        "booked": "Yozilgan, hali kelmagan",
+        "done": "Yakunlangan",
+        "other": "Kelmagan / bekor qilingan"
+      },
+      "payPaid": "Toʻlangan",
+      "payDue": "Toʻlanmagan {amount}"
     },
     "data": {
       "title": "Maʼlumotlar qayerda saqlanadi",
@@ -3419,7 +3434,13 @@
     "computable": "oʻzi hisoblanadi",
     "draftConclusion": "Xulosa qoralamasi",
     "draftLine": "{label}: {value} — meʼyordan {flag} ({min}–{max})",
-    "draftAllNormal": "Oʻlchangan koʻrsatkichlar meʼyor doirasida."
+    "draftAllNormal": "Oʻlchangan koʻrsatkichlar meʼyor doirasida.",
+    "studyEyebrow": "Tekshiruv blankasi",
+    "backToQueue": "Navbatga qaytish",
+    "openVisit": "Koʻrikni ochish",
+    "doneToday": "Bugun bajarilgan",
+    "studyHint": "Blankani toʻldiring va «Tayyor»ni bosing — natija qabulxonada chop etishga tayyor boʻladi.",
+    "ready": "Tayyor"
   },
   "bot": {
     "welcome": "Assalomu alaykum! Bu — ITop Med, klinikalar uchun boshqaruv tizimi.\n\nTizimni ochish uchun quyidagi tugmani bosing.",
@@ -3629,6 +3650,118 @@
       "patch": "Plastir",
       "solution": "Eritma",
       "other": "Boshqa"
+    }
+  },
+  "historyWizard": {
+    "eyebrow": "Kasallik tarixi yaratish",
+    "backToVisit": "Koʻrikka qaytish",
+    "noteSigned": "Bu koʻrikda yozish mumkin emas: bayonnoma imzolangan yoki koʻrik yakunlangan.",
+    "save": "Saqlash va koʻrik varaqasiga oʻtish",
+    "complaintsTitle": "1. Shikoyatlar",
+    "duration": "Qachondan beri",
+    "durationUnit": "Birlik",
+    "unit": {
+      "days": "kun",
+      "weeks": "hafta",
+      "months": "oy",
+      "years": "yil"
+    },
+    "since": {
+      "days": "{n} kundan beri.",
+      "weeks": "{n} haftadan beri.",
+      "months": "{n} oydan beri.",
+      "years": "{n} yildan beri."
+    },
+    "label": {
+      "chestPainExertion": "Zoʻriqishda koʻkrakda ogʻriq",
+      "chestPainRest": "Tinch holatda koʻkrakda ogʻriq",
+      "dyspneaExertion": "Zoʻriqishda hansirash",
+      "dyspneaRest": "Tinch holatda hansirash",
+      "palpitations": "Yurak urib ketishi",
+      "irregular": "Yurak ishida uzilishlar",
+      "headache": "Bosh ogʻrigʻi",
+      "dizziness": "Bosh aylanishi",
+      "weakness": "Holsizlik",
+      "edema": "Oyoqlarda shish",
+      "syncope": "Hushdan ketish",
+      "priorMi": "Infarkt oʻtkazgan",
+      "stroke": "Insult oʻtkazgan",
+      "heredity": "Yaqinlarida yurak kasalligi"
+    },
+    "c": {
+      "chestPainExertion": "jismoniy zoʻriqishda koʻkrak qafasida ogʻriq",
+      "chestPainRest": "tinch holatda koʻkrak qafasida ogʻriq",
+      "dyspneaExertion": "jismoniy zoʻriqishda hansirash",
+      "dyspneaRest": "tinch holatda hansirash",
+      "palpitations": "yurak urib ketishi",
+      "irregular": "yurak ishida uzilishlar",
+      "headache": "bosh ogʻrigʻi",
+      "dizziness": "bosh aylanishi",
+      "weakness": "holsizlik",
+      "edema": "oyoqlarda shish",
+      "syncope": "hushdan ketish holatlari"
+    },
+    "bpTitle": "2. Arterial bosim va dorilar",
+    "bp": {
+      "yes": "Bosim koʻtariladi",
+      "no": "Bosim koʻtarilmaydi"
+    },
+    "bpYears": "Necha yildan beri",
+    "bpMax": "Eng yuqori bosim",
+    "meds": "Doimiy qabul qiladigan dorilar",
+    "medsPlaceholder": "Masalan: Amlodipin 5 mg",
+    "riskTitle": "3. Anamnez va xavf omillari",
+    "diabetes": "Qandli diabet",
+    "diabetesOpt": {
+      "NO": "Yoʻq",
+      "TYPE2": "2-tip",
+      "TYPE1": "1-tip",
+      "OTHER": "Boshqa"
+    },
+    "smoking": "Chekish",
+    "smokingOpt": {
+      "NEVER": "Chekmaydi",
+      "FORMER": "Oldin chekkan",
+      "CURRENT": "Chekadi"
+    },
+    "extra": "Qoʻshimcha (ixtiyoriy)",
+    "previewTitle": "4. Bayonnomaga yoziladi",
+    "previewHint": "Javoblardan oʻzi tuziladi; xohlasangiz shu yerda tahrirlang.",
+    "complaintsText": "Shikoyatlar",
+    "historyText": "Kasallik anamnezi",
+    "h": {
+      "bp": "Arterial bosim koʻtariladi.",
+      "bpYears": "Arterial bosim {n} yildan beri koʻtariladi.",
+      "bpMax": "Eng yuqori qayd etilgan bosim {bp} mm sim. ust.",
+      "bpNo": "Arterial bosim koʻtarilishini inkor etadi.",
+      "meds": "Doimiy qabul qiladi: {meds}.",
+      "diabetes2": "2-tip qandli diabet.",
+      "diabetes1": "1-tip qandli diabet.",
+      "diabetesNo": "Qandli diabet yoʻq.",
+      "smokes": "Chekadi.",
+      "smokedBefore": "Oldin chekkan.",
+      "mi": "Miokard infarktini oʻtkazgan.",
+      "stroke": "Insultni oʻtkazgan.",
+      "heredity": "Yaqin qarindoshlarida yurak-qon tomir kasalliklari bor."
+    },
+    "dxTitle": "5. Taxminiy tashxis",
+    "dxHint": "Javoblar va bugungi bosim, vazn boʻyicha taklif. Faqat siz belgilaganlari yoziladi; birinchisi — asosiy tashxis.",
+    "dxNone": "Hozircha taklif yoʻq — tashxisni koʻrik varaqasida yozasiz.",
+    "dxPrimary": "asosiy",
+    "dx": {
+      "I10": "Essensial (birlamchi) gipertenziya",
+      "I11_9": "Gipertonik yurak kasalligi (yurak yetishmovchiligisiz)",
+      "I20_8": "Stenokardiyaning boshqa shakllari (zoʻriqish stenokardiyasi)",
+      "I50_9": "Yurak yetishmovchiligi, aniqlanmagan",
+      "I49_9": "Yurak ritmining buzilishi, aniqlanmagan",
+      "R07_4": "Koʻkrak qafasidagi ogʻriq, aniqlanmagan",
+      "R55": "Hushdan ketish (sinkope)",
+      "I25_2": "Oʻtkazilgan miokard infarkti",
+      "I69_4": "Insult oqibatlari",
+      "E11": "2-tip qandli diabet",
+      "E10": "1-tip qandli diabet",
+      "E66": "Semizlik",
+      "Z72_0": "Tamaki chekish"
     }
   }
 }

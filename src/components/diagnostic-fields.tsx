@@ -22,17 +22,18 @@ export interface StudyTemplate {
  * templates (its fields with the clinic's normal ranges, "fill normal",
  * values outside the range marked at once) or the built-in fields of a study.
  */
-export function DiagnosticFields({ templates }: { templates: StudyTemplate[] }) {
+export function DiagnosticFields({ templates, initialTemplateId = "", initialKind = "ECG" }: { templates: StudyTemplate[]; initialTemplateId?: string; initialKind?: DiagnosticKindKey }) {
   const t = useTranslations("diagnostics");
   const locale = useLocale();
   /** Numbers of the clinic's ranges with a decimal comma, except in English. */
   const dec = (n: number) => (locale === "en" ? String(n) : String(n).replace(".", ","));
   // Starts with the built-in study (ECG, echo, ...): one of the clinic's templates (e.g. a
   // pregnancy ultrasound form) is picked on purpose, never pre-selected for every patient.
-  const [templateId, setTemplateId] = useState<string>("");
+  // From the doctor's queue a paid service opens its own form (initialTemplateId / initialKind).
+  const [templateId, setTemplateId] = useState<string>(templates.some((x) => x.id === initialTemplateId) ? initialTemplateId : "");
   const tpl = templates.find((x) => x.id === templateId) ?? null;
-  const [kind, setKind] = useState<DiagnosticKindKey>("ECG");
-  const [title, setTitle] = useState<string>(tpl?.name ?? t("kind.ECG"));
+  const [kind, setKind] = useState<DiagnosticKindKey>(initialKind);
+  const [title, setTitle] = useState<string>(tpl?.name ?? t(`kind.${initialKind}`));
   const [values, setValues] = useState<Record<string, string>>({});
   // Fields the program computed (echo formulas); a field the doctor types into leaves this set.
   const [auto, setAuto] = useState<Set<string>>(new Set());
